@@ -8,7 +8,7 @@
             </ol>
         </div>
         <div class="card card-dashboard border">
-            <div class="card-body">
+            <div class="card-body card-advanced-config">
                 <template>
                     <form autocomplete="off">
                         <el-tabs v-model="activeName">

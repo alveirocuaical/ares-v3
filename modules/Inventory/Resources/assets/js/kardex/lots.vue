@@ -1,7 +1,7 @@
 <template>
     <div class="card mb-0 pt-2 pt-md-0">
         <div class="card mb-0">
-            <div class="card-body">
+            <div class="card-body p-0">
                 <data-table :resource="resource">
                     <tr slot="heading">
                         <th width="5%">#</th>

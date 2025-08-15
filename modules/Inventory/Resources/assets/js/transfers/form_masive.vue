@@ -1,9 +1,10 @@
 <template>
   <div class="card mb-0 pt-2 pt-md-0">
-    <div class="card-header bg-info">
+    <!-- <div class="card-header bg-info">
       <h3 class="my-0">Nuevo Traslado</h3>
-    </div>
+    </div> -->
     <div class="card-body">
+      <div class="invoice">
       <form autocomplete="off" @submit.prevent="submit">
         <div class="form-body">
           <div class="row">
@@ -145,6 +146,7 @@
           <el-button type="primary" native-type="submit" :loading="loading_submit">Guardar</el-button>
         </div>
       </form>
+      </div>
     </div>
 
     <output-lots-form
@@ -154,7 +156,13 @@
     ></output-lots-form>
   </div>
 </template>
-
+<style>
+@media only screen and (min-width: 768px) {
+    html.fixed .inner-wrapper {
+        padding-top: 60px !important;
+    }
+}
+</style>
 <script>
 import OutputLotsForm from "./partials/lots.vue";
 import queryString from 'query-string';

@@ -312,6 +312,13 @@
         />
     </div>
 </template>
+<style>
+@media only screen and (min-width: 768px) {
+    html.fixed .inner-wrapper {
+        padding-top: 60px !important;
+    }
+}
+</style>
 <script>
 import TermsCondition from './partials/terms_condition.vue'
 import PersonForm from '../persons/form.vue'

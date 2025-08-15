@@ -4,7 +4,7 @@
             <h3 class="my-0">Consulta kardex</h3>
     </div>-->
         <div class="card mb-0">
-            <div class="card-body">
+            <div class="card-body p-0">
                 <data-table :resource="resource">
                     <tr slot="heading" >
                         <th width="5%">#</th>

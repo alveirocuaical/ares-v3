@@ -1,7 +1,13 @@
 <template>
     <div  v-loading="loading">
         <div class="page-header pr-0">
-            <h2><a href="/dashboard"><i class="fas fa-tachometer-alt"></i></a></h2>
+            <h2><a href="/support-documents">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-shopping-bag" style="margin-top: -5px;">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M6.331 8h11.339a2 2 0 0 1 1.977 2.304l-1.255 8.152a3 3 0 0 1 -2.966 2.544h-6.852a3 3 0 0 1 -2.965 -2.544l-1.255 -8.152a2 2 0 0 1 1.977 -2.304z"></path>
+                    <path d="M9 11v-5a3 3 0 0 1 6 0v5"></path>
+                </svg>
+            </a></h2>
             <ol class="breadcrumbs">
                 <li class="active"><span>DSNOF</span></li>
             </ol>
@@ -10,9 +16,9 @@
             </div>
         </div>
         <div class="card mb-0">
-            <div class="card-header bg-info">
+            <!-- <div class="card-header bg-info">
                 <h3 class="my-0">Listado de Documentos de soporte</h3>
-            </div>
+            </div> -->
             <div class="card-body">
                 <data-table :resource="resource" :init-search="initSearch">
                     <tr slot="heading" width="100%">

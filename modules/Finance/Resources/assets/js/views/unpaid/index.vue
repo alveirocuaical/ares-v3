@@ -1,8 +1,31 @@
 <template>
+<div>
+    <div class="page-header pr-0">
+        <h2>
+            <a href="/finances/unpaid">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-calculator" style="margin-top: -5px;">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M4 3m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                    <path d="M8 7m0 1a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v1a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1z"></path>
+                    <path d="M8 14l0 .01"></path>
+                    <path d="M12 14l0 .01"></path>
+                    <path d="M16 14l0 .01"></path>
+                    <path d="M8 17l0 .01"></path>
+                    <path d="M12 17l0 .01"></path>
+                    <path d="M16 17l0 .01"></path>
+                </svg>
+            </a>
+        </h2>
+        <ol class="breadcrumbs">
+            <li class="active">
+                <span>Cuentas por cobrar</span>
+            </li>
+        </ol>
+    </div>
     <div class="card mb-0 pt-2 pt-md-0">
-        <div class="card-header bg-info">
+        <!-- <div class="card-header bg-info">
             <h3 class="my-0">Cuentas por cobrar</h3>
-        </div>
+        </div> -->
         <div class="card mb-0">
             <div class="card-body">
 
@@ -249,6 +272,7 @@
             :external="true"
             ></remission-payments>
     </div>
+</div>
 </template>
 
 <script>

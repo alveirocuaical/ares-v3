@@ -589,14 +589,14 @@
           </div> -->
 
           <div class="col-xl-3 col-md-6">
-            <section class="card">
+            <section class="card card-featured-left">
               <div class="card-body">
                 <h2 class="card-title">Ventas por producto</h2>
                 <div class="mt-3">
                   <el-checkbox  v-model="form.enabled_move_item" @change="loadDataAditional">Ordenar por movimientos</el-checkbox><br>
                 </div>
-                <div class="table-responsive">
-                  <table class="table">
+                <div class="table-responsive table-default">
+                  <table class="table table-default">
                     <thead>
                       <tr>
                         <th>#</th>
@@ -633,14 +633,14 @@
             </section>
           </div>
           <div class="col-xl-3 col-md-6">
-            <section class="card">
+            <section class="card card-featured-left">
               <div class="card-body">
                 <h2 class="card-title">Top clientes</h2>
                 <div class="mt-3">
                   <el-checkbox  v-model="form.enabled_transaction_customer" @change="loadDataAditional">Ordenar por transacciones</el-checkbox><br>
                 </div>
-                <div class="table-responsive">
-                  <table class="table">
+                <div class="table-responsive table-default">
+                  <table class="table table-default">
                     <thead>
                       <tr>
                         <th>#</th>

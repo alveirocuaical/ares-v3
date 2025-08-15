@@ -38,7 +38,7 @@
                             <small class="form-control-feedback" v-if="errors.email" v-text="errors.email[0]"></small>
                         </div>
                     </div>
-                    <div class="col-md-4 d-flex justify-content-center align-items-center aling-div">
+                    <div class="col-md-4 d-flex justify-content-start align-items-center aling-div">
                         <div class="form-group text-center">
                             <el-checkbox v-model="showAdditionalFields" size="large">
                                 <span class="custom-checkbox-label">Llenar información adicional</span>
@@ -184,7 +184,7 @@ margin-top: 25px;
 }
 .custom-checkbox-label {
 
-    font-size: 15pt; /* Ajusta el tamaño de la letra */
+    font-size: 13px; /* Ajusta el tamaño de la letra */
 }
 .el-checkbox .el-checkbox__input {
     transform: scale(1.3); /* Ajusta el tamaño del checkbox */

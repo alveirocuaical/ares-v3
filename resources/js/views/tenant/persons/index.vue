@@ -1,7 +1,9 @@
 <template>
     <div>
         <div class="page-header pr-0">
-            <h2><a href="/dashboard"><i class="fas fa-tachometer-alt"></i></a></h2>
+            <h2><a :href="breadcrumbUrl">
+                <span v-html="breadcrumbIcon"></span>
+            </a></h2>
             <ol class="breadcrumbs">
                 <li class="active"><span>{{ title }}</span></li>
             </ol>
@@ -12,10 +14,7 @@
                 <button type="button" class="btn btn-custom btn-sm  mt-2 mr-2" @click.prevent="clickCreate()"><i class="fa fa-plus-circle"></i> Nuevo</button>
             </div>
         </div>
-        <div class="card mb-0">
-            <div class="card-header bg-info">
-                <h3 class="my-0">Listado de {{ title }}</h3>
-            </div>
+        <div class="card mb-0">            
             <div class="card-body">
                 <data-table :resource="resource+`/${this.type}`">
                     <tr slot="heading">
@@ -79,6 +78,35 @@
         },
         created() {
             this.title = (this.type === 'customers')?'Clientes':'Proveedores'
+        },
+        computed: {
+            breadcrumbUrl() {
+                return this.type === 'customers' 
+                    ? '/persons/customers' 
+                    : '/persons/suppliers';
+            },
+            breadcrumbIcon() {
+                if (this.type === 'customers') {
+                    return `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" 
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" 
+                                stroke-linecap="round" stroke-linejoin="round" 
+                                style="margin-top: -5px;">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>`;
+                }
+                return `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" 
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" 
+                            stroke-linecap="round" stroke-linejoin="round" 
+                            class="icon icon-tabler icons-tabler-outline icon-tabler-shopping-bag" style="margin-top: -5px">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                            <path d="M6.331 8h11.339a2 2 0 0 1 1.977 2.304l-1.255 8.152a3 3 0 0 1 -2.966 2.544h-6.852a3 3 0 0 1 -2.965 -2.544l-1.255 -8.152a2 2 0 0 1 1.977 -2.304z"></path>
+                            <path d="M9 11v-5a3 3 0 0 1 6 0v5"></path>
+                        </svg>`;
+            }
         },
         methods: {
             clickExport() {
