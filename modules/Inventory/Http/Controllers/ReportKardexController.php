@@ -110,17 +110,14 @@ class ReportKardexController extends Controller
         $warehouse = Warehouse::where('establishment_id', auth()->user()->establishment_id)->first();
 
         if($date_start && $date_end){
-
             $data = InventoryKardex::with(['inventory_kardexable'])
-                        ->where([['warehouse_id', $warehouse->id]])
+                        ->where([["warehouse_id", $warehouse->id]])
                         ->whereBetween('date_of_issue', [$date_start, $date_end])
-                        ->orderBy('item_id')->orderBy('id');
-
+                        ->orderBy('id', 'desc');
         }else{
-
             $data = InventoryKardex::with(['inventory_kardexable'])
-                        ->where([['warehouse_id', $warehouse->id]])
-                        ->orderBy('item_id')->orderBy('id');
+                        ->where([["warehouse_id", $warehouse->id]])
+                        ->orderBy('id', 'desc');
         }
 
         if($item_id){

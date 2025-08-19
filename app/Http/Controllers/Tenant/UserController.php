@@ -98,9 +98,8 @@ class UserController extends Controller
 
     public function records()
     {
-        $records = User::all();
-
-        return new UserCollection($records);
+    $records = User::orderBy('id', 'desc')->get();
+    return new UserCollection($records);
     }
 
     public function destroy($id)
