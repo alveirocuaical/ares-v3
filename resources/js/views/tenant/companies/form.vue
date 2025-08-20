@@ -7,7 +7,7 @@
                 <li><span class="text-muted">Empresa</span></li>
             </ol>
         </div>
-        <div class="card">
+        <div class="card card-config">
             <div class="card-header bg-info">
                 <h3 class="my-0">Datos de la Empresa</h3>
             </div>

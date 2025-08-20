@@ -99,13 +99,49 @@
                         <!-- <td class="text-right">{{ row.total_exportation }}</td> -->
                         <td v-if="columns.total_perception.visible" class="text-right">{{ formatNumber(row.total_perception ? row.total_perception : 0) }}</td>
                         <td class="text-right">{{ formatNumber(row.total) }}</td>
-                        <td>
-                            <a v-if="row.state_type_id != '11'" :href="`/${resource}/edit/${row.id}`" type="button" class="btn waves-effect waves-light btn-xs btn-info">Editar</a>
-                            <a v-if="row.state_type_id != '11' && !['07', '08'].includes(String(row.document_type_id))" :href="`/${resource}/note/${row.id}`" type="button" class="btn waves-effect waves-light btn-xs btn-warning">Nota</a>
-                            <button v-if="row.state_type_id != '11'" type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickAnulate(row.id)">Anular</button>
-                            <button v-if="row.state_type_id == '11'" type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickDelete(row.id)">Eliminar</button>
-                            <a :href="`/${resource}/pdf/${row.id}`" type="button" class="btn waves-effect waves-light btn-xs btn-info" target="_blank">PDF</a>
-
+                        <td class="text-center">
+                            <el-dropdown trigger="click">
+                                <el-button size="mini" type="secondary" class="btn btn-default btn-sm btn-dropdown-toggle">
+                                    <i class="fas fa-ellipsis-h"></i>
+                                </el-button>
+                            
+                                <el-dropdown-menu slot="dropdown">
+                                
+                                    <el-dropdown-item 
+                                        v-if="row.state_type_id != '11'" 
+                                        :href="`/${resource}/edit/${row.id}`"
+                                        tag="a">
+                                        Editar
+                                    </el-dropdown-item>
+                                
+                                    <el-dropdown-item 
+                                        v-if="row.state_type_id != '11' && !['07', '08'].includes(String(row.document_type_id))" 
+                                        :href="`/${resource}/note/${row.id}`"
+                                        tag="a">
+                                        Nota
+                                    </el-dropdown-item>
+                                
+                                    <el-dropdown-item 
+                                        :href="`/${resource}/pdf/${row.id}`" 
+                                        target="_blank"
+                                        tag="a">
+                                        PDF
+                                    </el-dropdown-item>                            
+                                
+                                    <el-dropdown-item 
+                                        v-if="row.state_type_id != '11'" 
+                                        @click.native="clickAnulate(row.id)">
+                                        Anular
+                                    </el-dropdown-item>
+                                
+                                    <el-dropdown-item 
+                                        v-if="row.state_type_id == '11'" 
+                                        @click.native="clickDelete(row.id)">
+                                        Eliminar
+                                    </el-dropdown-item>
+                                
+                                </el-dropdown-menu>
+                            </el-dropdown>
                         </td>
                     </tr>
                 </data-table>
@@ -129,7 +165,6 @@
             ></purchase-payments>
     </div>
 </template>
-
 <script>
 
     // import DocumentsVoided from './partials/voided.vue'

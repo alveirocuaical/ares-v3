@@ -49,18 +49,44 @@
                         <td>{{ row.expense }}</td> -->
                         <td>{{ row.state_description }}</td>
                         <td class="text-center">
-                            <button type="button" class="btn waves-effect waves-light btn-xs btn-primary" @click.prevent="showReportModal(row.id)">Reporte</button>
-                            <button type="button" class="btn waves-effect waves-light btn-xs btn-primary" @click.prevent="clickDownload(row.id, 'resumido')">Reporte Resumen</button>
-                            <button type="button" class="btn waves-effect waves-light btn-xs btn-primary" @click.prevent="showArqueoModal(row.id)">Arqueo</button>
-
-                            <template v-if="row.state">
-
-                                <button type="button" class="btn waves-effect waves-light btn-xs btn-warning" @click.prevent="clickCloseCash(row.id)">Cerrar caja</button>
-                                <button v-if="typeUser === 'admin'" type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickCreate(row.id)">Editar</button>
-                                <button v-if="typeUser === 'admin'" type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickDelete(row.id)">Eliminar</button>
-
-                            </template>
-
+                            <el-dropdown trigger="click">
+                                <el-button size="mini" type="secondary" class="btn btn-default btn-sm btn-dropdown-toggle">
+                                    <i class="fas fa-ellipsis-h"></i>
+                                </el-button>
+                            
+                                <el-dropdown-menu slot="dropdown">
+                                
+                                    <el-dropdown-item @click.native="showReportModal(row.id)">
+                                        Reporte
+                                    </el-dropdown-item>
+                                
+                                    <el-dropdown-item @click.native="clickDownload(row.id, 'resumido')">
+                                        Reporte Resumen
+                                    </el-dropdown-item>
+                                
+                                    <el-dropdown-item @click.native="showArqueoModal(row.id)">
+                                        Arqueo
+                                    </el-dropdown-item>
+                                
+                                    <el-dropdown-item divided></el-dropdown-item>
+                                
+                                    <template v-if="row.state">
+                                        <el-dropdown-item @click.native="clickCloseCash(row.id)">
+                                            Cerrar caja
+                                        </el-dropdown-item>
+                                    
+                                        <el-dropdown-item v-if="typeUser === 'admin'" @click.native="clickCreate(row.id)">
+                                            Editar
+                                            <svg  xmlns="http://www.w3.org/2000/svg"  width="16"  height="16"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-edit text-muted" style="float: right;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
+                                        </el-dropdown-item>
+                                    
+                                        <el-dropdown-item v-if="typeUser === 'admin'" @click.native="clickDelete(row.id)">
+                                            Eliminar
+                                            <svg  xmlns="http://www.w3.org/2000/svg"  width="16"  height="16"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-trash text-muted" style="float: right;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                                        </el-dropdown-item>
+                                    </template>
+                                </el-dropdown-menu>
+                            </el-dropdown>
                         </td>
                     </tr>
                 </data-table>

@@ -130,7 +130,6 @@ sup.el-badge__content.el-badge__content--undefined.is-fixed {
 .el-badge.el-tooltip.item.ml-4.item {
     margin-left: 1rem !important;
 }
-
 .fas.fa-exclamation-circle.text-secondary,
 .fas.fa-exclamation-triangle.text-secondary,
 .fas.fa-bell.text-secondary,
@@ -238,11 +237,21 @@ body {
     font-family: var(--black-font-family, sans-serif);
     color: var(--black-dark);
 }
-
+.el-tooltip__popper {
+  transition: none !important;
+  animation: none !important;
+  transition-delay: 0s !important;
+  transition-duration: 0s !important;
+}
+.el-tooltip__popper[x-placement] {
+  transition-delay: 0s !important;
+  transition-duration: 0s !important;
+}
 ul.nav-main li .nav-children li a {
     padding: 4px 8px;
     margin-bottom: 2px;
     margin-left: 10px;
+    transition: none !important;
 }
 
 ul.nav-main li.nav-active:not(.nav-parent)>a,
@@ -1602,8 +1611,8 @@ ul.nav-main li .nav-children li.nav-active:not(.nav-parent) > a {
     font-weight: normal;
     font-size: 14px;
 }
-html.sidebar-light ul.nav-main > li > a {
-    padding: 0.40rem 0.50rem;
+ul.nav-main > li > a {
+    padding: 0.40rem 0.50rem !important;
 }
 ul.nav-main li.nav-parent > a:after {
     transform: rotate(180deg);
@@ -1630,6 +1639,9 @@ ul.nav-main li.nav-parent.nav-expanded > a:after {
 .sidebar-left-collapsed .header {
     left: 72px !important;
 }
+.el-dropdown-menu {
+    min-width: 120px;
+}
 .el-dropdown-menu,
 .el-picker-panel {
     border-radius: 10px;
@@ -1637,11 +1649,37 @@ ul.nav-main li.nav-parent.nav-expanded > a:after {
 .el-dropdown-menu--small .el-dropdown-menu__item {
     margin: 0 5px 0 5px;
 }
+.el-dropdown-menu__item{
+    color: var(--black-dark);
+}
 .el-dropdown-menu__item:not(.is-disabled):hover, .el-dropdown-menu__item:focus,
 .dropdown-item:hover, .dropdown-item:focus {
     background-color: var(--black-light);
     color: var(--black-dark);
     border-radius: 8px;
+}
+.card-config{
+    border: 1px solid var(--black-highlight) !important;
+    border-radius: 13px;
+}
+.card-config .card-body{
+    border-radius: 12px;
+}
+.card-config .card-header.bg-info{
+    border-radius: 12px 12px 0 0 !important;
+}
+.card.card-config.card-collapsed .card-header.bg-info{
+    border-radius: 12px !important;
+}
+.card-actions a, .card-actions .card-action {
+    background-color: transparent;
+    border-radius: 8px;
+    color: var(--black-dark) !important;
+    height: 24px;
+    width: 24px;
+}
+.card-actions a:hover, .card-actions .card-action:hover{
+    background-color: var(--black-light) !important;
 }
 ul.nav.list-config li:hover {
     background: var(--black-light) !important;
@@ -2340,6 +2378,17 @@ html.dark .dropdown-divider{
 }
 html.dark .btn-close-pos{
     padding: 7px 11px;
+}
+html.dark .card-config{
+    border: 1px solid var(--black-border-dark) !important;
+}
+html.dark .card-actions a, 
+html.dark .card-actions .card-action {
+    color: var(--black-light) !important;
+}
+html.dark .card-actions a:hover, 
+html.dark .card-actions .card-action:hover{
+    background-color: var(--black-content-dark) !important;
 }
 @media only screen and (min-width: 768px) {
     html.fixed .content-body {

@@ -1,5 +1,5 @@
 <template>
-    <div class="card">
+    <div class="card card-config">
         <div class="card-header bg-info">
             <h3 class="my-0">Listado de cuentas bancarias</h3>
         </div>

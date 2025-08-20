@@ -1,5 +1,5 @@
 <template>
-    <div class="card card-collapsed">
+    <div class="card card-collapsed card-config">
         <div class="card-header bg-info">
             <h3 class="my-0">Motivos de ingresos
                 <el-tooltip class="item" effect="dark" content="Ingresos" placement="top-start">
@@ -8,7 +8,6 @@
             </h3>
             <div class="card-actions white-text">
                 <a href="#" class="card-action card-action-toggle text-white" data-card-toggle=""></a>
-                <a href="#" class="card-action card-action-dismiss text-white" data-card-dismiss=""></a>
             </div>
         </div>
         <div class="card-body">
