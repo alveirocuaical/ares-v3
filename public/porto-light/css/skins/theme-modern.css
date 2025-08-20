@@ -440,6 +440,7 @@ html .card-primary .card-header {
     padding: 7px 15px !important;
     font-size: 13px !important;
     border-radius: 8px !important;
+    color: #ffffff;
 }
 .btn-custom:hover,
 .btn-custom.hover {
@@ -1284,7 +1285,9 @@ html.sidebar-light:not(.dark) .page-header .breadcrumbs span,
     justify-content: center;
     border-radius: 8px !important;
 }
-
+html.fixed .sidebar-left a svg {
+    margin-right: 0.1rem;
+}
 .row.no-gutters .col .card div,
 .testimonial-group div .col-sm-3.pointer {
     text-shadow: 0 0 2px rgb(0 0 0 / 20%);
@@ -1831,6 +1834,231 @@ html.sidebar-light:not(.dark) .style-switcher:before{
     align-items: center;
     justify-content: center;
 }
+/* Estilos importantes de custom.css que no existen en theme-modern.css */
+
+/* Estilos para avatar uploader */
+.avatar-uploader .el-upload {
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.avatar-uploader .el-upload:hover {
+  border-color: #409EFF;
+}
+.avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 140px;
+  max-width: 140px;
+  height: 178px;
+  line-height: 178px;
+  text-align: center;
+}
+.avatar {
+  width: 100%;
+  height: 178px;
+  display: block;
+}
+
+/* Estilos para botones flotantes/whatsapp */
+.ws-flotante {
+  position: fixed;
+  width: 70px;
+  height: 70px;
+  bottom: 5px;
+  right: 10px;
+  color: #FFF;
+  border-radius: 50px;
+  text-align: center;
+  z-index: 100;
+}
+
+/* Estilos para progress circle */
+.progress1 {
+  width: 70px;
+  height: 70px;
+  background: none;
+  position: relative;
+}
+.progress1::after {
+  content: "";
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 6px solid #eee;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.progress1>span {
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+  position: absolute;
+  top: 0;
+  z-index: 1;
+}
+.progress1 .progress1-left {
+  left: 0;
+}
+.progress1 .progress1-bar {
+  width: 100%;
+  height: 100%;
+  background: none;
+  border-width: 6px;
+  border-style: solid;
+  position: absolute;
+  top: 0;
+}
+.progress1 .progress1-left .progress1-bar {
+  left: 100%;
+  border-top-right-radius: 80px;
+  border-bottom-right-radius: 80px;
+  border-left: 0;
+  -webkit-transform-origin: center left;
+  transform-origin: center left;
+}
+.progress1 .progress1-right {
+  right: 0;
+}
+.progress1 .progress1-right .progress1-bar {
+  left: -100%;
+  border-top-left-radius: 80px;
+  border-bottom-left-radius: 80px;
+  border-right: 0;
+  -webkit-transform-origin: center right;
+  transform-origin: center right;
+}
+.progress1 .progress1-value {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+/* Estilos para switcher de temas */
+#switcher-top {
+  border-right: 20px solid transparent;
+  border-left: 20px solid transparent;
+  border-top: 20px solid #7367F0;
+  position: fixed;
+  z-index: 1031;
+  left: 50%;
+  top: 0px;
+  margin: 0 auto;
+  transform: translate(-50%);
+  transition: all 0.5s ease-in-out;
+}
+#switcher-top.active {
+  border-top: 45px solid #7367F0;
+  transition: all 0.5s ease-in-out;
+}
+#switcher-top.active span {
+  margin-top: -35px;
+  transition: all 0.5s ease-in-out;
+}
+#switcher-top span {
+  margin-top: -22px;
+  transition: all 0.5s ease-in-out;
+}
+
+#switcher-list {
+  border-right: 20px solid transparent;
+  border-left: 20px solid transparent;
+  border-top: 45px solid rgba(52, 58, 64, .9);
+  z-index: 1030;
+  position: fixed;
+  top: -45px;
+  margin: 0 auto;
+  left: 50%;
+  min-width: 780px;
+  transform: translate(-50%);
+  transition: all 0.5s ease-in-out;
+}
+#switcher-list.active {
+  top: 0px;
+  transform: translate(-50%);
+  transition: all 0.5s ease-in-out;
+}
+#switcher-list .row {
+  color: #fff;
+  margin-top: -35px;
+}
+#switcher-list .row a:hover {
+  color: #FFF;
+  text-decoration: none;
+}
+
+/* Estilos para colores de estado */
+.color--success {
+  color: #4ebf56;
+}
+.color--error {
+  color: #e23636;
+}
+.color--warning {
+  color: #ffc107;
+}
+
+/* Estilos para badges personalizados */
+.badge-red {
+  background: #E7355B !important;
+}
+
+/* Estilos para transiciones */
+.transition-box {
+  -moz-transition: height .5s;
+  -ms-transition: height .5s;
+  -o-transition: height .5s;
+  -webkit-transition: height .5s;
+  transition: height .5s;
+  overflow: hidden;
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: all .5s ease;
+}
+.fade-enter, .fade-leave-to {
+  transform: translateY(-20px);
+  opacity: 0;
+}
+
+/* Estilos para elementos full width */
+.full {
+  width: 100%;
+}
+
+/* Estilos para mensajes de demo */
+.warning-demo {
+  color: red;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+/* Estilos para elementos deshabilitados */
+.c-btn-disabled {
+  color: #606266;
+}
+
+/* Estilos para sistema de puntos */
+.fs-point-system {
+  font-size: 15px;
+}
+
+/* Estilos para selectores de moneda personalizados */
+.custom-change-select-currency {
+  width: 59px;
+}
+ul.nav-main li.nav-parent > ul.nav-children {
+    margin: 0 15px;
+    border-radius: 0 0 6px 6px;
+}
+a.nav-link{
+    transition: none !important;
+}
 /* ESTILOS MODO OSCURO */
 html.dark .header, html.header-dark .header {
     background: var(--black-bg-dark);
@@ -1869,16 +2097,27 @@ html.dark ul.nav-main li.nav-active:not(.nav-parent) > a {
     color: var(--black-light) !important;
     box-shadow: none;
 }
-html.dark ul.nav-main>li a:hover {
+html.dark ul.nav-main li.nav-expanded > a{
+    background-color: transparent !important;
+}
+html.dark ul.nav-main li .nav-children li a:hover,
+html.fixed.sidebar-dark ul.nav-main li a:hover, html.fixed.sidebar-dark ul.nav-main li .nav-children li a:focus{
     background-color: var(--black-content-dark) !important;
 }
 html.dark table, html.dark .table, html.dark .el-dialog__body, html.dark .invoice address, html.dark ul.nav-main li.nav-parent>a:after {
     color: var(--black-light) !important;
 }
-html.dark ul.nav-main li.nav-expanded > a, html.dark ul.nav-main li.nav-parent > ul.nav-children,
+html.dark ul.nav-main li.nav-expanded > a{
+    background-color: var(--black-bg-dark);
+}
+html.dark ul.nav-main li.nav-parent > ul.nav-children,
 html.dark .header .logo-container .topbar-links,
 html.dark .card-body, html.dark .card-footer {
     background-color: var(--black-bg-dark) !important;
+}
+html.dark ul.nav-main li.nav-parent > a:after {
+    top: -1px;
+    right: 0px;
 }
 html.dark .header .logo-container .topbar-links:hover {
     background: var(--black-content-dark) !important;
@@ -2065,6 +2304,15 @@ html.dark .border-dark,
 html.dark .border-danger,
 html.dark .border-warning {
     border-color: var(--black-border-dark) !important;
+}
+html.dark .el-pagination .el-pager li {
+    background: var(--black-input-dark);
+    border: 1px solid var(--black-border-dark);
+}
+html.dark .el-pagination button:disabled {
+    background-color: var(--black-input-dark);
+    border: 1px solid var(--black-border-dark);
+    color: var(--black-accent);
 }
 html.dark .table-responsive .table thead tr, html.dark .table-responsive .table tbody tr {
     border-top: 1px solid var(--black-border-dark);
@@ -2389,6 +2637,9 @@ html.dark .card-actions .card-action {
 html.dark .card-actions a:hover, 
 html.dark .card-actions .card-action:hover{
     background-color: var(--black-content-dark) !important;
+}
+html.dark ul.nav-main li a{
+    margin: 2px 10px;
 }
 @media only screen and (min-width: 768px) {
     html.fixed .content-body {
