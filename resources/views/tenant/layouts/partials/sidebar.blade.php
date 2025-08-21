@@ -613,27 +613,6 @@
 
                     @endif
 
-                    @if(in_array('configuration', $vc_modules))
-                    <li class="nav-parent {{ in_array($path[0], ['users', 'establishments'])?'nav-active nav-expanded':'' }}">
-                        <a class="nav-link" href="#">
-                            <svg  xmlns="http://www.w3.org/2000/svg"  width="20"  height="20"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-users-group"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 13a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M8 21v-1a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v1" /><path d="M15 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M17 10h2a2 2 0 0 1 2 2v1" /><path d="M5 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M3 13v-1a2 2 0 0 1 2 -2h2" /></svg>
-                            <span>Usuarios/Locales & Series</span>
-                        </a>
-                        <ul class="nav nav-children" style="">
-                            <li class="{{ ($path[0] === 'users')?'nav-active':'' }}">
-                                <a class="nav-link" href="{{route('tenant.users.index')}}">
-                                    Usuarios
-                                </a>
-                            </li>
-                            <li class="{{ ($path[0] === 'establishments')?'nav-active':'' }}">
-                                <a class="nav-link" href="{{route('tenant.establishments.index')}}">
-                                    Establecimientos
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    @endif
-
                     {{-- @if(in_array('advanced', $vc_modules) && $vc_company->soap_type_id != '03')
                     <li class="
                         nav-parent
@@ -1033,102 +1012,6 @@
                     </li>
                     @endif
 
-
-                    @if(in_array('configuration', $vc_modules))
-                    <li class="nav-parent {{in_array($path[0], [
-                        'co-configuration-change-ambient', 'co-configuration', 'co-configuration-documents',
-                        'companies', 'catalogs', 'advanced', 'tasks', 'inventories','company_accounts','bussiness_turns',
-                        'offline-configurations','series-configurations','configurations','co-advanced-configuration'
-                    ]) ? 'nav-active nav-expanded' : ''}}">
-                        <a class="nav-link" href="#">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-settings">
-                                <circle cx="12" cy="12" r="3"></circle>
-                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
-                                </path>
-                            </svg>
-                            <span>Configuración</span>
-                        </a>
-                        <ul class="nav nav-children">
-                            <li class="{{($path[0] === 'co-configuration-change-ambient') ? 'nav-active': ''}}">
-                                <a class="nav-link" href="{{route('tenant.configuration.change.ambient')}}">
-                                    Cambiar ambiente
-                                </a>
-                            </li>
-                            <li class="{{($path[0] === 'co-configuration-documents') ? 'nav-active': ''}}">
-                                <a class="nav-link" href="{{route('tenant.configuration.documents')}}">
-                                    Documentos
-                                </a>
-                            </li>
-                            <li class="{{($path[0] === 'co-configuration') ? 'nav-active': ''}}">
-                                <a class="nav-link" href="{{route('tenant.configuration')}}">
-                                    Empresa
-                                </a>
-                            </li>
-                            {{-- <li class="{{($path[0] === 'companies') ? 'nav-active': ''}}">
-                                <a class="nav-link" href="{{route('tenant.companies.create')}}">
-                                    Empresa
-                                </a>
-                            </li>
-                            <li class="{{($path[0] === 'company_accounts') ? 'nav-active': ''}}">
-                                <a class="nav-link" href="{{route('tenant.company_accounts.create')}}">
-                                    Cuentas contables
-                                </a>
-                            </li>
-                            <li class="{{($path[0] === 'bussiness_turns') ? 'nav-active': ''}}">
-                                <a class="nav-link" href="{{route('tenant.bussiness_turns.index')}}">
-                                    Giro de negocio
-                                </a>
-                            </li> --}}
-                            @if(auth()->user()->type != 'integrator')
-                            <li class="{{($path[0] === 'catalogs') ? 'nav-active' : ''}}">
-                                <a class="nav-link" href="{{route('tenant.catalogs.index')}}">
-                                    Catálogos
-                                </a>
-                            </li>
-                            @endif
-
-                            <li class="{{($path[0] === 'co-advanced-configuration') ? 'nav-active' : ''}}">
-                                <a class="nav-link" href="{{route('tenant.co-advanced-configuration.index')}}">
-                                    Avanzado
-                                </a>
-                            </li>
-
-                            {{-- <li class="{{($path[0] === 'advanced') ? 'nav-active' : ''}}">
-                                <a class="nav-link" href="{{route('tenant.advanced.index')}}">
-                                    Avanzado
-                                </a>
-                            </li>
-
-                            <li class="{{($path[1] === 'pdf_templates') ? 'nav-active' : ''}}">
-                                <a class="nav-link" href="{{route('tenant.advanced.pdf_templates')}}">
-                                    Plantillas PDF
-                                </a>
-                            </li>
-                            @if($vc_company->soap_type_id != '03')
-                            <li class="{{($path[0] === 'offline-configurations') ? 'nav-active' : ''}}">
-                                <a class="nav-link" href="{{route('tenant.offline_configurations.index')}}">
-                                    Modo offline
-                                </a>
-                            </li>
-                            <li class="{{($path[0] === 'series-configurations') ? 'nav-active' : ''}}">
-                                <a class="nav-link" href="{{route('tenant.series_configurations.index')}}">
-                                    Numeración de facturación
-                                </a>
-                            </li>
-                            @endif --}}
-                            {{-- @if(auth()->user()->type != 'integrator' && $vc_company->soap_type_id != '03')
-                            <li class="{{($path[0] === 'tasks') ? 'nav-active': ''}}">
-                                <a class="nav-link" href="{{route('tenant.tasks.index')}}">Tareas programadas</a>
-                            </li>
-                            @endif --}}
-
-                            {{-- <li class="{{($path[0] === 'inventories' && $path[1] === 'configuration') ? 'nav-active': ''}}">
-                                <a class="nav-link" href="{{route('tenant.inventories.configuration.index')}}">Inventarios</a>
-                            </li> --}}
-                        </ul>
-                    </li>
-                    @endif
-
                     @if(in_array('radian', $vc_modules))
                         <li class="nav-parent {{in_array($path[0], ['co-radian-events', 'co-email-reading']) ? 'nav-active nav-expanded' : ''}}">
                             <a class="nav-link" href="#">
@@ -1201,6 +1084,121 @@
                     sidebarLeft.scrollTop = initialPosition;
                 }
             }
+
+            document.addEventListener('DOMContentLoaded', function(){
+              var trigger = document.getElementById('configMenuToggle');
+              var menu    = document.getElementById('configDropdownMenu');
+              var wrapper = document.getElementById('sticky-config');
+
+              if(!trigger || !menu || !wrapper) return;
+
+              function openMenu(){
+                menu.classList.add('show');
+                wrapper.classList.add('open');
+                trigger.setAttribute('aria-expanded', 'true');
+              }
+              function closeMenu(){
+                menu.classList.remove('show');
+                wrapper.classList.remove('open');
+                trigger.setAttribute('aria-expanded', 'false');
+              }
+              function toggleMenu(e){
+                e.preventDefault();
+                menu.classList.contains('show') ? closeMenu() : openMenu();
+              }
+          
+              trigger.addEventListener('click', toggleMenu);
+          
+              // Cerrar al hacer click fuera
+              document.addEventListener('click', function(e){
+                if(!wrapper.contains(e.target)) closeMenu();
+              });
+          
+              // Cerrar con ESC
+              document.addEventListener('keydown', function(e){
+                if(e.key === 'Escape') closeMenu();
+              });
+          
+              // Recalcular en resize/scroll (si quieres cerrar en estos eventos)
+              window.addEventListener('resize', closeMenu);
+              // Si usas un contenedor scroll (ej: .nano-content):
+              var nano = document.querySelector('#sidebar-left .nano-content');
+              if(nano){ nano.addEventListener('scroll', closeMenu); }
+            });
         </script>
     </div>
+    @php
+        $isConfigRoute = in_array($path[0], [
+            'co-configuration-change-ambient', 'co-configuration', 'co-configuration-documents',
+            'companies', 'catalogs', 'advanced', 'tasks', 'inventories','company_accounts','bussiness_turns',
+            'offline-configurations','series-configurations','configurations','co-advanced-configuration'
+        ]);
+    @endphp
+
+    @if(in_array('configuration', $vc_modules))
+    <div id="sticky-config" class="sidebar-config dropup">
+        <a href="#" id="configMenuToggle"
+           class="config-btn d-flex align-items-center justify-content-between"
+           data-toggle="dropdown" aria-expanded="{{ $isConfigRoute ? 'true' : 'false' }}">
+            <span class="d-inline-flex align-items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-settings mr-1">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                    </path>
+                </svg>
+                Configuración y más
+            </span>
+            <i class="fa custom-caret"></i>
+        </a>
+
+        <div id="configDropdownMenu" class="dropdown-menu dropdown-menu-sidebar"
+             role="menu" aria-labelledby="configMenuToggle">
+            <ul class="list-unstyled mb-0">
+                <li class="{{($path[0] === 'co-configuration-change-ambient') ? 'nav-active': ''}}">
+                    <a class="dropdown-item" href="{{route('tenant.configuration.change.ambient')}}">
+                        <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-server"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 4m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v2a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z" /><path d="M3 12m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v2a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z" /><path d="M7 8l0 .01" /><path d="M7 16l0 .01" /></svg>
+                        Cambiar ambiente
+                    </a>
+                </li>
+                <li class="{{($path[0] === 'co-configuration-documents') ? 'nav-active': ''}}">                    
+                    <a class="dropdown-item" href="{{route('tenant.configuration.documents')}}">
+                        <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-file-text"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M9 9l1 0" /><path d="M9 13l6 0" /><path d="M9 17l6 0" /></svg>
+                        Documentos</a>
+                </li>
+                <li class="{{($path[0] === 'co-configuration') ? 'nav-active': ''}}">                    
+                    <a class="dropdown-item" href="{{route('tenant.configuration')}}">
+                        <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-building"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21l18 0" /><path d="M9 8l1 0" /><path d="M9 12l1 0" /><path d="M9 16l1 0" /><path d="M14 8l1 0" /><path d="M14 12l1 0" /><path d="M14 16l1 0" /><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16" /></svg>
+                        Empresa</a>
+                </li>
+                @if(auth()->user()->type != 'integrator')
+                <li class="{{($path[0] === 'users') ? 'nav-active': ''}}">
+                    <a class="dropdown-item" href="{{route('tenant.users.index')}}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-users-group"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M10 13a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"></path><path d="M8 21v-1a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v1"></path><path d="M15 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"></path><path d="M17 10h2a2 2 0 0 1 2 2v1"></path><path d="M5 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"></path><path d="M3 13v-1a2 2 0 0 1 2 -2h2"></path></svg>
+                        Usuarios
+                    </a>
+                </li>
+                <li class="{{($path[0] === 'establishments') ? 'nav-active': ''}}">
+                    <a class="dropdown-item" href="{{route('tenant.establishments.index')}}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M3 21l18 0"></path><path d="M4 21l0 -10"></path><path d="M20 21l0 -10"></path><path d="M5 11l14 0"></path><path d="M5 11l1 -6h12l1 6"></path><path d="M9 21l0 -8l6 0l0 8"></path></svg>
+                        Establecimientos
+                    </a>
+                </li>
+                @endif
+                @if(auth()->user()->type != 'integrator')
+                <li class="{{($path[0] === 'catalogs') ? 'nav-active' : ''}}">                    
+                    <a class="dropdown-item" href="{{route('tenant.catalogs.index')}}">
+                        <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-library"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 3m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z" /><path d="M4.012 7.26a2.005 2.005 0 0 0 -1.012 1.737v10c0 1.1 .9 2 2 2h10c.75 0 1.158 -.385 1.5 -1" /><path d="M11 7h5" /><path d="M11 10h6" /><path d="M11 13h3" /></svg>
+                        Catálogos</a>
+                </li>
+                @endif
+                <li class="{{($path[0] === 'co-advanced-configuration') ? 'nav-active' : ''}}">                    
+                    <a class="dropdown-item" href="{{route('tenant.co-advanced-configuration.index')}}">
+                        <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-tools"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21h4l13 -13a1.5 1.5 0 0 0 -4 -4l-13 13v4" /><path d="M14.5 5.5l4 4" /><path d="M12 8l-5 -5l-4 4l5 5" /><path d="M7 8l-1.5 1.5" /><path d="M16 12l5 5l-4 4l-5 -5" /><path d="M16 17l-1.5 1.5" /></svg>
+                        Avanzado</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    @endif
+
 </aside>

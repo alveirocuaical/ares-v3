@@ -142,7 +142,8 @@ p,
 .el-date-picker__header-label:hover,
 .el-picker-panel__icon-btn:hover,
 h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
-.style-switcher h5 {
+.style-switcher h5,
+html.sidebar-light:not(.dark) .style-switcher h4 {
     color: var(--black-dark);
 }
 .bg-primary {
@@ -646,12 +647,12 @@ html.fixed.sidebar-white:not(.dark) .sidebar-left a {
 .dropdown-menu-desktop {
     & ul li {
         & a {
-            color: var(--black-dark);
+            color: var(--black-dark) !important;
             margin: 0 5px 0 5px;
             border-radius: 10px;
             &:hover {
-                background-color: var(--black-light);
-                color: var(--black-dark);
+                background-color: var(--black-light) !important;
+                color: var(--black-dark) !important;
             }
         }
     }
@@ -663,6 +664,29 @@ html.fixed.sidebar-white:not(.dark) .sidebar-left a {
 }
 .dropdown-divider{
     border-color: var(--black-highlight) !important;
+}
+.style-switcher {
+    width: 280px;
+    position: fixed;
+    top: 0px;
+    bottom: 0;
+    height: 100%;
+    z-index: 1008;
+    border-radius: 0;
+    right: -280px;
+    z-index: 1020;
+}
+.style-switcher.closing {
+  transition: right .3s ease; /* ajusta duración/curva a gusto */
+  right: -280px;
+}
+.userbox.show .dropdown-menu {
+    left: -11px !important;
+    min-width: 190px !important;
+}
+.dropdown-menu .divider {
+    margin: 8px 0;
+    background-color: var(--black-highlight);
 }
 .el-input__inner,
 .el-textarea__inner {
@@ -779,7 +803,34 @@ html.sidebar-left-collapsed .sidebar-left .nav-main>li>a {
     color: var(--black-dark);
     cursor: pointer;
 }
-
+.btn-close{
+    font-size: 30px;
+    border: none;
+    background: transparent;
+    transform: rotate(45deg);
+}
+.btn-close:hover,
+.btn-close:focus {
+    border: none;
+    background: transparent;
+}
+.btn-suport{
+    width: 35px;
+    height: 35px;
+    background-color: transparent;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+}
+.btn-suport:hover{
+    background-color: var(--black-highlight);
+    cursor: pointer;
+}
+.support-sidebar{
+    border-radius: 0px;
+}
 .el-tabs__active-bar {
     position: absolute;
     bottom: 0;
@@ -1451,9 +1502,6 @@ html.dark .card.card-featured-left small.text-muted {
 }
 
 /* --------------------------- tema light --------------------------- */
-html.sidebar-light .userbox.show .dropdown-menu a:hover {
-    background-color: #18181b;
-}
 
 /* -------------------------- botones -------------------------- */
 /* -------------------------- white -------------------------- */
@@ -1630,7 +1678,8 @@ ul.nav-main>li a:hover {
     background-color: var(--black-highlight);
 }
 ul.nav-main li a,
-ul.nav-main li .nav-children li.nav-active:not(.nav-parent) > a {
+ul.nav-main li .nav-children li.nav-active:not(.nav-parent) > a,
+.sidebar-config a.config-btn {
     font-weight: normal;
     font-size: 14px;
 }
@@ -1761,8 +1810,8 @@ html.sidebar-light:not(.dark) .page-header {
 .dropdown-menu {
     border: 1px solid var(--black-highlight) !important;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-                0 2px 4px -2px rgba(0, 0, 0, 0.1);
-    box-sizing: content-box;
+                0 2px 4px -2px rgba(0, 0, 0, 0.1) !important;
+    box-sizing: content-box !important;
     float: left;
     padding: 0.5rem 0;
     color: var(--black-dark);
@@ -1848,7 +1897,75 @@ a, a:hover, a:focus,
 }
 html.sidebar-light:not(.dark) .style-switcher:before{
     background-color: var(--black-highlight);
+    width: 2px;
 }
+/* inicio */
+#sticky-config.sidebar-config{
+    position: sticky;
+    bottom: 10px;
+    width: 100%;
+    background: #FFFFFF;
+    z-index: 3;
+    padding: 5px;
+    border-radius: 0 0 12px 12px;
+}
+#sticky-config .config-btn{
+    width: 100%;
+    padding: .75rem 0.75rem;
+    text-decoration: none;
+    margin: 0;
+    border-radius: 8px;
+}
+#sticky-config .config-btn:hover{
+    background: var(--black-highlight);
+}
+#sticky-config .custom-caret{
+    transition: transform .2s ease;
+}
+#sticky-config.open .custom-caret{ transform: rotate(180deg); }
+
+.dropdown-menu-sidebar{
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: calc(100% + 8px);
+    display: none;
+    background: #FFFFFF;
+    border: 1px solid var(--black-highlight);
+    border-radius: 12px;
+    max-height: 60vh;
+    min-width: 230px;
+    padding: 0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1) !important;
+
+}
+
+/* Ítems del menú */
+.dropdown-menu-sidebar .dropdown-item{
+    width: auto;
+    padding: .5rem 1rem;
+    text-decoration: none;
+    margin: 5px;
+    border-radius: 8px;
+}
+.dropdown-menu-sidebar .dropdown-item:hover{
+    background: var(--black-light) !important;
+    color: var(--black-dark);
+}
+.dropdown-menu-sidebar .nav-active > .dropdown-item{
+    background: var(--black-light) !important;
+}
+.sidebar-left{ position: relative; overflow: visible; }
+#sticky-config .dropdown-menu-sidebar {
+    display: none;
+}
+#sticky-config:hover .dropdown-menu-sidebar {
+    display: block;
+}
+#sticky-config:hover .custom-caret {
+    transform: rotate(180deg);
+}
+/* fin */
 .el-button{
     display: flex;
     align-items: center;
@@ -2175,6 +2292,10 @@ html.dark .card.card-featured-left {
 }
 html.dark .border-bottom {
     border-bottom: 1px solid var(--black-border-dark) !important;
+}
+html.dark .btn-suport:hover{
+    background-color: var(--black-content-dark);
+    color: var(--black-light) !important;
 }
 html.dark label.control-label,
 html.dark .el-checkbox,

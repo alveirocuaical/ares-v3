@@ -16627,7 +16627,9 @@ p.drop-caps.drop-caps-style-2:first-letter {
     z-index: 992;
     margin-top: 5px;
 }
-
+html.sidebar-light:not(.dark) .style-switcher{
+    background-color: #ffffff;
+}
 /* .userbox.show .dropdown-menu li {
     margin-bottom: 5px;
 } */
