@@ -862,7 +862,7 @@
 
                     <li class="nav-parent {{$path[0] === 'accounting' && in_array($path[1], ['journal', 'charts', 'income-statement', 'financial-position', 'auxiliary-movement']) ? 'nav-active nav-expanded' : ''}}">
                         <a class="nav-link" href="#">
-                            <span class="float-right badge badge-red badge-danger mr-3 bg-secondary bg-danger">Nuevo</span>
+                            <span class="float-right badge badge-red badge-danger mr-3 bg-secondary bg-danger mt-1">Nuevo</span>
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chart-histogram">
                                 <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                 <path d="M3 3v18h18"></path>
@@ -1084,47 +1084,6 @@
                     sidebarLeft.scrollTop = initialPosition;
                 }
             }
-
-            document.addEventListener('DOMContentLoaded', function(){
-              var trigger = document.getElementById('configMenuToggle');
-              var menu    = document.getElementById('configDropdownMenu');
-              var wrapper = document.getElementById('sticky-config');
-
-              if(!trigger || !menu || !wrapper) return;
-
-              function openMenu(){
-                menu.classList.add('show');
-                wrapper.classList.add('open');
-                trigger.setAttribute('aria-expanded', 'true');
-              }
-              function closeMenu(){
-                menu.classList.remove('show');
-                wrapper.classList.remove('open');
-                trigger.setAttribute('aria-expanded', 'false');
-              }
-              function toggleMenu(e){
-                e.preventDefault();
-                menu.classList.contains('show') ? closeMenu() : openMenu();
-              }
-          
-              trigger.addEventListener('click', toggleMenu);
-          
-              // Cerrar al hacer click fuera
-              document.addEventListener('click', function(e){
-                if(!wrapper.contains(e.target)) closeMenu();
-              });
-          
-              // Cerrar con ESC
-              document.addEventListener('keydown', function(e){
-                if(e.key === 'Escape') closeMenu();
-              });
-          
-              // Recalcular en resize/scroll (si quieres cerrar en estos eventos)
-              window.addEventListener('resize', closeMenu);
-              // Si usas un contenedor scroll (ej: .nano-content):
-              var nano = document.querySelector('#sidebar-left .nano-content');
-              if(nano){ nano.addEventListener('scroll', closeMenu); }
-            });
         </script>
     </div>
     @php

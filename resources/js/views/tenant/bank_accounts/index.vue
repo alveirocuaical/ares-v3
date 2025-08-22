@@ -3,12 +3,7 @@
         <div class="card-header bg-info">
             <h3 class="my-0">Listado de cuentas bancarias</h3>
         </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col">
-                    <button type="button" class="btn btn-custom btn-sm  mt-2 mr-2" @click.prevent="clickCreate()"><i class="fa fa-plus-circle"></i> Nuevo</button>
-                </div>
-            </div>
+        <div class="card-body">            
             <div class="table-responsive">
                 <table class="table">
                     <thead>
@@ -39,6 +34,11 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <button type="button" class="btn btn-custom btn-sm  mt-2 mr-2" @click.prevent="clickCreate()"><i class="fa fa-plus-circle"></i> Nuevo</button>
+                </div>
             </div>            
         </div>
         <bank-accounts-form :showDialog.sync="showDialog"

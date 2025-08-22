@@ -146,6 +146,9 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
 html.sidebar-light:not(.dark) .style-switcher h4 {
     color: var(--black-dark);
 }
+.style-switcher h4{
+    background-color: transparent;
+}
 .bg-primary {
     background-color: #18181b !important;
 }
@@ -333,8 +336,8 @@ div.sub-title.text-muted {
 }
 .card.card-featured-left .table td, 
 .card.card-featured-left .table th {
-    font-size: .9rem;
-    font-weight: 500;
+    font-size: .8rem;
+    font-weight: 400;
 }
 .card-body {
     background: #ffffff;
@@ -822,7 +825,7 @@ html.sidebar-left-collapsed .sidebar-left .nav-main>li>a {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
+    border-radius: 50%;
 }
 .btn-suport:hover{
     background-color: var(--black-highlight);
@@ -982,8 +985,8 @@ ul.nav-main li .nav-children li a:before {
 }
 
 .badge {
-    padding: 0.7em;
-    font-size: 0.75rem !important;
+     padding: 0.5em;
+    font-size: 0.65rem !important;
 }
 
 .btn-warning {
@@ -1469,7 +1472,7 @@ a.ws-flotante {
 .el-tabs__item.is-active {
     background: #ffffff;
     border-radius: 7px;
-    margin: 3px;
+    margin: 4px;
 }
 .el-tabs__item h3{
     color: #797d88;
@@ -1949,7 +1952,7 @@ html.sidebar-light:not(.dark) .style-switcher:before{
     border-radius: 8px;
 }
 .dropdown-menu-sidebar .dropdown-item:hover{
-    background: var(--black-light) !important;
+    background: var(--black-light);
     color: var(--black-dark);
 }
 .dropdown-menu-sidebar .nav-active > .dropdown-item{
@@ -2193,6 +2196,10 @@ ul.nav-main li.nav-parent > ul.nav-children {
 a.nav-link{
     transition: none !important;
 }
+.el-tabs--top .el-tabs__item.is-top:nth-child(2), .el-tabs--top .el-tabs__item.is-bottom:nth-child(2), .el-tabs--bottom .el-tabs__item.is-top:nth-child(2), .el-tabs--bottom .el-tabs__item.is-bottom:nth-child(2),
+.el-tabs--top .el-tabs__item.is-top:last-child, .el-tabs--top .el-tabs__item.is-bottom:last-child, .el-tabs--bottom .el-tabs__item.is-top:last-child, .el-tabs--bottom .el-tabs__item.is-bottom:last-child{
+    padding: 0 20px;
+}
 /* ESTILOS MODO OSCURO */
 html.dark .header, html.header-dark .header {
     background: var(--black-bg-dark);
@@ -2368,7 +2375,7 @@ html.dark .el-select-dropdown {
 }
 html.dark .el-select-dropdown__item, html.dark .el-select-dropdown__item.selected,
 html.dark .dropdown-menu-desktop ul li a {
-    color: var(--black-light);
+    color: var(--black-light) !important;
 }
 html.dark .el-select-dropdown__item.hover, html.dark .el-select-dropdown__item:hover,
 html.dark .list-config li:hover {
@@ -2383,15 +2390,16 @@ html.dark .el-textarea__inner:focus{
 html.dark .el-textarea__inner:hover{
     border-color: var(--black-border-dark);
 }
-html.dark .dropdown-menu-desktop {
+html.dark .dropdown-menu-desktop,
+html.dark .userbox .dropdown-menu, html.header-dark .userbox .dropdown-menu {
     background-color: var(--black-input-dark);
     color: var(--black-light);
     border-color: var(--black-border-dark) !important;
 }
-html.dark .dropdown-menu-desktop {
-    & .divider {
-        background-color: var(--black-border-dark);
-    }
+html.dark .dropdown-menu-desktop .divider,
+html.dark .userbox .dropdown-menu .divider, 
+html.header-dark .userbox .dropdown-menu .divider {
+    background-color: var(--black-border-dark);
 }
 html.dark .user-profile-li .profile-info span.name {
     color: var(--black-light) !important;
@@ -2400,7 +2408,7 @@ html.dark .dropdown-menu-desktop {
     & ul li {
         & a {
             &:hover {
-                background-color: var(--black-content-dark);
+                background-color: var(--black-content-dark) !important;
                 color: var(--black-light);
             }
         }
@@ -2539,7 +2547,8 @@ html.dark .el-dialog__headerbtn:focus .el-dialog__close,
 html.dark .el-dialog__headerbtn:hover .el-dialog__close{
     color: var(--black-light) !important;
 }
-html.dark .el-input--small .el-input__inner, html.dark .el-input-group__prepend, html.dark .form-control{
+html.dark .el-input--small .el-input__inner, html.dark .el-input-group__prepend, html.dark .form-control,
+html.dark .el-dropdown-menu__item--divided:before{
     background-color: var(--black-input-dark);
 }
 html.dark .el-picker-panel {
@@ -2607,7 +2616,8 @@ html.dark .el-date-table td.current:not(.disabled) span {
     background-color: var(--black-content-dark);
 }
 html.dark .el-date-table th,
-html.dark .el-date-picker__header--bordered{
+html.dark .el-date-picker__header--bordered,
+html.dark .el-dropdown-menu__item--divided{
     border-color: var(--black-border-dark);
 }
 html.dark .el-collapse-item__header,
@@ -2616,7 +2626,8 @@ html.dark .el-collapse-item__wrap{
     border-color: transparent;
     color: var(--black-light);
 }
-html.dark .el-tabs--border-card{
+html.dark .el-tabs--border-card,
+html.dark .support-sidebar{
     background-color: var(--black-bg-dark);
     border-color: transparent;
 }
@@ -2626,7 +2637,9 @@ html.dark .bg-light{
 html.dark .card-body.bg-light{
     border: 1px solid var(--black-border-dark) !important;
 } 
-html.dark .text-dark{
+html.dark .text-dark,
+html.dark .el-switch__label,
+html.dark .btn-close{
     color: var(--black-light) !important;
 }
 html.dark .el-tabs--border-card > .el-tabs__header{
@@ -2680,6 +2693,16 @@ html.dark li.el-select-dropdown__item.item-result[data-v-3d395dcf] {
 html.dark .el-tabs__nav {
     background: var(--black-content-dark);
 }
+html.dark .support-body p{
+    background-color: var(--black-input-dark);
+    border-color: var(--black-border-dark);
+}
+html.dark .support-body p:hover{
+    background-color: var(--black-content-dark);
+}
+html.dark .support-header{
+    border-color: var(--black-border-dark);
+}
 html.dark .el-tabs__item.is-active h3,
 html.dark .dropdown-menu .dropdown-item,
 html.dark .dropdown-menu .dropdown-item:hover,
@@ -2718,10 +2741,12 @@ html.dark .el-popper[x-placement^="bottom"] {
 html.dark .el-dropdown-menu__item:not(.is-disabled):hover, 
 html.dark .el-dropdown-menu__item:focus, 
 html.dark .dropdown-item:hover, 
-html.dark .dropdown-item:focus{
+html.dark .dropdown-item:focus,
+html.dark #sticky-config .config-btn:hover{
     background-color: var(--black-content-dark);
 }
-html.dark .el-slider__bar{
+html.dark .el-slider__bar,
+html.dark #sticky-config .config-btn:hover{
     background-color: var(--black-content-dark) !important;
 }
 html.dark .el-message-box,
@@ -2732,7 +2757,8 @@ html.dark .style-switcher{
 }
 html.dark .el-table,
 html.dark .el-table th,
-html.dark .el-table tr{
+html.dark .el-table tr,
+html.dark #sticky-config.sidebar-config{
     background-color: var(--black-bg-dark);
 }
 html.dark .el-table th.is-leaf, 
