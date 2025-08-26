@@ -51,10 +51,10 @@ html.sidebar-left-big-icons .sidebar-left a {
     }
 
     html.sidebar-left-big-icons.sidebar-light .sidebar-left .nano .nav-main>li.nav-active>a {
-        background: #f7f8fa;
+        background: var(--black-highlight);
         box-shadow: none;
         border-radius: 6px !important;
-        color: #18181b !important;
+        color: var(--black-dark) !important;
     }
 
 }
@@ -380,6 +380,106 @@ div.sub-title.text-muted,
 .tab-content{
     border: none;
     box-shadow: none;
+}
+.support-sidebar {
+    padding: 0px;
+}
+.support-sidebar .support-header{
+    background-color: var(--black-primary);
+    color: #ffffff;
+    padding: 20px;
+    font-size: 16px;
+    font-weight: bold;
+}
+.support-sidebar .support-body{
+    padding: 0 20px ;
+}
+.close-btn{
+    color: var(--black-accent);
+}
+.close-btn:hover{
+    background-color: transparent;
+    border: none;
+    color: var(--black-light);
+}
+.support-body p {
+    margin-bottom: 0px;
+    padding: 0px;
+    background-color: transparent;
+    border-radius: 0;
+    border: none;
+    transition: none;
+}
+.support-body p:hover {
+    background-color: #fff;
+    box-shadow: none;
+    transform: none;
+}
+.support-container {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    margin: 15px 0 !important;
+    border-radius: 8px !important;
+    padding: 15px 0 !important;
+}
+.support-container .support-left {
+    flex: 0 0 25%;
+}
+.support-container .support-right {
+    flex: 0 0 75%;
+}
+.support-intro p{
+    margin-bottom: 5px;
+}
+.support-body strong{
+    color: var(--black-dark);
+}
+.icon-support-container{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.icon-support-container div{
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: #ffffff;
+}
+.support-whatsapp{
+    background-color: hsl(167, 82%, 96%);
+    border: 1px solid hsl(168, 88%, 77%);
+    color: #04966a;
+}
+.support-email{
+    background-color: #eff6ff;
+    border: 1px solid #76a6e3;
+    color: #2663eb;
+}
+.support-phone{
+    background-color: #fff7ed;
+    border: 1px solid #dec09b;
+    color: #ea580b;
+}
+.support-body a.support-link-whatsapp{
+    color: #04966a;
+    font-weight: bold;
+}
+.support-body a.support-link-whatsapp:hover{
+    color: #04966a;
+}
+.support-body a.support-link-email{
+    color: #2663eb;
+    font-weight: bold;
+}
+.support-body a.support-link-phone{
+    color: #ea580b;
+    font-weight: bold;
+}
+.support-body a.support-link-phone:hover{
+    color: #ea580b;
 }
 /* .tooltips-container button{
     padding: 8px 15px;
@@ -1680,8 +1780,8 @@ html.fixed .sidebar-left a svg {
     margin-top: 10px;
 }
 ul.nav-main>li a:hover {
-    padding-left: 0.50rem !important;
-    background-color: var(--black-highlight);
+    padding-left: 0rem !important;
+    background-color: var(--black-highlight) !important;
 }
 ul.nav-main li a,
 ul.nav-main li .nav-children li.nav-active:not(.nav-parent) > a,

@@ -61,6 +61,9 @@
         </div>
     </div>
     <div class="header-right d-flex align-items-center mr-4">
+        @inject('systemUser', 'Modules\Factcolombia1\Models\System\User')
+        @php $supportUser = $systemUser::first(); @endphp
+        @if($supportUser && ($supportUser->whatsapp_number || $supportUser->phone || $supportUser->address_contact))
         <li class="d-inline-block mr-2">
         <a role="menuitem"  class="nav-link btn-suport"  onclick="toggleSupportSidebar()" title="Soporte">
             <svg width="24" height="24" viewBox="0 0 512 512" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -72,6 +75,7 @@
             </svg>
         </a>
         </li>
+        @endif
         <span class="separator"></span>
         <div id="userbox" class="userbox">
             <a href="#" data-toggle="dropdown">
@@ -128,27 +132,62 @@
             $user = $systemUser::first();
         @endphp
     <div class="support-header">
-        <h5>{{ $user->introduction }}</h5>
+        Soporte al Cliente
         <button class="close-btn" onclick="toggleSupportSidebar()">&times;</button>
     </div>
     <div class="support-body">
-        <p><strong>Email:</strong>
-            <a class="support-link" href="https://mail.google.com/mail/?view=cm&fs=1&to={{ $user->address_contact }}" target="_blank">
-                {{ $user->address_contact }}
-            </a>
-        </p>
-    
-        <p><strong>Teléfono:</strong>
-            <a class="support-link" href="tel:{{ $user->phone }}">
-                {{ $user->phone }}
-            </a>
-        </p>
-    
-        <p><strong>Número de WhatsApp:</strong>
-            <a class="support-link" href="https://wa.me/{{ $user->whatsapp_number }}" target="_blank">
-                {{ $user->whatsapp_number }}
-            </a>
-        </p>
+        <div class="support-intro richtext">
+            {!! $user->introduction !!}
+        </div>
+
+    @if($user && $user->whatsapp_number)
+    <div class="support-container support-whatsapp">
+            <div class="icon-support-container support-left">
+                <div>
+                    <svg  xmlns="http://www.w3.org/2000/svg"  width="28"  height="28"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-brand-whatsapp"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9" /><path d="M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1" /></svg>
+                </div>
+            </div>
+            <div class="support-right">
+                <strong>WhatsApp</strong>
+                <a class="support-link  support-link-whatsapp d-flex flex-column" href="https://wa.me/{{ $user->whatsapp_number }}" target="_blank">
+                    {{ $user->whatsapp_number }}
+                </a>
+            </div>
+    </div>
+    @endif
+
+    @if($user && $user->address_contact)
+    <div class="support-container support-email">   
+            <div class="icon-support-container support-left">
+                <div>
+                    <svg  xmlns="http://www.w3.org/2000/svg"  width="28"  height="28"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-mail"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10z" /><path d="M3 7l9 6l9 -6" /></svg>
+                </div>                
+            </div>         
+            <div class="support-right">
+                <strong>Correo Electrónico</strong>
+                <a class="support-link support-link-email d-flex flex-column" href="https://mail.google.com/mail/?view=cm&fs=1&to={{ $user->address_contact }}" target="_blank">
+                    {{ $user->address_contact }}
+                </a>
+            </div>
+    </div>
+    @endif
+
+    @if($user && $user->phone)
+    <div class="support-container support-phone">
+            <div class="icon-support-container support-left">
+                <div>
+                    <svg  xmlns="http://www.w3.org/2000/svg"  width="28"  height="28"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-phone"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2" /></svg>
+                </div>
+            </div>
+            <div class="support-right">
+                <strong>Teléfono</strong>
+                <a class="support-link support-link-phone d-flex flex-column" href="tel:{{ $user->phone }}">
+                    {{ $user->phone }}
+                </a>
+            </div>
+    </div>
+    @endif
+        
     </div>
 </div>
 <div id="supportBackdrop" class="support-backdrop" onclick="toggleSupportSidebar()"></div>
