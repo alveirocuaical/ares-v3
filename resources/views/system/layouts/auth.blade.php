@@ -22,7 +22,7 @@
     @endif
 </head>
 
-<body>
+<body style="background-color: #fff">
 
     <div class="app">
         @yield('content')
