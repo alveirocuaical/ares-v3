@@ -141,6 +141,71 @@
         </section>
       </div>      
     </div>
+    
+    <div class="row mb-0">
+
+      <div class="col-xl-4 col-md-4">
+        <section class="card card-featured-left card-featured-primary">
+          <div class="card-body p-4">
+            <div class="widget-summary">
+              <div class="widget-summary-col">
+                <div class="summary">
+                  <h4 class="title d-flex justify-content-between">
+                    Total General
+                    <svg  xmlns="http://www.w3.org/2000/svg"  width="18"  height="18"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-cash text-muted"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 15h-3a1 1 0 0 1 -1 -1v-8a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v3" /><path d="M7 9m0 1a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1z" /><path d="M12 14a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /></svg>
+                  </h4>
+                  <div class="info mt-4">
+                    <strong class="amount">{{ getCurrencySymbol() + ' ' + formatNumber(getTotalGeneral()) }}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+      
+      <div class="col-xl-4 col-md-4">
+        <section class="card card-featured-left card-featured-success">
+          <div class="card-body p-4">
+            <div class="widget-summary">
+              <div class="widget-summary-col">
+                <div class="summary">
+                  <h4 class="title d-flex justify-content-between">                    
+                    Total Pagado
+                    <svg  xmlns="http://www.w3.org/2000/svg"  width="18"  height="18"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-circle-check text-muted"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 12l2 2l4 -4" /></svg>
+                  </h4>
+                  <div class="info mt-4">
+                    <strong class="amount">{{ getCurrencySymbol() + ' ' + formatNumber(getTotalPaid()) }}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+      
+      <div class="col-xl-4 col-md-4">
+        <section class="card card-featured-left card-featured-tertiary">
+          <div class="card-body p-4">
+            <div class="widget-summary">
+              <div class="widget-summary-col">
+                <div class="summary">
+                  <h4 class="title d-flex justify-content-between">
+                    Total por Pagar
+                    <svg  xmlns="http://www.w3.org/2000/svg"  width="18"  height="18"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-clock text-muted"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 7v5l3 3" /></svg>
+                  </h4>
+                  <div class="info mt-4">
+                    <strong class="amount">{{ getCurrencySymbol() + ' ' + formatNumber(getTotalToPay()) }}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+          
+    </div>
+    
     <div class="row">
       <div class="col-xl-12">
         <div class="row">
@@ -696,6 +761,16 @@
   font-size: 15px;
   font-weight: bold;
 }
+
+.widget-summary .summary .title {
+  font-size: .875rem;
+  font-weight: 500;
+}
+
+.widget-summary .summary .amount {
+  font-size: 24px;
+  font-weight: bold;
+}
 </style>
 <script>
 // import DocumentPayments from "../../../../../../resources/js/views/tenant/documents/partials/payments.vue";
@@ -788,12 +863,44 @@ export default {
   },
 
   methods: {
+    // Métodos para KPIs consolidados
+    getTotalPaid() {
+      const saleNotePaid = this.sale_note?.totals?.total_payment || 0;
+      const documentPaid = this.document?.totals?.total_payment || 0;
+      const documentPosPaid = this.document_pos?.totals?.total_payment || 0;
+      return saleNotePaid + documentPaid + documentPosPaid;
+    },
+    getTotalToPay() {
+      const saleNoteToPay = this.sale_note?.totals?.total_to_pay || 0;
+      const documentToPay = this.document?.totals?.total_to_pay || 0;
+      const documentPosToPay = this.document_pos?.totals?.total_to_pay || 0;
+      return saleNoteToPay + documentToPay + documentPosToPay;
+    },
+    getTotalGeneral() {
+      const saleNoteTotal = this.sale_note?.totals?.total || 0;
+      const documentTotal = this.document?.totals?.total || 0;
+      const documentPosTotal = this.document_pos?.totals?.total || 0;
+      return saleNoteTotal + documentTotal + documentPosTotal;
+    },
+    getCurrencySymbol() {
+      const selectedCurrency = this.currencies.find(currency => currency.id === this.form.currency_id);
+      return selectedCurrency?.symbol || '$';
+    },
     toggleFilters() {
       this.showFilters = !this.showFilters;
     },
     formatNumber(number) {
-      if (number === undefined || number === null) return '0.00';
-      return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",").replace(/\.(\d{2})/, ".$1");
+      if (number === undefined || number === null || number === 0) return '0.00';
+      
+      // Convertir a número y formatear con 2 decimales
+      const num = parseFloat(number);
+      if (num === 0) return '0.00';
+      
+      // Formatear con separador de miles (coma) y 2 decimales
+      return num.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
     },
     changeFilterItem(){
       this.form.item_id = null

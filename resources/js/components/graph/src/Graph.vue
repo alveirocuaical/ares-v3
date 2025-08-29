@@ -19,7 +19,9 @@
         <path d="M4 20h14" />
         <path d="M3 3l18 18" />
       </svg>
-      <p class="text-muted" style="font-weight: normal; font-size: 15px;">{{ emptyText }}</p>
+      <p class="text-muted" style="font-weight: normal; font-size: 15px;">
+        {{ emptyText }}
+      </p>
     </div>
 
     <canvas v-show="hasData" ref="canvas"></canvas>
@@ -27,50 +29,58 @@
 </template>
 
 <script>
-import Chart from 'chart.js';
+import Chart from "chart.js";
 
 export default {
   props: {
     type: { type: String, required: true },
     allData: {
       type: Object,
-      default: () => ({ labels: [], datasets: [] })
+      default: () => ({ labels: [], datasets: [] }),
     },
-    emptyText: { type: String, default: 'Sin datos para mostrar' },
+    emptyText: { type: String, default: "Sin datos para mostrar" },
   },
-  data () {
+  data() {
     return {
       chart: null,
       options: {
         maintainAspectRatio: false,
         legend: { display: false },
-        elements: { line: { tension: 0 } }
-      }
-    }
+        elements: { line: { tension: 0 } },
+      },
+    };
   },
   computed: {
-    hasData () {
+    hasData() {
       const labels = this.allData?.labels || [];
       const datasets = this.allData?.datasets || [];
       if (!labels.length || !datasets.length) return false;
 
-      return datasets.some(ds => {
+      return datasets.some((ds) => {
         const arr = Array.isArray(ds.data) ? ds.data : [];
-        return arr.some(v => typeof v === 'number' && !isNaN(v) && v !== 0);
+        return arr.some(
+          (v) => typeof v === "number" && !isNaN(v) && v !== 0
+        );
       });
-    }
+    },
   },
   watch: {
     allData: {
       immediate: true,
       deep: true,
-      handler () {
+      handler() {
         this.refreshChart();
-      }
-    }
+      },
+    },
   },
   methods: {
-    refreshChart () {
+    getColorWithOpacity(hex, opacity = 0.2) {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    },
+    refreshChart() {
       if (!this.hasData) {
         if (this.chart) {
           this.chart.destroy();
@@ -81,21 +91,39 @@ export default {
 
       if (this.chart) this.chart.destroy();
 
-      const ctx = this.$refs.canvas.getContext('2d');
+      const blackPrimary = getComputedStyle(document.documentElement)
+        .getPropertyValue("--black-primary")
+        .trim();
+      const warning = getComputedStyle(document.documentElement)
+        .getPropertyValue("--warning")
+        .trim();
+
+      const colors = [blackPrimary, warning];
+      const backgroundColors = colors.map((c) =>
+        this.getColorWithOpacity(c, 0.2)
+      );
+
+      const ctx = this.$refs.canvas.getContext("2d");
+
       this.chart = new Chart(ctx, {
         type: this.type,
         data: {
           labels: this.allData.labels,
-          datasets: this.allData.datasets
+          datasets: this.allData.datasets.map((ds, index) => ({
+            ...ds,
+            backgroundColor: backgroundColors[index],
+            borderColor: colors[index],
+            borderWidth: 3,
+          })),
         },
-        options: this.options
+        options: this.options,
       });
-    }
+    },
   },
-  beforeDestroy () {
+  beforeDestroy() {
     if (this.chart) this.chart.destroy();
-  }
-}
+  },
+};
 </script>
 
 <style scoped>
@@ -108,7 +136,6 @@ export default {
 .chart-container .chartjs-render-monitor {
   height: inherit !important;
 }
-
 .empty-state {
   position: absolute;
   inset: 0;
@@ -116,9 +143,9 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: .5rem;
+  gap: 0.5rem;
   text-align: center;
-  padding: .75rem;
-  opacity: .8;
+  padding: 0.75rem;
+  opacity: 0.8;
 }
 </style>
