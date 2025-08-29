@@ -1137,6 +1137,9 @@ export default {
                 payment_method_id: 1,
                 payments: [],
                 electronic: false,
+                seller_id: null,
+                head_note: this.advanced_configuration.head_note || '',
+                foot_note: this.advanced_configuration.foot_note || '',
             }
             this.initFormItem();
             this.changeDateOfIssue();

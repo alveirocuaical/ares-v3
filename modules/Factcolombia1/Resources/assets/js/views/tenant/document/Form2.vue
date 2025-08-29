@@ -119,6 +119,15 @@
                                         v-text="errors.payment_form_id[0]"></small>
                                 </div>
                             </div>
+                            <div class="col-lg-4 pb-2" v-if="advanced_configuration.enable_seller_views">
+                                <div class="form-group" :class="{ 'has-danger': errors.seller_id }">
+                                    <label class="control-label">Vendedor</label>
+                                    <el-select v-model="form.seller_id" filterable remote reserve-keyword placeholder="Seleccione un vendedor" :remote-method="searchRemoteSellers" :loading="loading_sellers">
+                                        <el-option v-for="seller in sellers" :key="seller.id" :label="seller.full_name" :value="seller.id"></el-option>
+                                    </el-select>
+                                    <small class="form-control-feedback" v-if="errors.seller_id" v-text="errors.seller_id[0]"></small>
+                                </div>
+                            </div>
                             <template v-if="is_edit">
                                 <div class="col-lg-2">
                                     <div class="form-group">
@@ -523,6 +532,9 @@ export default {
             advanced_configuration: {},
             showDiscountCodeDialog: false,
             discount_code_validated: false,
+            sellers: [],
+            loading_sellers: false,
+            seller_search_timeout: null,
         }
     },
     //filtro de separadores de mil
@@ -540,6 +552,9 @@ export default {
         await this.$http.get('/co-advanced-configuration/record').then(response => {
             this.advanced_configuration = response.data.data
         })
+        if (this.advanced_configuration.enable_seller_views) {
+        await this.fetchSellers();
+        }
         await this.initForm()
         await this.fetchCompanyInfo();
         await this.$http.get(`/${this.resource}/tables`)
@@ -639,6 +654,33 @@ export default {
             } catch (error) {
                 console.error('Error al obtener la información de la compañía:', error);
             }
+        },
+        async fetchSellers() {
+            try {
+                const response = await this.$http.get('/co-sellers/active');
+                this.sellers = response.data.data;
+            } catch (e) {
+                this.sellers = [];
+            }
+        },
+        searchRemoteSellers(query) {
+            if (this.seller_search_timeout) clearTimeout(this.seller_search_timeout);
+
+            if (!query || query.length < 3) {
+                this.sellers = [];
+                return;
+            }
+
+            this.loading_sellers = true;
+            this.seller_search_timeout = setTimeout(() => {
+                this.$http.get('/co-sellers/active', { params: { search: query } })
+                    .then(response => {
+                        this.sellers = response.data.data;
+                    })
+                    .finally(() => {
+                        this.loading_sellers = false;
+                    });
+            }, 400);
         },
         shouldShowResolution(option) {
             // Si ambientId es 2, no mostrar opciones con prefijo SETP
@@ -888,6 +930,18 @@ export default {
                 health_fields: {},
                 health_users: []
             }
+            this.form.head_note = this.invoice && this.invoice.head_note !== undefined
+                ? this.invoice.head_note
+                : (this.advanced_configuration.head_note || '');
+
+            this.form.foot_note = this.invoice && this.invoice.foot_note !== undefined
+                ? this.invoice.foot_note
+                : (this.advanced_configuration.foot_note || '');
+
+            // this.form.notes = this.invoice && this.invoice.notes !== undefined
+            //     ? this.invoice.notes
+            //     : (this.advanced_configuration.notes || '');
+            
             if (this.is_edit)
                 this.form.number = this.invoice ? this.invoice.number : null
             this.errors = {}
@@ -1259,6 +1313,12 @@ export default {
 
             // Agregar las cuentas bancarias al form antes de enviar
             this.form.bank_accounts = this.bank_accounts;
+
+            ['foot_note', 'head_note'].forEach(key => {
+                if (this.form[key] === null || this.form[key] === undefined || this.form[key] === '') {
+                    delete this.form[key];
+                }
+            });
 
             this.form.service_invoice = await this.createInvoiceService();
             // return
