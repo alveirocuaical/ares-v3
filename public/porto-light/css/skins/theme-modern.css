@@ -1281,7 +1281,15 @@ html.sidebar-white ul.nav-main li.nav-active:not(.nav-parent)>a {
 .text-danger {
     color: var(--danger) !important;
 }
-
+.text-warning {
+    color: var(--warning) !important;
+}
+.text-success {
+    color: var(--success) !important;
+}
+.text-info {
+    color: var(--info) !important;
+}
 .table th,
 .table td {
     padding: 0.5rem;

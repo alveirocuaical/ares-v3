@@ -7,12 +7,13 @@
       <div>
         <h2>Dashboard</h2>
       </div>
-      <div>
+      <div class="d-flex align-items-center h-100">
+        {{ filterLabel }}
         <el-button 
           type="primary"
           @click="toggleFilters"
           size="small"
-          class="mr-2 p-2"
+          class="mx-2 p-2"
           :title="showFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
         >
           <svg v-if="showFilters" xmlns="http://www.w3.org/2000/svg"  width="20"  height="20"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"
@@ -48,23 +49,22 @@
       <div class="col-xl-12 px-0" v-show="showFilters">
         <section class="card card-featured-secondary">
           <div class="card-body">
-            <div class="row">
-              <div class="col-md-3">
-                <div class="form-group">
-                  <label class="control-label">Establecimiento</label>
-                  <el-select v-model="form.establishment_id" @change="loadAll">
-                    <el-option
-                      v-for="option in establishments"
-                      :key="option.id"
-                      :value="option.id"
-                      :label="option.name"
-                    ></el-option>
-                  </el-select>
-                </div>
+            <div class="filters-container">
+              <div class="filter-item">
+                <label class="control-label">Establecimiento</label>
+                <el-select v-model="form.establishment_id" @change="loadAll" style="width: 100%">
+                  <el-option
+                    v-for="option in establishments"
+                    :key="option.id"
+                    :value="option.id"
+                    :label="option.name"
+                  ></el-option>
+                </el-select>
               </div>
-              <div class="col-md-3">
+            
+              <div class="filter-item">
                 <label class="control-label">Periodo</label>
-                <el-select v-model="form.period" @change="changePeriod">
+                <el-select v-model="form.period" @change="changePeriod" style="width: 100%">
                   <el-option key="all" value="all" label="Todos"></el-option>
                   <el-option key="month" value="month" label="Por mes"></el-option>
                   <el-option key="between_months" value="between_months" label="Entre meses"></el-option>
@@ -72,8 +72,9 @@
                   <el-option key="between_dates" value="between_dates" label="Entre fechas"></el-option>
                 </el-select>
               </div>
+            
               <template v-if="form.period === 'month' || form.period === 'between_months'">
-                <div class="col-md-3">
+                <div class="filter-item">
                   <label class="control-label">Mes de</label>
                   <el-date-picker
                     v-model="form.month_start"
@@ -82,11 +83,13 @@
                     value-format="yyyy-MM"
                     format="MM/yyyy"
                     :clearable="false"
+                    style="width: 100%"
                   ></el-date-picker>
                 </div>
               </template>
+            
               <template v-if="form.period === 'between_months'">
-                <div class="col-md-3">
+                <div class="filter-item">
                   <label class="control-label">Mes al</label>
                   <el-date-picker
                     v-model="form.month_end"
@@ -96,11 +99,13 @@
                     value-format="yyyy-MM"
                     format="MM/yyyy"
                     :clearable="false"
+                    style="width: 100%"
                   ></el-date-picker>
                 </div>
               </template>
+            
               <template v-if="form.period === 'date' || form.period === 'between_dates'">
-                <div class="col-md-3">
+                <div class="filter-item">
                   <label class="control-label">Fecha del</label>
                   <el-date-picker
                     v-model="form.date_start"
@@ -109,11 +114,13 @@
                     value-format="yyyy-MM-dd"
                     format="dd/MM/yyyy"
                     :clearable="false"
+                    style="width: 100%"
                   ></el-date-picker>
                 </div>
               </template>
+            
               <template v-if="form.period === 'between_dates'">
-                <div class="col-md-3">
+                <div class="filter-item">
                   <label class="control-label">Fecha al</label>
                   <el-date-picker
                     v-model="form.date_end"
@@ -123,17 +130,20 @@
                     value-format="yyyy-MM-dd"
                     format="dd/MM/yyyy"
                     :clearable="false"
+                    style="width: 100%"
                   ></el-date-picker>
                 </div>
               </template>
-              <div class="col-md-3">
-                <label class="control-label">Moneda
-                    <el-tooltip class="item" effect="dark" content="Filtra por moneda del documento emitido" placement="top-start">
-                        <i class="fa fa-info-circle"></i>
-                    </el-tooltip>
+            
+              <div class="filter-item">
+                <label class="control-label">
+                  Moneda
+                  <el-tooltip class="item" effect="dark" content="Filtra por moneda del documento emitido" placement="top-start">
+                    <i class="fa fa-info-circle"></i>
+                  </el-tooltip>
                 </label>
-                <el-select v-model="form.currency_id" filterable @change="loadAll">
-                    <el-option v-for="option in currencies" :key="option.id" :value="option.id" :label="option.name"></el-option>
+                <el-select v-model="form.currency_id" filterable @change="loadAll" style="width: 100%">
+                  <el-option v-for="option in currencies" :key="option.id" :value="option.id" :label="option.name"></el-option>
                 </el-select>
               </div>
             </div>
@@ -146,7 +156,7 @@
 
       <div class="col-xl-4 col-md-4">
         <section class="card card-featured-left card-featured-primary">
-          <div class="card-body p-4">
+          <div class="card-body px-4 py-3">
             <div class="widget-summary">
               <div class="widget-summary-col">
                 <div class="summary">
@@ -155,7 +165,10 @@
                     <svg  xmlns="http://www.w3.org/2000/svg"  width="18"  height="18"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-cash text-muted"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 15h-3a1 1 0 0 1 -1 -1v-8a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v3" /><path d="M7 9m0 1a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1z" /><path d="M12 14a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /></svg>
                   </h4>
                   <div class="info mt-4">
-                    <strong class="amount">{{ getCurrencySymbol() + ' ' + formatNumber(getTotalGeneral()) }}</strong>
+                    <strong class="amount">{{ getCurrencySymbol() + ' ' + formatNumber(kpiTotalGeneral) }}</strong>
+                  </div>
+                  <div class="description mt-1">
+                    <small class="text-muted">Facturas + Remisiones + POS</small>
                   </div>
                 </div>
               </div>
@@ -166,7 +179,7 @@
       
       <div class="col-xl-4 col-md-4">
         <section class="card card-featured-left card-featured-success">
-          <div class="card-body p-4">
+          <div class="card-body px-4 py-3">
             <div class="widget-summary">
               <div class="widget-summary-col">
                 <div class="summary">
@@ -175,7 +188,10 @@
                     <svg  xmlns="http://www.w3.org/2000/svg"  width="18"  height="18"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-circle-check text-muted"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 12l2 2l4 -4" /></svg>
                   </h4>
                   <div class="info mt-4">
-                    <strong class="amount">{{ getCurrencySymbol() + ' ' + formatNumber(getTotalPaid()) }}</strong>
+                    <strong class="amount">{{ getCurrencySymbol() + ' ' + formatNumber(kpiTotalPaid) }}</strong>
+                  </div>
+                  <div class="description mt-1">
+                    <small class="text-muted">Facturas + Remisiones + POS</small>
                   </div>
                 </div>
               </div>
@@ -186,16 +202,19 @@
       
       <div class="col-xl-4 col-md-4">
         <section class="card card-featured-left card-featured-tertiary">
-          <div class="card-body p-4">
+          <div class="card-body px-4 py-3">
             <div class="widget-summary">
               <div class="widget-summary-col">
                 <div class="summary">
-                  <h4 class="title d-flex justify-content-between">
+                  <h4 class="title d-flex justify-content-between text-warning">
                     Total por Pagar
-                    <svg  xmlns="http://www.w3.org/2000/svg"  width="18"  height="18"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-clock text-muted"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 7v5l3 3" /></svg>
+                    <svg  xmlns="http://www.w3.org/2000/svg"  width="18"  height="18"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-clock text-warning"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 7v5l3 3" /></svg>
                   </h4>
                   <div class="info mt-4">
-                    <strong class="amount">{{ getCurrencySymbol() + ' ' + formatNumber(getTotalToPay()) }}</strong>
+                    <strong class="amount text-warning">{{ getCurrencySymbol() + ' ' + formatNumber(kpiTotalToPay) }}</strong>
+                  </div>
+                  <div class="description mt-1">
+                    <small class="text-muted">Facturas + Remisiones + POS</small>
                   </div>
                 </div>
               </div>
@@ -771,6 +790,34 @@
   font-size: 24px;
   font-weight: bold;
 }
+.filters-container {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.filter-item {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+@media (max-width: 525px) {
+  .filters-container {
+    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .filter-item {
+    width: 100% !important;
+  }
+
+  .filter-item el-select,
+  .filter-item el-date-picker {
+    width: 100% !important;
+  }
+}
 </style>
 <script>
 // import DocumentPayments from "../../../../../../resources/js/views/tenant/documents/partials/payments.vue";
@@ -861,25 +908,62 @@ export default {
     //   this.loadAll();
     // });
   },
+  computed: {
+    filterLabel() {
+      const period = this.form.period;
 
+      if (!period || period === "all") {
+        return "Filtrado: Todos los registros";
+      }
+
+      if (period === "month" && this.form.month_start) {
+        return `Filtrado por mes: ${this.formatMonth(this.form.month_start)}`;
+      }
+
+      if (period === "between_months" && this.form.month_start && this.form.month_end) {
+        return `Filtrado entre meses: ${this.formatMonth(this.form.month_start)} - ${this.formatMonth(this.form.month_end)}`;
+      }
+
+      if (period === "date" && this.form.date_start) {
+        return `Filtrado por fecha: ${this.formatDate(this.form.date_start)}`;
+      }
+
+      if (period === "between_dates" && this.form.date_start && this.form.date_end) {
+        return `Filtrado entre fechas: ${this.formatDate(this.form.date_start)} - ${this.formatDate(this.form.date_end)}`;
+      }
+
+      return "Filtrado: Sin datos seleccionados";
+    },
+    kpiTotalPaid()    { return this.getTotalPaid(); },
+    kpiTotalToPay()   { return this.getTotalToPay(); },
+    kpiTotalGeneral() { return this.getTotalGeneral(); },
+  },
   methods: {
-    // Métodos para KPIs consolidados
+    toNumber(v) {
+      if (v === null || v === undefined) return 0;
+      const cleaned = String(v).replace(/[^\d.-]/g, '');
+      const n = Number(cleaned);
+      return isNaN(n) ? 0 : n;
+    },
+    
     getTotalPaid() {
-      const saleNotePaid = this.sale_note?.totals?.total_payment || 0;
-      const documentPaid = this.document?.totals?.total_payment || 0;
-      const documentPosPaid = this.document_pos?.totals?.total_payment || 0;
+      const saleNotePaid   = this.toNumber(this.sale_note?.totals?.total_payment);
+      const documentPaid   = this.toNumber(this.document?.totals?.total_payment);
+      const documentPosPaid= this.toNumber(this.document_pos?.totals?.total_payment);
       return saleNotePaid + documentPaid + documentPosPaid;
     },
+
     getTotalToPay() {
-      const saleNoteToPay = this.sale_note?.totals?.total_to_pay || 0;
-      const documentToPay = this.document?.totals?.total_to_pay || 0;
-      const documentPosToPay = this.document_pos?.totals?.total_to_pay || 0;
+      const saleNoteToPay   = this.toNumber(this.sale_note?.totals?.total_to_pay);
+      const documentToPay   = this.toNumber(this.document?.totals?.total_to_pay);
+      const documentPosToPay= this.toNumber(this.document_pos?.totals?.total_to_pay);
       return saleNoteToPay + documentToPay + documentPosToPay;
     },
+
     getTotalGeneral() {
-      const saleNoteTotal = this.sale_note?.totals?.total || 0;
-      const documentTotal = this.document?.totals?.total || 0;
-      const documentPosTotal = this.document_pos?.totals?.total || 0;
+      const saleNoteTotal   = this.toNumber(this.sale_note?.totals?.total);
+      const documentTotal   = this.toNumber(this.document?.totals?.total);
+      const documentPosTotal= this.toNumber(this.document_pos?.totals?.total);
       return saleNoteTotal + documentTotal + documentPosTotal;
     },
     getCurrencySymbol() {
@@ -1064,6 +1148,14 @@ export default {
         }
         return false;
       });
+    },
+    formatMonth(date) {
+      const [year, month] = date.split("-");
+      return `${month}/${year}`;
+    },
+    formatDate(date) {
+      const [year, month, day] = date.split("-");
+      return `${day}/${month}/${year}`;
     }
   }
 };
