@@ -387,6 +387,7 @@ Vue.component('tenant-accounting-reports-income-statement-index', require('@view
 Vue.component('tenant-accounting-reports-auxiliary-movement-index', require('@viewsModuleAccounting/reports/auxiliary_movement.vue'));
 
 Vue.component('system-support-configuration', require('./views/system/configuration/supportConfiguration.vue'));
+Vue.component('system-config-login', require('./views/system/configuration/configLogin.vue'));
 
 
 const app = new Vue({

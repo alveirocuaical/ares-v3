@@ -17,7 +17,8 @@ class Configuration extends Model
         'soap_username',
         'soap_password',
         'soap_url',
-
+        'login_bg_color',
+        'login_bg_image',
     ];
 
 

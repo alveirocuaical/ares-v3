@@ -9,28 +9,27 @@
                         <div class="row">
                             <div class="col-md-3">
                                 <div class="form-group" :class="{'has-danger': errors.phone}">
-                                    <label class="control-label">Teléfono</label>
-                                    <el-input v-model="form.phone"></el-input>
-                                    <div class="sub-title text-muted">
-                                      <small>
-                                        Ingresa el número con el código de país, sin espacios ni símbolos.  
+                                    <label class="control-label">Teléfono
+                                        <el-tooltip class="item" effect="dark" content="Ingresa el número con el código de país, sin espacios ni símbolos.  
                                         Este número se mostrará en el panel de soporte de los clientes.  
-                                        Ejemplo: 573155555555
-                                      </small>
-                                    </div>
+                                        Ejemplo: 573155555555" placement="top-start">
+                                            <i class="fa fa-info-circle"></i>
+                                        </el-tooltip>
+                                    </label>
+                                    <el-input v-model="form.phone"></el-input>                                    
                                     <small class="form-control-feedback" v-if="errors.phone" v-text="errors.phone[0]"></small>
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group" :class="{'has-danger': errors.whatsapp_number}">
-                                  <label class="control-label">Número de WhatsApp</label>
+                                  <label class="control-label">WhatsApp
+                                    <el-tooltip class="item" effect="dark" content="Ingresa el número con el código de país, sin espacios ni símbolos.  
+                                        Este será el número de WhatsApp que verán los clientes en el panel de soporte.  
+                                        Ejemplo: 573155555555" placement="top-start">
+                                        <i class="fa fa-info-circle"></i>
+                                    </el-tooltip>
+                                  </label>
                                   <el-input v-model="form.whatsapp_number"></el-input>
-                                  <div class="sub-title text-muted">
-                                    <small>Ingresa el número con el código de país, sin espacios ni símbolos.  
-                                    Este será el número de WhatsApp que verán los clientes en el panel de soporte.  
-                                    Ejemplo: 573155555555
-                                    </small>
-                                  </div>
                                   <small class="form-control-feedback" v-if="errors.whatsapp_number" v-text="errors.whatsapp_number[0]"></small>
                                 </div>
                             </div>

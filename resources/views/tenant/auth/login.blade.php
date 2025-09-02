@@ -2,13 +2,42 @@
 
 @section('content')
 @php
-    $path_background = $vc_company->logo_login != '' ? 'storage/uploads/logos/'.$vc_company->logo_login : 'images/fondo-5.svg';
+    // Priorizar imagen del sistema, si no existe usar la del tenant
+    if (isset($loginBgImage) && $loginBgImage) {
+        $path_background = 'storage/uploads/system/' . $loginBgImage;
+    } else {
+        $path_background = $vc_company->logo_login != '' ? 'storage/uploads/logos/'.$vc_company->logo_login : 'images/fondo-5.svg';
+    }
 @endphp
 <section class="auth auth__form-right login-container">
-    <article class="auth__image" style="background-image: url({{ asset($path_background) }});background-size: 100%">
+    <article
+      class="auth__image"
+      style="
+        background-color: {{ $loginBgColor ?? 'rgb(248, 248, 248)' }};
+        padding: 5%;
+      "
+    >
         @if ($vc_company->logo ?? false)
-            <img class="auth__logo top-left" src="{{ asset('storage/uploads/logos/'.$vc_company->logo) }}" alt="Logo" />
+            <img
+              class="auth__logo top-left"
+              src="{{ asset('storage/uploads/logos/'.$vc_company->logo) }}"
+              alt="Logo"
+            />
         @endif
+    
+        <div
+          style="
+            background-image: url('{{ asset($path_background) }}');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+            display: block;
+            background-color: transparent;
+          "
+        ></div>
     </article>
     <article class="auth__form">
         <form method="POST" action="{{ route('login') }}">

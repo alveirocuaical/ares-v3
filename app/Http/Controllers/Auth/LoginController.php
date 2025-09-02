@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\System\Configuration;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Support\Facades\Config;
 
@@ -45,6 +46,10 @@ class LoginController extends Controller
      */
     public function showLoginForm()
     {
-        return view('tenant.auth.login');
+        $systemConfiguration = Configuration::first();
+        $loginBgColor = $systemConfiguration ? $systemConfiguration->login_bg_color : 'rgb(248, 248, 248)';
+        $loginBgImage = $systemConfiguration && $systemConfiguration->login_bg_image ? $systemConfiguration->login_bg_image : null;
+        
+        return view('tenant.auth.login', compact('loginBgColor', 'loginBgImage'));
     }
 }
