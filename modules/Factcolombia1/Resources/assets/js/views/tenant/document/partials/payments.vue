@@ -126,9 +126,16 @@
                                 <td class="text-right">{{ document.total }}</td>
                                 <td></td>
                             </tr>
+                            <tr v-if="document.total_notas_credito && document.total_notas_credito > 0">
+                                <td colspan="6" class="text-right">NOTAS DE CRÉDITO</td>
+                                <td class="text-right">{{ document.total_notas_credito }}</td>
+                                <td></td>
+                            </tr>
                             <tr>
                                 <td colspan="6" class="text-right">PENDIENTE DE PAGO</td>
-                                <td class="text-right">{{ document.total_difference }}</td>
+                                <td class="text-right">
+                                    {{ (parseFloat(document.total) - (parseFloat(document.total_notas_credito) || 0) - parseFloat(document.total_paid)).toFixed(2) }}
+                                </td>
                                 <td></td>
                             </tr>
                             </tfoot>
@@ -228,7 +235,14 @@
                         <div class="card-body p-2">
                             <div class="d-flex justify-content-between"><b>TOTAL PAGADO</b> <span>{{ document.total_paid }}</span></div>
                             <div class="d-flex justify-content-between"><b>TOTAL A PAGAR</b> <span>{{ document.total }}</span></div>
-                            <div class="d-flex justify-content-between"><b>PENDIENTE DE PAGO</b> <span>{{ document.total_difference }}</span></div>
+                            <div class="d-flex justify-content-between" v-if="document.total_notas_credito && document.total_notas_credito > 0">
+                                <b>NOTAS DE CRÉDITO</b> <span>{{ document.total_notas_credito }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between"><b>PENDIENTE DE PAGO</b>
+                                <span>
+                                    {{ (parseFloat(document.total) - (parseFloat(document.total_notas_credito) || 0) - parseFloat(document.total_paid)).toFixed(2) }}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>

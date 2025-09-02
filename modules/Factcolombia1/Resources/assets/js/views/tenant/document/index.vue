@@ -69,8 +69,10 @@
                         <td class="text-right">{{ getFormatDecimal(row.total) }}</td>
 
                         <td class="text-center">
-                            <button type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2"
-                                    @click.prevent="clickPayment(row.id)">Pagos</button>
+                            <template v-if="row.type_document_name !== 'Nota crédito'">
+                                <button type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2"
+                                        @click.prevent="clickPayment(row.id)">Pagos</button>
+                            </template>
                         </td>
                         <td class="text-right" >
                             <button type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2"

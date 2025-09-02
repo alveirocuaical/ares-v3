@@ -1506,6 +1506,17 @@ class DocumentController extends Controller
                 'cufe' => $response_model->cude
             ]);
 
+            if ($request->reference_id && $this->document->type_document_id == 3) {
+                $referenced_document = Document::find($request->reference_id);
+                if ($referenced_document) {
+                    DocumentHelper::handlePaymentsOnCreditNote(
+                        $referenced_document,
+                        $request->note_concept_id,
+                        $request->total
+                    );
+                }
+            }
+
             // Registrar asientos contables
             if($this->document->type_document_id == 3 ){
                 $this->registerAccountingCreditNoteEntries($this->document);

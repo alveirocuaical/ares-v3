@@ -41,15 +41,16 @@ class DocumentPaymentController extends Controller
 
         $total_paid = collect($document->payments)->sum('payment');
         $total = $document->total;
-        $total_difference = round($total - $total_paid, 2);
+        $total_notas_credito = $document->creditNotes()->sum('total');
+        $total_difference = round($total - $total_notas_credito - $total_paid, 2);
 
         return [
             'number_full' => $document->number_full,
             'total_paid' => $total_paid,
             'total' => $total,
+            'total_notas_credito' => $total_notas_credito,
             'total_difference' => $total_difference
         ];
-
     }
 
     public function store(DocumentPaymentRequest $request)
