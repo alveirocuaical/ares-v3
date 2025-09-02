@@ -8,6 +8,7 @@
             <i class="fas fa-bars" aria-label="Toggle sidebar"></i>
         </div>
         <div class="d-md-none ml-1 d-lg-block" style="height: inherit;">
+            @if(in_array('documents', $vc_modules))
             <a href="{{ route('tenant.co-documents.create') }}"
                 title="Nueva Factura Electrónica"
                 class="topbar-links"
@@ -22,6 +23,8 @@
                 </svg>
                 <span>NFE</span>
             </a>
+            @endif
+            @if(in_array('pos', $vc_modules))
             <a href="{{ route('tenant.pos.index') }}"
                 title="POS"
                 class="topbar-links"
@@ -30,6 +33,8 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-cash-register mb-1"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M21 15h-2.5c-.398 0 -.779 .158 -1.061 .439c-.281 .281 -.439 .663 -.439 1.061c0 .398 .158 .779 .439 1.061c.281 .281 .663 .439 1.061 .439h1c.398 0 .779 .158 1.061 .439c.281 .281 .439 .663 .439 1.061c0 .398 -.158 .779 -.439 1.061c-.281 .281 -.663 .439 -1.061 .439h-2.5"></path><path d="M19 21v1m0 -8v1"></path><path d="M13 21h-7c-.53 0 -1.039 -.211 -1.414 -.586c-.375 -.375 -.586 -.884 -.586 -1.414v-10c0 -.53 .211 -1.039 .586 -1.414c.375 -.375 .884 -.586 1.414 -.586h2m12 3.12v-1.12c0 -.53 -.211 -1.039 -.586 -1.414c-.375 -.375 -.884 -.586 -1.414 -.586h-2"></path><path d="M16 10v-6c0 -.53 -.211 -1.039 -.586 -1.414c-.375 -.375 -.884 -.586 -1.414 -.586h-4c-.53 0 -1.039 .211 -1.414 .586c-.375 .375 -.586 .884 -.586 1.414v6m8 0h-8m8 0h1m-9 0h-1"></path><path d="M8 14v.01"></path><path d="M8 17v.01"></path><path d="M12 13.99v.01"></path><path d="M12 17v.01"></path></svg>
                 <span>POS</span>
             </a>
+            @endif
+            @if(in_array('purchases', $vc_modules))
             <a href="{{ route('tenant.purchases.create') }}"
                 title="Generar Compra"
                 class="topbar-links"
@@ -42,6 +47,8 @@
                 </svg>
                 <span>GCP</span>
             </a>
+            @endif
+            @if(in_array('inventory', $vc_modules))
             <a href="{{ route('tenant.items.index') }}"
                 title="Productos"
                 class="topbar-links"
@@ -50,6 +57,8 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-1"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M14 4h6v6h-6z"></path><path d="M4 14h6v6h-6z"></path><path d="M17 17m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"></path><path d="M7 7m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"></path></svg>
                 <span>PRO</span>
             </a>
+            @endif
+            @if(in_array('reports', $vc_modules))
             <a href="{{ route('tenant.reports.customers.index') }}"
                 title="Clientes"
                 class="topbar-links"
@@ -58,6 +67,7 @@
                 <svg  xmlns="http://www.w3.org/2000/svg"  width="18"  height="18"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-users mb-1"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" /><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0 -3 -3.85" /></svg>
                 <span>CLI</span>
             </a>
+            @endif
         </div>
     </div>
     <div class="header-right d-flex align-items-center mr-4">
@@ -76,6 +86,12 @@
         </a>
         </li>
         @endif
+        <span class="separator"></span>
+        <li class="d-inline-block">
+            <a role="menuitem" class="nav-link" id="fullscreen-btn" title="Pantalla completa">
+                <i id="fullscreen-icon" class="fas fa-expand"></i>
+            </a>
+        </li>
         <span class="separator"></span>
         <div id="userbox" class="userbox">
             <a href="#" data-toggle="dropdown">
@@ -201,4 +217,29 @@ function toggleSupportSidebar() {
     sidebar.classList.toggle('show');
     backdrop.classList.toggle('show');
 }
+document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('fullscreen-btn');
+    const icon = document.getElementById('fullscreen-icon');
+
+    function updateIcon() {
+        if (document.fullscreenElement) {
+            icon.classList.remove('fa-expand');
+            icon.classList.add('fa-compress');
+        } else {
+            icon.classList.remove('fa-compress');
+            icon.classList.add('fa-expand');
+        }
+    }
+
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+        } else {
+            document.exitFullscreen();
+        }
+    });
+
+    document.addEventListener('fullscreenchange', updateIcon);
+});
 </script>
