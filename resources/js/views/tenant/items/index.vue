@@ -24,6 +24,7 @@
                     <tr slot="heading" width="100%">
                         <th>
                             <el-checkbox
+                                class="hide-label-checkbox"
                                 v-model="selectAll"
                                 @change="toggleSelectAll"
                                 :indeterminate="isIndeterminate"
@@ -43,10 +44,13 @@
                     </tr>
                     <tr slot-scope="{ index, row }" :class="{ disable_color : !row.active}">
                         <td>
+                        <el-tooltip content="Seleccionar para imprimir código de barras" placement="top">
                             <el-checkbox
-                                v-model="selectedItems"
-                                :label="row.id"
+                            class="hide-label-checkbox"
+                            v-model="selectedItems"
+                            :label="row.id"
                             ></el-checkbox>
+                        </el-tooltip>
                         </td>
                         <el-tooltip effect="dark" :content="`Stock actual: ${row.stock}`" placement="top">
                             <td>{{ index }}</td>
@@ -257,7 +261,14 @@
     }
 </script>
 <style scoped>
->>> .el-checkbox__label {
+.hide-label-checkbox >>> .el-checkbox__label {
   display: none !important;
+}
+.hide-label-checkbox >>> .el-checkbox__inner {
+  border-color: #007bff !important;
+}
+.hide-label-checkbox.is-checked >>> .el-checkbox__inner {
+  background-color: #007bff !important;
+  border-color: #007bff !important;
 }
 </style>
