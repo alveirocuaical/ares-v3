@@ -245,7 +245,8 @@ a:focus {
 }
 
 .el-button--primary:focus,
-.el-button--primary:hover {
+.el-button--primary:hover,
+.el-button--primary.is-plain:focus, .el-button--primary.is-plain:hover {
     background: var(--black-primary);
     border-color: var(--black-primary);
     color: #fff;
