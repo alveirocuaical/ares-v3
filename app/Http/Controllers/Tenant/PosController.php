@@ -50,16 +50,24 @@ class PosController extends Controller
     {
         $cash = Cash::where([['user_id', auth()->user()->id],['state', true]])->first();
 
-        if(!$cash) return redirect()->route('tenant.cash.index');
-
-        if(!$cash->resolution_id) return redirect()->route('tenant.cash.index');
+        // Validación de caja temporalmente deshabilitada
+        // if(!$cash) return redirect()->route('tenant.cash.index');
+        // if(!$cash->resolution_id) return redirect()->route('tenant.cash.index');
 
         /*$configuration_pos_document = ConfigurationPos::first();
         if(!$configuration_pos_document) return redirect()->route('tenant.pos.configuration');*/
 
         $configuration = Configuration::first();
-        $configuration_pos = ConfigurationPos::where('id', $cash->resolution_id)->firstOrFail();
-        $configuration->configuration_pos = $configuration_pos;
+        
+        // Solo asignar configuration_pos si existe una caja
+        if($cash && $cash->resolution_id) {
+            $configuration_pos = ConfigurationPos::where('id', $cash->resolution_id)->firstOrFail();
+            $configuration->configuration_pos = $configuration_pos;
+        } else {
+            // Si no hay caja, usar la primera configuración disponible o crear una por defecto
+            $configuration_pos = ConfigurationPos::first();
+            $configuration->configuration_pos = $configuration_pos;
+        }
 
         $company = Company::select('soap_type_id')->first();
         $soap_company  = $company->soap_type_id;
@@ -149,7 +157,8 @@ class PosController extends Controller
     {
         $cash = Cash::where([['user_id', auth()->user()->id],['state', true]])->first();
 
-        if(!$cash) return redirect()->route('tenant.cash.index');
+        // Validación de caja temporalmente deshabilitada
+        // if(!$cash) return redirect()->route('tenant.cash.index');
 
         return view('tenant.pos.index_full');
     }
@@ -171,6 +180,7 @@ class PosController extends Controller
                     ->when($request->has('cat') && $request->cat != '', function ($query) use ($request) {
                         $query->where('category_id', $request->cat);
                     })
+                    ->orderByDesc('is_favorite')
                     ->paginate(50);
 
         return new PosCollection($items, $configuration);
@@ -273,7 +283,7 @@ class PosController extends Controller
 
             $configuration =  Configuration::first();
 
-            $items = Item::whereWarehouse()->whereNotItemsAiu()->whereIsActive()->where('unit_type_id', '!=', 'ZZ')->orderBy('description')->take(100)
+            $items = Item::whereWarehouse()->whereNotItemsAiu()->whereIsActive()->where('unit_type_id', '!=', 'ZZ')->orderByDesc('is_favorite')->orderBy('description')->take(100)
                             ->get()->transform(function($row) use ($configuration) {
                                 $full_description = ($row->internal_id)?$row->internal_id.' - '.$row->description:$row->name;
                                 return [
@@ -310,6 +320,7 @@ class PosController extends Controller
                                     'unit_type' => $row->unit_type,
                                     'tax' => $row->tax,
                                     'item_unit_types' => $row->item_unit_types->transform(function($row) { return $row->getSearchRowResource();}),
+                                    'is_favorite' => (bool) $row->is_favorite, 
                                     //'sale_unit_price_calculate' => self::calculateSalePrice($row)
                                     'sale_unit_price_with_tax' => $this->getSaleUnitPriceWithTax($row, $configuration->decimal_quantity)
                                 ];
@@ -569,6 +580,18 @@ class PosController extends Controller
                 'message' => $e->getMessage()
             ], 422);
         }
+    }
+    public function toggle_favorite(Request $request, $item_id)
+    {
+        $item = Item::findOrFail($item_id);
+        $item->is_favorite = !$item->is_favorite;
+        $item->save();
+
+        return response()->json([
+            'success' => true,
+            'is_favorite' => $item->is_favorite,
+            'message' => $item->is_favorite ? 'Marcado como favorito' : 'Quitado de favoritos'
+        ]);
     }
 
 }

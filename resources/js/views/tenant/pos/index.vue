@@ -8,20 +8,55 @@
       </div> -->
         <div class="row">
             <div class="col-md-6">
-                <!-- <h2 class="text-sm">POS</h2> -->
-                <h2>
-                    <el-switch v-model="search_item_by_barcode" active-text="Buscar por código de barras" @change="changeSearchItemBarcode"></el-switch>
-                </h2>
-                <template v-if="!electronic">
-                    <h2>
+                <div class="header-controls-row d-flex align-items-center h-100 my-0">
+                    <el-switch v-model="search_item_by_barcode" active-text="Buscar por código de barras" @change="changeSearchItemBarcode" class="el-switch el-switch-barcode"></el-switch>
+                    <template v-if="!electronic">
                         <el-switch v-model="type_refund" active-text="Devolución"></el-switch>
-                    </h2>
-                </template>
+                    </template>
+                    <div class="balanza-btn-group">
+                        <button
+                            v-if="!scale.connected"
+                            size="small"
+                            class="el-button btn-balanza el-button--primary el-button--small d-flex align-items-center"
+                            type="primary"
+                            :loading="scale.connecting"
+                            @click="connectScale"
+                        >
+                            <i class="fa fa-balance-scale" style="margin-right:6px;"></i>
+                            <span class="balanza-btn-text">Conectar balanza</span>
+                            <el-tooltip
+                                effect="dark"
+                                content="Para establecer la conexión, asegúrese de que la balanza esté conectada a un puerto COM. Si no aparece el puerto, instale el driver correspondiente al modelo de su balanza."
+                                placement="top"
+                            >
+                                <i class="fa fa-info-circle balanza-tooltip"></i>
+                            </el-tooltip>
+                        </button>
+                        <button
+                            v-if="scale.connected"
+                            size="small"
+                            type="danger"
+                            class="el-button btn-balanza el-button--primary el-button--small d-flex align-items-center"
+                            @click="disconnectScale"
+                            :loading="scale.connecting"
+                        >
+                            <i class="fa fa-plug" style="margin-right:6px;"></i>
+                            <span class="balanza-btn-text">Desconectar balanza</span>
+                            <el-tooltip
+                                effect="dark"
+                                content="Para establecer la conexión, asegúrese de que la balanza esté conectada a un puerto COM. Si no aparece el puerto, instale el driver correspondiente al modelo de su balanza."
+                                placement="top"
+                            >
+                                <i class="fa fa-info-circle balanza-tooltip"></i>
+                            </el-tooltip>
+                        </button>                        
+                    </div>
+                </div>
             </div>
             <div class="col-md-4">
-                <h2> <button type="button" @click="place = 'cat'" class="btn btn-custom btn-sm"><i class="fa fa-border-all"></i></button> </h2>
-                <h2> <button type="button" :disabled="place == 'cat2'" @click="setView" class="btn btn-custom btn-sm"><i class="fa fa-bars"></i></button> </h2>
-                <h2> <button type="button" :disabled="place== 'cat'" @click="back()" class="btn btn-custom btn-sm"><i class="fa fa-undo"></i></button> </h2>
+                <h2 class="px-2"> <button type="button" @click="place = 'cat'" class="btn btn-custom btn-sm m-auto"><i class="fa fa-border-all"></i></button> </h2>
+                <h2 class="px-2"> <button type="button" :disabled="place == 'cat2'" @click="setView" class="btn btn-custom btn-sm m-auto"><i class="fa fa-bars"></i></button> </h2>
+                <h2 class="px-2"> <button type="button" :disabled="place== 'cat'" @click="back()" class="btn btn-custom btn-sm m-auto"><i class="fa fa-undo"></i></button> </h2>
             </div>
             <div class="col-md-2 d-flex align-items-center justify-content-end">
                 <div class="right-wrapper mr-2">
@@ -69,6 +104,13 @@
                             <div class="card-body pointer px-2 pt-2" @click="clickAddItem(item,index)">
                                 <el-tooltip class="item" effect="dark" :content="item.name" placement="bottom-end">
                                     <p class="font-weight-semibold mb-0 truncate-text">
+                                        <!-- <span
+                                            class="favorite-star"
+                                            @click.stop="toggleFavorite(item)"
+                                            :title="isFavorite(item) ? 'Quitar de favoritos' : 'Marcar como favorito'"
+                                        >
+                                            <i :class="isFavorite(item) ? 'fas fa-star text-warning' : 'far fa-star text-secondary'"></i>
+                                        </span> -->
                                         {{item.name}}
                                     </p>
                                 </el-tooltip>
@@ -116,24 +158,24 @@
 
                             <div v-if="configuration.options_pos" class="card-footer btn-group flex-wrap configuration-options">
                                 <el-row style="width:100%; gap: 5px;"">
-                                    <el-col :span="6">
+                                    <el-col :span="4">
                                         <el-tooltip class="item" effect="dark" content="Visualizar stock" placement="bottom-end">
                                             <button type="button" style="width:100% !important;" class="btn btn-xs btn-primary-pos" @click="clickWarehouseDetail(item)">
                                                 <i class="fa fa-search"></i>
                                             </button>
                                         </el-tooltip>
                                     </el-col>
-                                    <el-col :span="6">
+                                    <el-col :span="4">
                                         <el-tooltip class="item" effect="dark" content="Visualizar historial de ventas del producto (precio venta) y cliente" placement="bottom-end">
                                             <button type="button" style="width:100% !important;" class="btn btn-xs btn-primary-pos" @click="clickHistorySales(item.item_id)"><i class="fa fa-list"></i></button>
                                         </el-tooltip>
                                     </el-col>
-                                    <el-col :span="6">
+                                    <el-col :span="4">
                                         <el-tooltip class="item" effect="dark" content="Visualizar historial de compras del producto (precio compra)" placement="bottom-end">
                                             <button type="button" style="width:100% !important;" class="btn btn-xs btn-primary-pos" @click="clickHistoryPurchases(item.item_id)"><i class="fas fa-cart-plus"></i></button>
                                         </el-tooltip>
                                     </el-col>
-                                    <el-col :span="6">
+                                    <el-col :span="4">
                                         <el-tooltip class="item" effect="dark" content="Visualizar lista de precios disponibles" placement="bottom-end">
                                             <el-popover placement="top" title="Precios" width="400" trigger="click">
                                                 <el-table v-if="item.item_unit_types" :data="item.item_unit_types">
@@ -156,6 +198,16 @@
                                                 </el-table>
                                                 <button type="button" slot="reference" style="width:100% !important;" class="btn btn-xs btn-primary-pos"><i class="fas fa-money-bill-alt"></i></button>
                                             </el-popover>
+                                        </el-tooltip>
+                                    </el-col>
+                                    <el-col :span="4">
+                                        <el-tooltip class="item" effect="dark" :content="isFavorite(item) ? 'Quitar de favoritos' : 'Marcar como favorito'" placement="bottom-end">
+                                            <button type="button"
+                                                style="width:100% !important;"
+                                                class="btn btn-xs btn-primary-pos"
+                                                @click.stop="toggleFavorite(item)">
+                                                <i :class="isFavorite(item) ? 'fas fa-star text-warning' : 'far fa-star text-secondary'"></i>
+                                            </button>
                                         </el-tooltip>
                                     </el-col>
                                 </el-row>
@@ -227,27 +279,35 @@
                                 <tr v-for="(item,index) in form.items" :key="index" class="pos-product-row">
                                     <td width="20%" class="td-main">
                                         <div class="row-main">
-                                            <el-input v-model="item.item.aux_quantity" :readonly="item.item.calculate_quantity" class="input-qty" @change="onQuantityInput(item, index)"></el-input>
-                                            <div class="product-name">
-                                                <span v-html="clearText(item.item.name)"></span>
-                                                <small v-if="item.unit_type">{{ item.unit_type.name }}</small>
-                                                <template v-if="item.item.lot_code || item.item.date_of_due">
-                                                    <small class="text-muted lote-info">
-                                                        <span v-if="item.item.lot_code">Lote: {{item.item.lot_code}}</span>
-                                                        <span v-if="item.item.lot_code && item.item.date_of_due"> - </span>
-                                                        <span v-if="item.item.date_of_due">FV: {{item.item.date_of_due}}</span>
-                                                    </small>
-                                                </template>
-                                                <small> {{nameSets(item.item_id)}} </small>
+                                            <div style="width: 45%;">
+                                                <div class="product-info">
+                                                    <div class="product-name">
+                                                        <span v-html="clearText(item.item.name)"></span>
+                                                    </div>
+                                                    <div class="product-details">
+                                                        <small v-if="item.unit_type">{{ item.unit_type.name }}</small>
+                                                        <template v-if="item.item.lot_code || item.item.date_of_due">
+                                                            <small class="text-muted lote-info">
+                                                                <span v-if="item.item.lot_code">Lote: {{item.item.lot_code}}</span>
+                                                                <span v-if="item.item.lot_code && item.item.date_of_due"> - </span>
+                                                                <span v-if="item.item.date_of_due">FV: {{item.item.date_of_due}}</span>
+                                                            </small>
+                                                        </template>
+                                                        <small> {{nameSets(item.item_id)}} </small>
+                                                    </div>
+                                                </div>                                                
                                             </div>
-                                        </div>
-                                        <div class="row-secondary">
-                                            <el-input v-model="item.sale_unit_price_with_tax" class="input-price input-text-right" @input="clickAddItem(item,index,true)" :readonly="item.item.calculate_quantity"></el-input>
-                                            <el-input v-model="item.total" @input="calculateQuantity(index)" class="input-total input-text-right" :readonly="!item.item.calculate_quantity"></el-input>
-                                            <a class="btn btn-sm btn-default btn-trash text-danger" @click="clickDeleteItem(index)">
-                                                <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-trash text-danger"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
-                                            </a>
-                                        </div>
+                                            <div class="row-secondary">
+                                                <el-input v-model="item.item.aux_quantity" :readonly="scale.connected" class="input-qty" @focus="startContinuousWeight(item, index)" @blur="stopContinuousWeight(item, index)" @change="onQuantityInput(item, index)" @keyup.enter="onEnterQuantity(item, index)"></el-input>
+                                                <el-input v-model="item.sale_unit_price_with_tax" class="input-price input-text-right" @input="clickAddItem(item,index,true)" :readonly="item.item.calculate_quantity"></el-input>
+                                                <span class="input-text-right">
+                                                  {{currency.symbol}} {{ item.total }}
+                                                </span>
+                                                <a class="btn btn-sm btn-default btn-trash text-danger" @click="clickDeleteItem(index)">
+                                                    <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-trash text-danger"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                                                </a>
+                                            </div>
+                                        </div>                                        
                                     </td>
                                 </tr>
                                 <!-- Refund items (puedes adaptar igual si lo necesitas) -->
@@ -276,10 +336,7 @@
                             <table v-show="!isMobile" class="table table-sm table-borderless mb-0">
                                 <tr v-for="(item,index) in form.items" :key="index" class="pos-product-row">
                                     <td width="20%">
-                                        <el-input v-model="item.item.aux_quantity" :readonly="item.item.calculate_quantity" class="input-qty" @change="onQuantityInput(item, index)"></el-input>
-                                    </td>
-                                    <td width="20%">
-                                        <p class="m-0" style="line-height: 1em;">
+                                        <p class="m-0 product-name-desktop" style="line-height: 1em;">
                                             <span v-html="clearText(item.item.name)"></span><br>
                                             <small v-if="item.unit_type">{{ item.unit_type.name }}</small>
                                             <template v-if="item.item.lot_code || item.item.date_of_due">
@@ -292,6 +349,9 @@
                                         </p>
                                         <small> {{nameSets(item.item_id)}} </small>
                                     </td>
+                                    <td width="20%">
+                                        <el-input v-model="item.item.aux_quantity" :readonly="scale.connected" class="input-qty" @focus="startContinuousWeight(item, index)" @blur="stopContinuousWeight(item, index)" @change="onQuantityInput(item, index)" @keyup.enter="onEnterQuantity(item, index)"></el-input>
+                                    </td>                                    
                                     <td width="20%">
                                         <p class="font-weight-semibold m-0 text-center">
                                             <el-input v-model="item.sale_unit_price_with_tax" class="input-text-right" @input="clickAddItem(item,index,true)" :readonly="item.item.calculate_quantity">
@@ -465,6 +525,18 @@
 
 <style>
 /* The heart of the matter */
+.favorite-star .fa-star,
+.btn-primary-pos .fa-star {
+    color: #fff !important;
+}
+.favorite-star .fa-star.text-warning,
+.btn-primary-pos .fa-star.text-warning {
+    color: #ffc107 !important;
+}
+.favorite-star .fa-star.text-secondary,
+.btn-primary-pos .fa-star.text-secondary {
+    color: #fff !important;
+}
 .testimonial-group>.row {
     overflow-x: auto;
     white-space: nowrap;
@@ -588,18 +660,22 @@
     border-bottom: 1px dashed var(--black-highlight);
     margin-bottom: 2px;
     padding-bottom: 2px;
+    overflow-x: auto;
+    white-space: nowrap;
   }
   .table-pos-products .td-main {
     display: block;
     width: 100% !important;
     padding: 4px 2px !important;
     box-sizing: border-box;
+    white-space: nowrap;
   }
   .table-pos-products .row-main {
     display: flex;
     align-items: center;
     width: 100%;
     gap: 8px;
+    min-width: fit-content;
   }
   .table-pos-products .input-qty {
     flex: 0 0 60px;
@@ -607,15 +683,30 @@
     min-width: 40px;
     margin-right: 6px;
   }
-  .table-pos-products .product-name {
+  .table-pos-products .product-info {
     flex: 1 1 auto;
+    white-space: normal;
+    min-width: 150px;
+  }
+  .table-pos-products .product-name {
     font-size: 14px;
     line-height: 1.2;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    max-height: calc(1.2em * 2); /* 2 líneas * line-height */
+    word-break: break-word;
+    margin-bottom: 2px;
   }
-  .table-pos-products .product-name small {
+  .table-pos-products .product-details {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    white-space: normal;
+  }
+  .table-pos-products .product-details small {
     display: block;
     font-size: 12px;
     color: #888;
@@ -623,13 +714,18 @@
     margin-bottom: 0;
     white-space: normal;
     word-break: break-word;
+    line-height: 1.1;
   }
   .table-pos-products .row-secondary {
     display: flex;
     align-items: center;
-    width: 100%;
+    width: 55%;
     gap: 8px;
     margin-top: 2px;
+    min-width: 256px !important;
+  }
+  .table-pos-products .row-secondary input{
+    padding: 0 5px !important;
   }
   .table-pos-products .input-price,
   .table-pos-products .input-total {
@@ -658,6 +754,17 @@
     display: none !important;
   }
 }
+
+/* Clase para limitar el nombre del producto en vista de escritorio a 2 líneas */
+.product-name-desktop {
+  max-height: calc(1em * 2 + 0.5em); /* 2 líneas + espacio para el <br> */
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+}
 </style>
 
 <script>
@@ -669,7 +776,8 @@ import HistoryPurchasesForm from "../../../../../modules/Pos/Resources/assets/js
 import PersonForm from "../persons/form.vue";
 import WarehousesDetail from '../items/partials/warehouses.vue'
 import queryString from "query-string";
-import {functions} from '@mixins/functions'
+import {functions} from '@mixins/functions';
+import scaleMixin from '@mixins/scaleMixin'
 
 export default {
     props: ['configuration', 'soapCompany'],
@@ -681,7 +789,7 @@ export default {
         PersonForm,
         WarehousesDetail
     },
-    mixins: [functions],
+    mixins: [functions, scaleMixin],
     data() {
         return {
             place: 'cat',
@@ -733,6 +841,7 @@ export default {
     },
     beforeDestroy() {
         window.removeEventListener('resize', this.handleResize);
+        this.disconnectScale();
     },
     async created() {
         try {
@@ -819,6 +928,28 @@ export default {
         }
     },
     methods: {
+        async toggleFavorite(item) {
+            this.loading = true;
+            try {
+                const res = await this.$http.post(`/pos/toggle-favorite/${item.item_id}`);
+                item.is_favorite = res.data.is_favorite;
+                this.sortItemsByFavorites();
+                this.$message.success(res.data.message);
+            } catch (e) {
+                this.$message.error('Error al marcar favorito');
+            }
+            this.loading = false;
+        },
+        isFavorite(item) {
+            return !!item.is_favorite;
+        },
+        sortItemsByFavorites() {
+            this.items = [...this.items].sort((a, b) => {
+                const aFav = a.is_favorite ? 1 : 0;
+                const bFav = b.is_favorite ? 1 : 0;
+                return bFav - aFav;
+            });
+        },
         getQueryParameters() {
             return queryString.stringify({
                 page: this.pagination.current_page
@@ -851,6 +982,7 @@ export default {
                     } else {
                         this.pagination.total = 0;
                     }
+                    this.sortItemsByFavorites();
                 });
         },
         setListPriceItem(item_unit_type, index) {
@@ -1839,6 +1971,7 @@ export default {
         },
         filterItems() {
             this.items = this.all_items;
+            this.sortItemsByFavorites();
         },
         reloadDataCustomers(customer_id) {
             this.$http.get(`/${this.resource}/table/customers`).then(response => {
@@ -1922,9 +2055,15 @@ export default {
                     this.calculateTotal();
                     return;
                 }
-                if (qty < 1) {
-                    item.item.aux_quantity = 1;
-                    item.quantity = 1;
+                if (qty < 0.001) { // Cambia de 1 a 0.001 para permitir decimales pequeños
+                    // Si hay un valor leído válido, no lo sobrescribas por 0
+                    if (this.scale.lastWeightValue && Number(this.scale.lastWeightValue) > 0) {
+                        item.item.aux_quantity = Number(this.scale.lastWeightValue).toFixed(3);
+                        item.quantity = Number(this.scale.lastWeightValue).toFixed(3);
+                    } else {
+                        item.item.aux_quantity = 1;
+                        item.quantity = 1;
+                    }
                     this.calculateTotal();
                     return;
                 }
@@ -1950,3 +2089,69 @@ export default {
     }
 };
 </script>
+<style scoped>
+.page-header .header-controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 8px;
+    margin-top: 8px;
+    width: 100%;
+    min-height: 48px;
+    max-width: 100%;
+    padding-left: 24px; /* <-- Ajusta este valor según lo que necesites */
+}
+
+.page-header .header-controls-row > * {
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.page-header .el-switch {
+    min-width: 110px;
+    max-width: 160px;
+    font-size: 15px;
+    flex: 1 1 110px;
+}
+
+.page-header .el-switch__label {
+    font-size: 14px !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.page-header .balanza-btn-group {
+    gap: 8px;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    max-width: 180px;
+    flex: 1 1 120px;
+}
+.el-switch-barcode {
+    min-width: 190px !important;
+    max-width: 260px !important;
+}
+.page-header .btn-balanza {
+    height: 30px;
+    padding: 0 10px;    
+    overflow: hidden;    
+}
+.page-header .btn-balanza .balanza-btn-text{
+    max-width: 110px;
+    font-size: 13px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    display: inline-block;
+}
+.page-header .balanza-tooltip {
+    margin-left: 6px;
+    font-size: 13px !important;
+}
+
+/* Responsive: apila verticalmente los controles y separa del campo de búsqueda */
+</style>
