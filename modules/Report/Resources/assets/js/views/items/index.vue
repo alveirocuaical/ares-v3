@@ -58,7 +58,7 @@
                                 <td>{{row.customer_number}}</td>
                                 <td>{{row.customer_name}}</td>
                                 <td>{{row.quantity}}</td>
-                                <td>{{ row.total }}</td> 
+                                <td>{{ row.total | numberFormat }}</td>
                             </tr>
 
                         </data-table>

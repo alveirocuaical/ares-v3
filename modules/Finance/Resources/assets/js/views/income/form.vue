@@ -170,7 +170,7 @@
                                         <tr v-for="(row, index) in form.items" :key="index">
                                             <td>{{ index + 1 }}</td>
                                             <td>{{ row.description }}</td>
-                                            <td class="text-right">{{ currency_type.symbol }} {{ row.total }}</td>
+                                            <td class="text-right">{{ currency_type.symbol }} {{ row.total | numberFormat }}</td>
                                             <td class="text-right">
                                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickRemoveItem(index)">x</button>
                                             </td>
@@ -180,7 +180,7 @@
                             </div>
                         </div>
                         <div class="col-md-12">
-                            <h3 class="text-right" v-if="form.total > 0"><b>TOTAL: </b>{{ currency_type.symbol }} {{ form.total }}</h3>
+                            <h3 class="text-right" v-if="form.total > 0"><b>TOTAL: </b>{{ currency_type.symbol }} {{ form.total | numberFormat }}</h3>
                         </div>
                     </div>
                 </div>

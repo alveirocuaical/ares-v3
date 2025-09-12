@@ -55,7 +55,7 @@
                             </template>
                         </td>  
                         <td class="text-center">{{ row.currency_name }}</td> 
-                        <td class="text-center">{{ formatNumber(row.total) }}</td> 
+                        <td class="text-center">{{ row.total | numberFormat }}</td> 
                         <td class="text-right">
 
                             <template v-if="!row.is_adjust_note">
@@ -116,12 +116,6 @@
                 const year = date.getFullYear();
                 const month = String(date.getMonth() + 1).padStart(2, '0');
                 return `${year}-${month}`;
-            },
-            formatNumber(number) {
-                return Number(number).toLocaleString('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                });
             },
         }
     }

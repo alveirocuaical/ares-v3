@@ -747,7 +747,7 @@
                           <td>{{ row.internal_id }}</td>
                           <td>{{ row.description }}</td>
                           <td class="text-right">{{ row.move_quantity }}</td>
-                          <td class="text-right">{{ formatNumber(row.total) }}</td>
+                          <td class="text-right">{{ row.total | numberFormat }}</td>
                         </tr>
                       </template>
                     </tbody>
@@ -793,7 +793,7 @@
                             <small v-text="row.number"></small>
                           </td>
                           <td class="text-right">{{ row.transaction_quantity }}</td>
-                          <td class="text-right">{{ formatNumber(row.total) }}</td>
+                          <td class="text-right">{{ row.total | numberFormat }}</td>
                         </tr>
                       </template>
                     </tbody>

@@ -97,8 +97,8 @@
 
                         <td class="text-center">{{ row.currency_type_id }}</td>
                         <!-- <td class="text-right">{{ row.total_exportation }}</td> -->
-                        <td v-if="columns.total_perception.visible" class="text-right">{{ formatNumber(row.total_perception ? row.total_perception : 0) }}</td>
-                        <td class="text-right">{{ formatNumber(row.total) }}</td>
+                        <td v-if="columns.total_perception.visible" class="text-right">{{ row.total_perception ? row.total_perception : 0 | numberFormat }}</td>
+                        <td class="text-right">{{ row.total | numberFormat }}</td>
                         <td class="text-center">
                             <el-dropdown trigger="click">
                                 <el-button size="mini" type="secondary" class="btn btn-default btn-sm btn-dropdown-toggle">
@@ -260,12 +260,6 @@
             },
              clickImport() {
                 this.showImportDialog = true
-            },
-            formatNumber(number) {
-                return number ? new Intl.NumberFormat('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                }).format(number) : '0.00'
             },
             getCurrentMonth() {
                 const date = new Date();
