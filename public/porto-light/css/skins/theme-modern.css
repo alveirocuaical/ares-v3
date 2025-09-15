@@ -712,9 +712,10 @@ label.control-label {
 
 .btn-info:hover,
 .btn-info.hover {
-    background-color: #2f2f31;
-    border-color: #2f2f31;
+    background-color: var(--info);
+    border-color: var(--info);
     color: #fff;
+    opacity: 0.8;
 }
 
 .btn-info:not(:disabled):not(.disabled):active:focus,
@@ -727,14 +728,15 @@ label.control-label {
 .btn-info:not(:disabled):not(.disabled).active,
 .show>.btn-info.dropdown-toggle {
     color: #fff;
-    background-color: #2f2f31;
-    border-color: #2f2f31;
+    background-color: var(--info);
+    border-color: var(--info);
+    opacity: 0.8;
 }
 
 .btn-info,
 .btn-info.disabled {
-    background: #18181b;
-    border: 1px solid #18181b;
+    background: var(--info);
+    border: 1px solid var(--info);
     -webkit-box-shadow: none;
     box-shadow: none;
     -webkit-transition: .2s ease-in;
@@ -753,8 +755,9 @@ label.control-label {
 .open>.dropdown-toggle.btn-info:focus,
 .open>.dropdown-toggle.btn-info:hover,
 .show>.btn-info.dropdown-toggle {
-    background-color: #18181b;
-    border: 1px solid #18181b;
+    background-color: var(--info);
+    border: 1px solid var(--info);
+    opacity: 0.8;
 }
 .el-button,
 .second-buton,
@@ -1135,9 +1138,10 @@ form.style-switcher-wrap h3 {
 }
 
 .btn-info {
-    background-color: #18181b;
-    border-color: #18181b;
+    background-color: var(--info);
+    border-color: var(--info);
     box-shadow: unset;
+    color: #FFFFFF !important;
 }
 
 ul.nav-main li .nav-children li a:before {
@@ -1356,9 +1360,11 @@ html.sidebar-white ul.nav-main li.nav-active:not(.nav-parent)>a {
 
 .btn-info:hover,
 .btn-info.hover {
-    background-color: #2f2f31;
-    border-color: #2f2f31;
+    background-color: var(--info);
+    border-color: var(--info);
     box-shadow: none;
+    opacity: 0.8;
+    color: #ffffff;
 }
 .page-header h2 {
     border-bottom: none;
@@ -2564,6 +2570,9 @@ html.fixed.sidebar-dark .style-switcher:before {
 }
 html.dark .style-switcher:before {
     background-color: var(--black-border-dark) !important;
+}
+html.dark #custom-select .el-input-group__prepend{
+    background-color: var(--black-border-dark);
 }
 html.dark .page-header,
 html.header-dark .page-header {
