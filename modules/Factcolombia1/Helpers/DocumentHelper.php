@@ -31,6 +31,7 @@ class DocumentHelper
         $document->prefix = $nextConsecutive->prefix;
         $document->number = $correlative_api;
         $document->user_id = auth()->id();
+        $document->seller_id = $request->seller_id ?? null;
         $document->external_id = Str::uuid()->toString();
         $document->establishment_id = auth()->user()->establishment_id;
         $document->establishment = $establishment;
@@ -67,6 +68,7 @@ class DocumentHelper
         $document->time_days_credit = $request->time_days_credit;
         $document->response_api = $response;
         $document->response_api_status = $response_status;
+        $document->state_document_id = $request->state_document_id;
         $document->correlative_api = $correlative_api;
         $document->sale_note_id = $request->sale_note_id;
         $document->remission_id = $request->remission_id;
@@ -184,7 +186,7 @@ class DocumentHelper
                 'discount' => isset($item['total_discount']) ? $item['total_discount'] : 0,
                 'total' => isset($item['total']) ? $item['total'] : (isset($item['subtotal']) ? $item['subtotal'] : $item['line_extension_amount']) + (isset($item['total_tax']) ? $item['total_tax'] : $item['price_amount'] - $item['line_extension_amount']),
                 'total_plastic_bag_taxes' => 0,
-                'warehouse_id' => null,
+                'warehouse_id' => $item['warehouse_id'] ?? null,
                 'from_remission' => $document->remission_id,// Agregamos esta bandera
 
             ]);
@@ -341,7 +343,8 @@ class DocumentHelper
                 'total_tax' => $item['total_tax'],
                 'subtotal' => $item['subtotal'],
                 'discount' => $item['discount'],
-                'total' => $item['total']
+                'total' => $item['total'],
+                'warehouse_id' => $item['warehouse_id'] ?? null,
             ];
 
         }

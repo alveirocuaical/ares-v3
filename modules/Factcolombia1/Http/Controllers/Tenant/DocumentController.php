@@ -60,6 +60,7 @@ use Modules\Accounting\Models\JournalPrefix;
 use Modules\Accounting\Models\ChartOfAccount;
 use Modules\Accounting\Models\ChartAccountSaleConfiguration;
 use Modules\Accounting\Models\AccountingChartAccountConfiguration;
+use Modules\Accounting\Helpers\AccountingEntryHelper;
 
 
 class DocumentController extends Controller
@@ -83,8 +84,8 @@ class DocumentController extends Controller
     public function columns()
     {
         return [
-            'number' => 'Número',
             'date_of_issue' => 'Fecha de emisión',
+            'number' => 'Número',
             'customer' => 'Cliente',
         ];
     }
@@ -116,8 +117,100 @@ class DocumentController extends Controller
 
     public function records(Request $request)
     {
-        $records =  Document::where($request->column, 'like', '%' . $request->value . '%')->whereTypeUser()->latest();
-        return new DocumentCollection($records->paginate(config('tenant.items_per_page')));
+        $query = Document::query();
+        // Filtro por comprobante (ignora otros filtros)
+        if ($request->filled('comprobante')) {
+            // Elimina espacios y convierte a mayúsculas para uniformidad
+            $comprobante = strtoupper(str_replace(' ', '', $request->comprobante));
+
+            // Permite guion opcional: separa prefijo y número
+            if (strpos($comprobante, '-') !== false) {
+                $parts = explode('-', $comprobante, 2);
+            } else {
+                // Busca el primer dígito para separar prefijo y número
+                $parts = preg_split('/(?=\d)/', $comprobante, 2);
+            }
+
+            if (count($parts) == 2 && $parts[0] !== '') {
+                $prefix = $parts[0];
+                $number = $parts[1];
+                $query->where('prefix', $prefix)
+                    ->where('number', $number);
+            } else {
+                
+                // Solo número o solo prefijo
+                if (is_numeric($comprobante)) {
+                    $query->where('number', $comprobante);
+                } else {
+                    $query->where('prefix', $comprobante);
+                }
+            }
+        } else {
+            // Filtro por estado (state_document_id)
+            if ($request->filled('state_document_id')) {
+                $query->where('state_document_id', $request->state_document_id);
+            }
+            // Filtro por cliente (customer_id)
+            if ($request->filled('customer_id')) {
+                $query->where('customer_id', $request->customer_id);
+            }
+            // Filtro por resolución (type_document_id)
+            if ($request->filled('resolution_id')) {
+                $query->where('type_document_id', $request->resolution_id);
+            }
+            if ($request->column == 'date_of_issue') {
+
+                if (!empty($request->fecha_inicio) && !empty($request->fecha_fin)) {
+                    // Entre meses
+                    $query->whereBetween('date_of_issue', [$request->fecha_inicio, $request->fecha_fin]);
+
+                } else if (strlen($request->value) == 7) {
+                    // Si el valor es un mes (YYYY-MM), filtrar por todo el mes
+                    $year_month = explode('-', $request->value);
+                    $year = $year_month[0];
+                    $month = $year_month[1];
+
+                    $query->whereYear('date_of_issue', $year)
+                        ->whereMonth('date_of_issue', $month);
+                } else if (!empty($request->value)) {
+                    // Si es una fecha específica (YYYY-MM-DD)
+                    $query->whereDate('date_of_issue', $request->value);
+                }
+            } else {
+                $query->where($request->column, 'like', '%' . $request->value . '%');
+            }
+        }
+        $query->whereTypeUser()->latest();
+
+        return new DocumentCollection($query->paginate(config('tenant.items_per_page')));
+    }
+
+    //Para el listado de estados
+    public function statesList()
+    {
+        // Ajusta el modelo y campos según tu estructura real
+        return \Modules\Factcolombia1\Models\Tenant\StateDocument::select('id', 'name')->get();
+    }
+
+    //Para El listado de Resoluciones en la vista
+    public function activeResolutions()
+    {
+        $resolutions = TypeDocument::whereNotNull('resolution_number')
+            ->where('resolution_date_end', '>', now())
+            ->orderBy('description')
+            ->get(['id', 'description', 'prefix']);
+
+        return response()->json($resolutions);
+    }
+
+    //Para el listado de clientes
+    public function customersList()
+    {
+        $customers = Person::whereType('customers')
+            ->whereIsEnabled()
+            ->orderBy('name')
+            ->get(['id', 'name']);
+        return response()->json($customers);
     }
 
 
@@ -228,14 +321,51 @@ class DocumentController extends Controller
         }
     }
 
-    public function sincronize()
+    public function sincronize(Request $request)
     {
         try {
+            $company = ServiceTenantCompany::firstOrFail();
+            $this->sincronize_resolutions($company->identification_number);
+            $base_url = config('tenant.service_fact');
+            $i = 0;
+
+            // Si viene tipo y fechas, sincroniza por fechas
+            if ($request->type === 'fecha' && $request->filled(['desde', 'hasta'])) {
+                $ch2 = curl_init("{$base_url}information/{$company->identification_number}/{$request->desde}/{$request->hasta}");
+                curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch2, CURLOPT_CUSTOMREQUEST, "GET");
+                curl_setopt($ch2, CURLOPT_SSL_VERIFYHOST, 0);
+                curl_setopt($ch2, CURLOPT_SSL_VERIFYPEER, 0);
+                curl_setopt($ch2, CURLOPT_HTTPHEADER, array(
+                    'Content-Type: application/json',
+                    'Accept: application/json',
+                    "Authorization: Bearer {$company->api_token}"
+                ));
+                $response_status = curl_exec($ch2);
+                curl_close($ch2);
+
+                $response_status_decoded = json_decode($response_status);
+                if (isset($response_status_decoded->data[0]->documents)) {
+                    $documents = $response_status_decoded->data[0]->documents;
+                    foreach($documents as $document){
+                        if($document->cufe != 'cufe-initial-number' && in_array($document->type_document_id, [1, 2, 4, 5])){
+                            $d = Document::where('prefix', $document->prefix)->where('number', $document->number)->get();
+                            if(count($d) == 0){
+                                $this->store_sincronize($document);
+                                $i++;
+                            }
+                        }
+                    }
+                }
+                return [
+                    "success" => true,
+                    "message" => "Se sincronizaron satisfactoriamente, {$i} registros por rango de fechas.",
+                ];
+            }
+
+            // Si viene tipo y página, sincroniza por página (comportamiento original)
             $advanced_configuration = AdvancedConfiguration::where('lastsync', '!=', 0)->get();
             if(count($advanced_configuration) > 0){
-//                $lastsync_date = new DateTime($advanced_configuration[0]->lastsync);
-//                $lastsync = $lastsync_date->modify('-1 day')->format('Y-m-d');
-//                $lastsync = $advanced_configuration[0]->lastsync;
                 $lastsync = 0;
             }
             else{
@@ -253,10 +383,11 @@ class DocumentController extends Controller
                     $lastsync = 0;
             }
 
-            $company = ServiceTenantCompany::firstOrFail();
-            $this->sincronize_resolutions($company->identification_number);
-            $base_url = config('tenant.service_fact');
-            $i = 0;
+            // Si el usuario seleccionó página específica
+            if ($request->type === 'pagina' && $request->filled('page')) {
+                $lastsync = $request->page;
+            }
+
             do{
                 $ch2 = curl_init("{$base_url}information/{$company->identification_number}/page/{$lastsync}/page");
                 curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
@@ -284,7 +415,7 @@ class DocumentController extends Controller
                     }
                 }
                 $lastsync++;
-            }while($response_status_decoded->data[0]->count != 0);
+            }while($response_status_decoded->data[0]->count != 0 && $request->type !== 'pagina');
             $advanced_configuration[0]->lastsync = $lastsync;
             $advanced_configuration[0]->save();
             return [
@@ -383,6 +514,7 @@ class DocumentController extends Controller
             }
             $response = json_encode(['cufe' => $request->cufe]);
             $response_status = NULL;
+            $request->state_document_id = 5; // Estado aceptado
             $this->document = DocumentHelper::createDocument($request, $nextConsecutive, $correlative_api, $this->company, $response, $response_status, $company->type_environment_id);
 //        } catch (\Exception $e) {
 //            DB::connection('tenant')->rollBack();
@@ -557,11 +689,11 @@ class DocumentController extends Controller
             // $correlative_api = $this->getCorrelativeInvoice(1, $request->prefix);
             $this->company = Company::query()->with('country', 'version_ubl', 'type_identity_document')->firstOrFail();
 
-            if (($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents))
-                return [
-                    'success' => false,
-                    'message' => '"Has excedido el límite de documentos de tu cuenta."'
-                ];
+            // if (($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents))
+            //     return [
+            //         'success' => false,
+            //         'message' => '"Has excedido el límite de documentos de tu cuenta."'
+            //     ];
 
             $company = ServiceTenantCompany::firstOrFail();
 
@@ -570,10 +702,29 @@ class DocumentController extends Controller
 
             $ignore_state_document_id = ($company->type_environment_id === 2 || $invoice_json !== NULL);
             $ignore_state_document_id = true;
-            if($invoice_json !== NULL)
-                $correlative_api = $invoice_json_decoded['number'];
-            else
-                $correlative_api = $this->getCorrelativeInvoice(1, $request->prefix, $ignore_state_document_id);
+
+            // Modificar la lógica para manejar edición
+            if ($request->is_edit) {
+                // Buscar el documento original
+                $originalDocument = Document::where('number', $request->number)
+                                         ->where('prefix', $request->prefix)
+                                         ->first();
+
+                if ($originalDocument) {
+                    // Modificar el prefijo del documento original agregando "B"
+                    $originalDocument->prefix = 'B' . $originalDocument->prefix;
+                    $originalDocument->save();
+
+                    // Mantener el prefijo original para el nuevo documento
+                    $correlative_api = $this->getCorrelativeInvoice(1, $request->prefix, $ignore_state_document_id);
+                }
+            } else {
+                if($invoice_json !== NULL) {
+                    $correlative_api = $invoice_json_decoded['number'];
+                } else {
+                    $correlative_api = $this->getCorrelativeInvoice(1, $request->prefix, $ignore_state_document_id);
+                }
+            }
 
             // dd($correlative_api);
             // \Log::debug($correlative_api);
@@ -592,6 +743,21 @@ class DocumentController extends Controller
                 $service_invoice = $invoice_json_decoded;
             else
                 $service_invoice = $request->service_invoice;
+
+            // Agregar cuentas bancarias si vienen en el request
+            if ($request->has('bank_accounts')) {
+                $service_invoice['bank_accounts'] = $request->bank_accounts;
+            }
+            //agregar campos personalizados para la plantilla
+            if ($request->filled('head_note')) {
+                $service_invoice['head_note'] = $request->head_note;
+            }
+            if ($request->filled('foot_note')) {
+                $service_invoice['foot_note'] = $request->foot_note;
+            }
+            // if ($request->filled('notes')) {
+            //     $service_invoice['notes'] = $request->notes;
+            // }
 
             if($invoice_json === NULL){
                 $service_invoice['number'] = $correlative_api;
@@ -851,8 +1017,8 @@ class DocumentController extends Controller
                 $nextConsecutive = FacadeDocument::nextConsecutive($resolution[0]->id);
             }
             $this->company = Company::query()->with('country', 'version_ubl', 'type_identity_document')->firstOrFail();
-            if(($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents))
-                throw new \Exception("Has excedido el límite de documentos de tu cuenta.");
+            // if(($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents))
+            //     throw new \Exception("Has excedido el límite de documentos de tu cuenta.");
             if($invoice_json !== NULL){
                 $request = new Request();
                 $request->type_document_id = $resolution[0]->id;
@@ -886,9 +1052,22 @@ class DocumentController extends Controller
                 }
                 $request->items = $service_invoice['invoice_lines'];
             }
+
+            if($response_model->ResponseDian->Envelope->Body->SendBillSyncResponse->SendBillSyncResult->IsValid == 'true') {
+                $state_document_id = self::ACCEPTED;
+            } else {
+                $state_document_id = self::REJECTED;
+            }
+
+            $request->merge(['state_document_id' => $state_document_id]);
+
+            if ($request->has('seller_id')) {
+                $request->merge(['seller_id' => $request->seller_id]);
+            }
+
             $this->document = DocumentHelper::createDocument($request, $nextConsecutive, $correlative_api, $this->company, $response, $response_status, $company->type_environment_id);
             $payments = (new DocumentHelper())->savePayments($this->document, $request->payments);
-            
+
             // Registrar asientos contables
             $this->registerAccountingSaleEntries($this->document);
             // Registrar cupón
@@ -968,89 +1147,50 @@ class DocumentController extends Controller
         }
     }
 
-    private function registerAccountingSaleEntries($document) {
-        $total = $document->total;
-        $iva = $document->total_tax;
-        $subtotal = $document->sale ;
-        
-        // $accountIdAsset = ChartOfAccount::where('code','13050501')->first();
+    private function registerAccountingSaleEntries($document)
+    {
+        try {
+            $config_accounts = AccountingChartAccountConfiguration::first();
+            $accountIdCash = ChartOfAccount::where('code','110505')->first();
+            $accountIdIncome = ChartOfAccount::where('code','413595')->first();
+            $document_type = TypeDocument::find($document->type_document_id);
+            $accountReceibableCustomer = ChartOfAccount::where('code', $config_accounts->customer_receivable_account)->first(); // cuenta clientes
+            $is_credit = $document->payment_form_id == 2 ? true : false;
 
-        $accountIdCash = ChartOfAccount::where('code','11050501')->first();
-        $accountIdIncome = ChartOfAccount::where('code','41359101')->first();
-        $taxIva = Tax::where('name','IVA5')->first();
-        if($taxIva){
-            $accountIdLiability = ChartOfAccount::where('code',$taxIva->chart_account_sale)->first();
-        }
-
-        $saleCost = AccountingChartAccountConfiguration::first();
-        if($saleCost){
-            $accountIdSaleCost = ChartOfAccount::where('code',$saleCost->sale_cost_account)->first();
-        }
-
-        $assetInventory = ChartAccountSaleConfiguration::first();
-        if($assetInventory){
-            $accountIdInventory = ChartOfAccount::where('code',$assetInventory->income_account)->first();
-        }
-        
-        // dd($accountIdCash, $accountIdIncome, $accountIdLiability,$accountIdSaleCost,$accountIdInventory);
-
-        if($accountIdCash && $accountIdIncome && $accountIdLiability){
-
-            $entry = JournalEntry::create([
-                'date' => date('Y-m-d'),
-                'journal_prefix_id' => 1,
-                'description' => 'Factura de Venta #'.$document->prefix.'-'.$document->number,
+            AccountingEntryHelper::registerEntry([
+                'prefix_id' => 1,
+                'description' => $document_type->name . ' #' . $document->prefix . '-' . $document->number,
                 'document_id' => $document->id,
-                'status' => 'posted'
+                'movements' => [
+                    [
+                        'account_id' => $is_credit ? $accountReceibableCustomer->id : $accountIdCash->id,
+                        'debit' => $document->total,
+                        'credit' => 0,
+                        'affects_balance' => true,
+                    ],
+                    [
+                        'account_id' => $accountIdIncome->id,
+                        'debit' => 0,
+                        'credit' => $document->sale,
+                        'affects_balance' => true,
+                    ],
+                ],
+                'taxes' => $document->taxes ?? [],
+                'tax_config' => [
+                    'tax_field' => 'chart_account_sale',
+                    'tax_debit' => false,
+                    'tax_credit' => true,
+                    'retention_debit' => true,
+                    'retention_credit' => false,
+                ],
             ]);
-    
-            //Caja general (contado)
-            $entry->details()->create([
-                'chart_of_account_id' => $accountIdCash->id,
-                'debit' => $total,
-                'credit' => 0,
-            ]);
-    
-            //Cuentas por cobrar (Activo)
-            // $entry->details()->create([
-            //     'chart_of_account_id' => $accountIdAsset->id,
-            //     'debit' => $total,
-            //     'credit' => 0,
-            // ]);
-    
-            //Ingresos por ventas (Ingreso)
-            $entry->details()->create([
-                'chart_of_account_id' => $accountIdIncome->id,
-                'debit' => 0,
-                'credit' => $subtotal,
-            ]);
-    
-            //IVA generado (Pasivo)
-            $entry->details()->create([
-                'chart_of_account_id' => $accountIdLiability->id,
-                'debit' => 0,
-                'credit' => $iva,
-            ]);
-
-            //Costo de ventas
-            $entry->details()->create([
-                'chart_of_account_id' => $accountIdSaleCost->id,
-                'debit' => 0,
-                'credit' => 0,
-            ]);
-
-            //Inventarios
-            $entry->details()->create([
-                'chart_of_account_id' => $accountIdInventory->id,
-                'debit' => 0,
-                'credit' => 0,
-            ]);
+        } catch (\Exception $e) {
+            \Log::error('insert Entry '.$e->getMessage());
         }
-
     }
 
     public function preeliminarview(DocumentRequest $request){
-//        \Log::debug($invoice_json);
+        //        \Log::debug($invoice_json);
         try {
             if(!$request->customer_id){
                 $customer = (object)$request->service_invoice['customer'];
@@ -1083,7 +1223,7 @@ class DocumentController extends Controller
             $ignore_state_document_id = true;
             $correlative_api = $this->getCorrelativeInvoice(1, $request->prefix, $ignore_state_document_id);
 
-//            \Log::debug($correlative_api);
+            //            \Log::debug($correlative_api);
 
             if(!is_numeric($correlative_api)){
                 return [
@@ -1091,7 +1231,7 @@ class DocumentController extends Controller
                     'message' => 'Error al obtener correlativo Api.'
                 ];
             }
-//            \Log::debug($invoice_json_decoded);
+            //            \Log::debug($invoice_json_decoded);
 
             $service_invoice = $request->service_invoice;
 
@@ -1100,9 +1240,9 @@ class DocumentController extends Controller
             $service_invoice['resolution_number'] = $request->resolution_number;
             $service_invoice['head_note'] = "V I S T A   P R E E L I M I N A R  --  V I S T A   P R E E L I M I N A R  --  V I S T A   P R E E L I M I N A R  --  V I S T A   P R E E L I M I N A R";
             $service_invoice['foot_note'] = "Modo de operación: Software Propio - by ".env('APP_NAME', 'FACTURADOR')." La presente Factura Electrónica de Venta, es un título valor de acuerdo con lo establecido en el Código de Comercio y en especial en los artículos 621,772 y 774. El Decreto 2242 del 24 de noviembre de 2015 y el Decreto Único 1074 de mayo de 2015. El presente título valor se asimila en todos sus efectos a una letra de cambio Art. 779 del Código de Comercio. Con esta el Comprador declara haber recibido real y materialmente las mercancías o prestación de servicios descritos en este título valor.";
-//\Log::debug(json_encode($service_invoice));
+            //\Log::debug(json_encode($service_invoice));
             $service_invoice['web_site'] = env('APP_NAME', 'FACTURADOR');
-//\Log::debug(json_encode($service_invoice));
+            //\Log::debug(json_encode($service_invoice));
             if(!is_null($this->company['jpg_firma_facturas']))
               if(file_exists(public_path('storage/uploads/logos/'.$this->company['jpg_firma_facturas']))){
                   $firma_facturacion = base64_encode(file_get_contents(public_path('storage/uploads/logos/'.$this->company['jpg_firma_facturas'])));
@@ -1173,12 +1313,12 @@ class DocumentController extends Controller
 
             $ch = curl_init("{$base_url}ubl2.1/invoice/preeliminar-view");
             $data_document = json_encode($service_invoice);
-//\Log::debug("{$base_url}ubl2.1/invoice");
-//\Log::debug($company->api_token);
-//\Log::debug($correlative_api);
-//\Log::debug($data_document);
-//            return $data_document;
-//return "";
+            //\Log::debug("{$base_url}ubl2.1/invoice");
+            //\Log::debug($company->api_token);
+            //\Log::debug($correlative_api);
+            //\Log::debug($data_document);
+            //            return $data_document;
+            //return "";
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
             curl_setopt($ch, CURLOPT_POSTFIELDS,($data_document));
@@ -1190,7 +1330,7 @@ class DocumentController extends Controller
                 "Authorization: Bearer {$company->api_token}"
             ));
             $response = curl_exec($ch);
-//\Log::debug($response);
+            //\Log::debug($response);
             curl_close($ch);
             $response_model = json_decode($response);
             // dd($response_model);
@@ -1228,11 +1368,11 @@ class DocumentController extends Controller
                 ->with('country', 'version_ubl', 'type_identity_document')
                 ->firstOrFail();
 
-            if (($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents))
-                return [
-                        'success' => false,
-                        'message' => '"Has excedido el límite de documentos de tu cuenta."'
-                ];
+            // if (($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents))
+            //     return [
+            //             'success' => false,
+            //             'message' => '"Has excedido el límite de documentos de tu cuenta."'
+            //     ];
 
                 // $correlative_api = $this->getCorrelativeInvoice($type_document_service);
             $company = ServiceTenantCompany::firstOrFail();
@@ -1298,13 +1438,13 @@ class DocumentController extends Controller
             ));
             $response = curl_exec($ch);
             curl_close($ch);
-//\Log::debug("{$base_url}ubl2.1/invoice");
-//\Log::debug($company->api_token);
-//\Log::debug($correlative_api);
-//\Log::debug($data_document);
-//            return $data_document;
-\Log::debug($response);
-//return "";
+            //\Log::debug("{$base_url}ubl2.1/invoice");
+            //\Log::debug($company->api_token);
+            //\Log::debug($correlative_api);
+            //\Log::debug($data_document);
+            //            return $data_document;
+            \Log::debug($response);
+            //return "";
 
             $response_model = json_decode($response);
             $zip_key = null;
@@ -1415,9 +1555,21 @@ class DocumentController extends Controller
                 ->with('country', 'version_ubl', 'type_identity_document')
                 ->firstOrFail();
 
-            if (($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents)) throw new \Exception("Has excedido el límite de documentos de tu cuenta.");
+            // if (($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents)) throw new \Exception("Has excedido el límite de documentos de tu cuenta.");
 
 
+            if($response_model->ResponseDian->Envelope->Body->SendBillSyncResponse->SendBillSyncResult->IsValid == 'true') {
+                $state_document_id = self::ACCEPTED;
+            } else {
+                $state_document_id = self::REJECTED;
+            }
+
+            $request->merge(['state_document_id' => $state_document_id]);
+
+            if ($request->has('seller_id')) {
+                $request->merge(['seller_id' => $request->seller_id]);
+            }
+            
             $this->document = DocumentHelper::createDocument($request, $nextConsecutive, $correlative_api, $this->company, $response, $response_status, $company->type_environment_id);
             $this->document->update([
                 'xml' => $this->getFileName(),
@@ -1427,6 +1579,9 @@ class DocumentController extends Controller
             // Registrar asientos contables
             if($this->document->type_document_id == 3 ){
                 $this->registerAccountingCreditNoteEntries($this->document);
+            }
+            if($this->document->type_document_id == 2 ){
+                $this->registerAccountingSaleEntries($this->document);
             }
 
         }
@@ -1490,58 +1645,44 @@ class DocumentController extends Controller
         ];
     }
 
-    private function registerAccountingCreditNoteEntries($document) {
-        $total = $document->total;
-        $iva = $document->total_tax;
-        $subtotal = $document->sale ;
-
-
-        $accountIdIncome = ChartOfAccount::where('code','41750501')->first();
-
-        $taxIva = Tax::where('name','IVA5')->first();
-        if($taxIva){
-            $accountIdLiability = ChartOfAccount::where('code',$taxIva->chart_account_return_sale)->first();
-        }
-
-        $accountConfiguration = AccountingChartAccountConfiguration::first();
-
-        if($accountConfiguration){
+    private function registerAccountingCreditNoteEntries($document)
+    {
+        try {
+            $accountConfiguration = AccountingChartAccountConfiguration::first();
             $accountIdCustomer = ChartOfAccount::where('code',$accountConfiguration->customer_returns_account)->first();
-        }
+            $accountIdIncome = ChartOfAccount::where('code','417505')->first();
+            $document_type = TypeDocument::find($document->type_document_id);
 
-        if($accountIdCustomer && $accountIdIncome && $accountIdLiability){
-
-            $entry = JournalEntry::create([
-                'date' => date('Y-m-d'),
-                'journal_prefix_id' => 1,
-                'description' => 'Nota de Crédito #'.$document->prefix.'-'.$document->number,
+            AccountingEntryHelper::registerEntry([
+                'prefix_id' => 1,
+                'description' => $document_type->name . ' #' . $document->prefix . '-' . $document->number,
                 'document_id' => $document->id,
-                'status' => 'posted'
+                'movements' => [
+                    [
+                        'account_id' => $accountIdCustomer->id,
+                        'debit' => 0,
+                        'credit' => $document->total,
+                        'affects_balance' => true,
+                    ],
+                    [
+                        'account_id' => $accountIdIncome->id,
+                        'debit' => $document->sale,
+                        'credit' => 0,
+                        'affects_balance' => true,
+                    ],
+                ],
+                'taxes' => $document->taxes ?? [],
+                'tax_config' => [
+                    'tax_field' => 'chart_account_return_sale',
+                    'tax_debit' => true,
+                    'tax_credit' => false,
+                    'retention_debit' => false,
+                    'retention_credit' => true,
+                ],
             ]);
-    
-            //ventas
-            $entry->details()->create([
-                'chart_of_account_id' => $accountIdIncome->id,
-                'debit' => $subtotal,
-                'credit' => 0,
-            ]);
-    
-            //IVA generado (Pasivo)
-            $entry->details()->create([
-                'chart_of_account_id' => $accountIdLiability->id,
-                'debit' => $iva,
-                'credit' => 0,
-            ]);
-
-            //Clientes
-            $entry->details()->create([
-                'chart_of_account_id' => $accountIdCustomer->id,
-                'debit' => 0,
-                'credit' => $total,
-            ]);
-
+        } catch (\Exception $e) {
+            \Log::error('insert Entry '.$e->getMessage());
         }
-
     }
 
     /**
@@ -1592,13 +1733,46 @@ class DocumentController extends Controller
         $number = substr($request->number_full, strpos($request->number_full, '-') + 1);
 //        \Log::debug($prefix);
 //        \Log::debug($number);
+
+        // 1. Procesar correos desde el request
+        $emails = [];
+        if (!empty($request->email)) {
+            $emails = array_merge($emails, explode(';', $request->email));
+        }
+        if (!empty($request->additional_emails)) {
+            $emails = array_merge($emails, explode(';', $request->additional_emails));
+        }
+        // Limpiar: quitar espacios, correos vacíos y duplicados
+        $emails = array_unique(array_filter(array_map('trim', $emails)));
+        // Filtrar correos válidos
+        $emails = array_filter($emails, function ($email) {
+            return filter_var($email, FILTER_VALIDATE_EMAIL);
+        });
+
+        if (empty($emails)) {
+            return [
+                'success' => false,
+                'message' => 'Debe ingresar al menos un correo válido en los campos de correo.',
+            ];
+        }
+
+        // 2. Construir email_cc_list con todos los correos válidos
+        $email_cc_list = [];
+        foreach ($emails as $email) {
+            $email_cc_list[] = ['email' => $email];
+        }
+
+        // Agregar correo de la sucursal si es válido y no está ya en la lista
+        if (!empty($sucursal->email) && filter_var($sucursal->email, FILTER_VALIDATE_EMAIL)) {
+            if (!in_array($sucursal->email, $emails)) {
+                $email_cc_list[] = ['email' => $sucursal->email];
+            }
+        }
+
         $send= (object)[
             'prefix' => $prefix,
             'number' => $number,
-            'alternate_email' => $request->email,
-            'email_cc_list' => [
-                ['email' => $sucursal->email]
-            ]
+            'email_cc_list' => $email_cc_list
         ];
     //    \Log::debug(json_encode($send));
         $data_send = json_encode($send);
@@ -1716,42 +1890,65 @@ class DocumentController extends Controller
 
     public function getCorrelativeInvoice($type_service, $prefix = null, $ignore_state_document_id = false)
     {
+        try {
+            if ($prefix) {
+                $resolution = TypeDocument::where('prefix', $prefix)
+                    ->where('code', $type_service)
+                    ->orderBy('resolution_date', 'desc')
+                    ->first();
 
-        $company = ServiceTenantCompany::firstOrFail();
+                if ($resolution) {
+                    $next_number = $resolution->generated + 1;
 
-        // $base_url = config('tenant.service_fact');
-        // if($prefix)
-        //     $ch2 = curl_init("{$base_url}ubl2.1/invoice/current_number/{$type_service}/{$prefix}");
-        // else
-        //     $ch2 = curl_init("{$base_url}ubl2.1/invoice/current_number/{$type_service}");
+                    $document = Document::where('prefix', $prefix)
+                        ->where('number', $next_number)
+                        ->first();
 
-        $url = $this->getBaseUrlCorrelativeInvoice($type_service, $prefix, $ignore_state_document_id);
-        $ch2 = curl_init($url);
-        // dd($url, $ch2);
+                    if ($document) {
+                        if ($document->state_document_id == 6) {
+                            $document->delete();
+                            return $next_number;
+                        }
+                    } else {
+                        return $next_number;
+                    }
+                }
+            }
 
-        curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch2, CURLOPT_CUSTOMREQUEST, "GET");
-        curl_setopt($ch2, CURLOPT_SSL_VERIFYHOST, 0);
-        curl_setopt($ch2, CURLOPT_SSL_VERIFYPEER, 0);
-        curl_setopt($ch2, CURLOPT_HTTPHEADER, array(
-            'Content-Type: application/json',
-            'Accept: application/json',
-            "Authorization: Bearer {$company->api_token}"
-        ));
-        $response_data = curl_exec($ch2);
-        $err = curl_error($ch2);
-        curl_close($ch2);
-        $response_encode = json_decode($response_data);
-        if($err){
-            return null;
-        }
-        else {
-            // error del api y la respuesta es una excepcion
-            if(isset($response_encode->exception)) {
+            $company = ServiceTenantCompany::firstOrFail();
+
+            $url = $this->getBaseUrlCorrelativeInvoice($type_service, $prefix, $ignore_state_document_id);
+            $ch2 = curl_init($url);
+
+            curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch2, CURLOPT_CUSTOMREQUEST, "GET");
+            curl_setopt($ch2, CURLOPT_SSL_VERIFYHOST, 0);
+            curl_setopt($ch2, CURLOPT_SSL_VERIFYPEER, 0);
+            curl_setopt($ch2, CURLOPT_HTTPHEADER, array(
+                'Content-Type: application/json',
+                'Accept: application/json',
+                "Authorization: Bearer {$company->api_token}"
+            ));
+
+            $response_data = curl_exec($ch2);
+            $err = curl_error($ch2);
+            curl_close($ch2);
+
+            if ($err) {
+                return null;
+            }
+
+            $response_encode = json_decode($response_data);
+
+            if (isset($response_encode->exception)) {
                 \Log::error($response_encode->trace);
                 throw new \Exception($response_encode->message);
             }
+
             return $response_encode->number;
+
+        } catch (\Exception $e) {
+            return null;
         }
     }
 
@@ -1805,22 +2002,36 @@ class DocumentController extends Controller
     public function tables()
     {
         $customers = $this->table('customers');
-        // $customers = Client::all();
         $type_documents = TypeDocument::query()
-                            ->get()
-                            ->each(function($typeDocument) {
-                                $typeDocument->alert_range = (($typeDocument->to - 100) < (Document::query()
-                                    ->hasPrefix($typeDocument->prefix)
-                                    ->whereBetween('number', [$typeDocument->from, $typeDocument->to])
-                                    ->max('number') ?? $typeDocument->from));
-                                $typeDocument->alert_date = ($typeDocument->resolution_date_end == null) ? false : Carbon::parse($typeDocument->resolution_date_end)->subMonth(1)->lt(Carbon::now());
-                            });
+            ->get()
+            ->each(function($typeDocument) {
+                $typeDocument->alert_range = (($typeDocument->to - 100) < (Document::query()
+                    ->hasPrefix($typeDocument->prefix)
+                    ->whereBetween('number', [$typeDocument->from, $typeDocument->to])
+                    ->max('number') ?? $typeDocument->from));
+                $typeDocument->alert_date = ($typeDocument->resolution_date_end == null) ? false : Carbon::parse($typeDocument->resolution_date_end)->subMonth(1)->lt(Carbon::now());
+            });
         $payment_methods = PaymentMethod::all();
         $payment_forms = PaymentForm::all();
         $type_invoices = TypeInvoice::all();
         $currencies = Currency::all();
         $taxes = $this->table('taxes');
-        $resolutions = TypeDocument::select('id','prefix', 'resolution_number', 'from', 'to', 'description', 'resolution_date_end')->whereNotNull('resolution_number')->whereIn('code', [1,2,3])->where('resolution_date_end', '>', Carbon::now())->get();
+
+        $establishment_id = auth()->user()->establishment_id;
+
+        $resolutions = TypeDocument::select('id','prefix', 'resolution_number', 'from', 'to', 'description', 'resolution_date_end', 'show_in_establishments', 'establishment_ids')
+            ->whereNotNull('resolution_number')
+            ->whereIn('code', [1,2,3])
+            ->where('resolution_date_end', '>', Carbon::now())
+            ->where(function($query) use ($establishment_id) {
+                $query->where('show_in_establishments', 'all')
+                    ->orWhere(function($q) use ($establishment_id) {
+                        $q->where('show_in_establishments', 'custom')
+                            ->whereJsonContains('establishment_ids', $establishment_id);
+                    });
+            })
+            ->get();
+
         return compact('customers','payment_methods','payment_forms','type_invoices','currencies', 'taxes', 'type_documents', 'resolutions');
     }
 
@@ -1917,8 +2128,8 @@ class DocumentController extends Controller
             $establishment_id = auth()->user()->establishment_id;
             $warehouse = ModuleWarehouse::where('establishment_id', $establishment_id)->first();
 
-            $items_u = ItemP::whereNotItemsAiu()->whereWarehouse()->whereIsActive()->whereNotIsSet()->orderBy('description')->take(20)->get();
-            $items_s = ItemP::whereNotItemsAiu()->where('unit_type_id','ZZ')->whereIsActive()->orderBy('description')->take(10)->get();
+            $items_u = ItemP::whereNotItemsAiu()->whereWarehouse()->whereIsActive()->whereNotIsSet()->orderBy('internal_id')->take(20)->get();
+            $items_s = ItemP::whereNotItemsAiu()->where('unit_type_id','ZZ')->whereIsActive()->orderBy('internal_id')->take(10)->get();
 
            // $items_aiu = ItemP::whereIn('internal_id', ['aiu00001', 'aiu00002', 'aiu00003'])->get();
 
@@ -1995,6 +2206,7 @@ class DocumentController extends Controller
                     'series_enabled' => (bool) $row->series_enabled,
                     'unit_type' => $row->unit_type,
                     'tax' => $row->tax,
+                    'active' => (bool) $row->active,
                 ];
             });
         }
@@ -2073,6 +2285,7 @@ class DocumentController extends Controller
                     'series_enabled' => (bool) $row->series_enabled,
                     'unit_type' => $row->unit_type,
                     'tax' => $row->tax,
+                    'active' => (bool) $row->active,
                 ];
             });
         }
@@ -2179,6 +2392,7 @@ class DocumentController extends Controller
                     'unit_type' => $row->unit_type,
                     'tax' => $row->tax,
                     'is_set' => (bool) $row->is_set,
+                    'active' => (bool) $row->active,
                 ];
             });
 
@@ -2266,7 +2480,7 @@ class DocumentController extends Controller
                 'message' => 'Cupón no encontrado'
             ], 404);
         }
-        
+
         $coupon = ConfigurationPurchaseCoupon::where('id',$purchaseCoupon->configuration_purchase_coupon_id)->where('status',1)->first();
 
         if (!$coupon) {
@@ -2286,6 +2500,7 @@ class DocumentController extends Controller
             'customer_number' => $purchaseCoupon->customer_number,
             'customer_phone' => $purchaseCoupon->customer_phone,
             'customer_email' => $purchaseCoupon->customer_email,
+            'document_amount' => $purchaseCoupon->document_amount,
         ];
 
         $html = View::make('factcolombia1::coupon.coupon', $data)->render();
@@ -2421,6 +2636,7 @@ class DocumentController extends Controller
                 'series_enabled' => (bool) $row->series_enabled,
                 'unit_type' => $row->unit_type,
                 'tax' => $row->tax,
+                'active' => (bool) $row->active,
 
             ];
         });
@@ -2484,7 +2700,15 @@ class DocumentController extends Controller
             $service_invoice['number'] = $correlative_api;
             $service_invoice['prefix'] = $request->prefix;
             $service_invoice['resolution_number'] = $request->resolution_number;
-
+            if ($request->filled('head_note')) {
+                $service_invoice['head_note'] = $request->head_note;
+            }
+            if ($request->filled('foot_note')) {
+                $service_invoice['foot_note'] = $request->foot_note;
+            }
+            // if ($request->filled('notes')) {
+            //     $service_invoice['notes'] = $request->notes;
+            // }
             if ($request->order_reference)
             {
                 if (isset($request['order_reference']['issue_date_order']) && isset($request['order_reference']['id_order']))
@@ -2657,8 +2881,14 @@ class DocumentController extends Controller
                 ->with('country', 'version_ubl', 'type_identity_document')
                 ->firstOrFail();
 
-            if (($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents)) throw new \Exception("Has excedido el límite de documentos de tu cuenta.");
+            // if (($this->company->limit_documents != 0) && (Document::count() >= $this->company->limit_documents)) throw new \Exception("Has excedido el límite de documentos de tu cuenta.");
+            if($response_model->ResponseDian->Envelope->Body->SendBillSyncResponse->SendBillSyncResult->IsValid == 'true') {
+                $state_document_id = self::ACCEPTED;
+            } else {
+                $state_document_id = self::REJECTED;
+            }
 
+            $request->merge(['state_document_id' => $state_document_id]);
             $this->document = DocumentHelper::createDocument($request, $nextConsecutive, $correlative_api, $this->company, $response, $response_status, $company->type_environment_id);
             $payments = (new DocumentHelper())->savePayments($this->document, $request->payments);
 

@@ -1,6 +1,6 @@
 <template>
-<div>
-    <header class="page-header pr-0">
+<div class="pos" :class="{ 'payment-active': is_payment }">
+    <header class="page-header pr-0" v-show="!is_payment">
         <!-- <h2 class="text-sm">POS</h2>
       <div class="right-wrapper pull-right">
         <h2 class="text-sm pr-5">T/C 3.321</h2>
@@ -8,25 +8,60 @@
       </div> -->
         <div class="row">
             <div class="col-md-6">
-                <!-- <h2 class="text-sm">POS</h2> -->
-                <h2>
-                    <el-switch v-model="search_item_by_barcode" active-text="Buscar por código de barras" @change="changeSearchItemBarcode"></el-switch>
-                </h2>
-                <template v-if="!electronic">
-                    <h2>
+                <div class="header-controls-row d-flex align-items-center h-100 my-0">
+                    <el-switch v-model="search_item_by_barcode" active-text="Buscar por código de barras" @change="changeSearchItemBarcode" class="el-switch el-switch-barcode"></el-switch>
+                    <template v-if="!electronic">
                         <el-switch v-model="type_refund" active-text="Devolución"></el-switch>
-                    </h2>
-                </template>
+                    </template>
+                    <div class="balanza-btn-group">
+                        <button
+                            v-if="!scale.connected"
+                            size="small"
+                            class="el-button btn-balanza el-button--primary el-button--small d-flex align-items-center"
+                            type="primary"
+                            :loading="scale.connecting"
+                            @click="connectScale"
+                        >
+                            <i class="fa fa-balance-scale" style="margin-right:6px;"></i>
+                            <span class="balanza-btn-text">Conectar balanza</span>
+                            <el-tooltip
+                                effect="dark"
+                                content="Para establecer la conexión, asegúrese de que la balanza esté conectada a un puerto COM. Si no aparece el puerto, instale el driver correspondiente al modelo de su balanza."
+                                placement="top"
+                            >
+                                <i class="fa fa-info-circle balanza-tooltip"></i>
+                            </el-tooltip>
+                        </button>
+                        <button
+                            v-if="scale.connected"
+                            size="small"
+                            type="danger"
+                            class="el-button btn-balanza el-button--primary el-button--small d-flex align-items-center"
+                            @click="disconnectScale"
+                            :loading="scale.connecting"
+                        >
+                            <i class="fa fa-plug" style="margin-right:6px;"></i>
+                            <span class="balanza-btn-text">Desconectar balanza</span>
+                            <el-tooltip
+                                effect="dark"
+                                content="Para establecer la conexión, asegúrese de que la balanza esté conectada a un puerto COM. Si no aparece el puerto, instale el driver correspondiente al modelo de su balanza."
+                                placement="top"
+                            >
+                                <i class="fa fa-info-circle balanza-tooltip"></i>
+                            </el-tooltip>
+                        </button>                        
+                    </div>
+                </div>
             </div>
             <div class="col-md-4">
-                <h2> <button type="button" @click="place = 'cat'" class="btn btn-custom btn-sm  mt-2 mr-2"><i class="fa fa-border-all"></i></button> </h2>
-                <h2> <button type="button" :disabled="place == 'cat2'" @click="setView" class="btn btn-custom btn-sm  mt-2 mr-2"><i class="fa fa-bars"></i></button> </h2>
-                <h2> <button type="button" :disabled="place== 'cat'" @click="back()" class="btn btn-custom btn-sm  mt-2 mr-2"><i class="fa fa-undo"></i></button> </h2>
+                <h2 class="px-2"> <button type="button" @click="place = 'cat'" class="btn btn-custom btn-sm m-auto"><i class="fa fa-border-all"></i></button> </h2>
+                <h2 class="px-2"> <button type="button" :disabled="place == 'cat2'" @click="setView" class="btn btn-custom btn-sm m-auto"><i class="fa fa-bars"></i></button> </h2>
+                <h2 class="px-2"> <button type="button" :disabled="place== 'cat'" @click="back()" class="btn btn-custom btn-sm m-auto"><i class="fa fa-undo"></i></button> </h2>
             </div>
-            <div class="col-md-2">
-                <div class="right-wrapper">
+            <div class="col-md-2 d-flex align-items-center justify-content-end">
+                <div class="right-wrapper mr-2">
                     <!-- <h2 class="text-sm pr-5">T/C  {{form.exchange_rate_sale}}</h2> -->
-                    <h2 class="text-sm  pull-right">{{user.name}}</h2>
+                    <p class="pull-right m-0">{{user.name}}</p>
                 </div>
             </div>
         </div>
@@ -63,17 +98,24 @@
                     </div>
                 </div>
 
-                <div v-if="place == 'prod' || place == 'cat2'" class="row pos-items">
-                    <div v-for="(item,index) in items" v-bind:class="classObjectCol" :key="index">
-                        <section class="card ">
+                <div v-if="place == 'prod' || place == 'cat2'" class="product-pos-container" :class="gridLayoutClass">
+                    <div v-for="(item,index) in items" :key="index">
+                        <section class="card product-item">
                             <div class="card-body pointer px-2 pt-2" @click="clickAddItem(item,index)">
                                 <el-tooltip class="item" effect="dark" :content="item.name" placement="bottom-end">
                                     <p class="font-weight-semibold mb-0 truncate-text">
+                                        <!-- <span
+                                            class="favorite-star"
+                                            @click.stop="toggleFavorite(item)"
+                                            :title="isFavorite(item) ? 'Quitar de favoritos' : 'Marcar como favorito'"
+                                        >
+                                            <i :class="isFavorite(item) ? 'fas fa-star text-warning' : 'far fa-star text-secondary'"></i>
+                                        </span> -->
                                         {{item.name}}
                                     </p>
                                 </el-tooltip>
-                                <!-- <p class="font-weight-semibold mb-0" v-if="item.name.length < 50">{{item.name}}</p> -->
-                                <img :src="item.image_url" class="img-thumbail img-custom" />
+                                <!-- Mostrar imagen solo si la pantalla es >= 600px -->
+                                <img v-if="!hideProductImage" :src="item.image_url" class="img-thumbail img-custom product-image-responsive" />
                                 <p class="text-muted font-weight-lighter mb-0">
                                     <small>{{item.internal_id}}</small>
                                     <small style="float: right; clear">{{item.lot_code ? 'Lote:' + item.lot_code : ''}}   {{item.date_of_due ? 'FV:' + item.date_of_due : ''}}</small>
@@ -83,46 +125,57 @@
                                     </template>
                                 </p>
                             </div>
-                            <div class="card-footer pointer text-center bg-primary">
+                            <div class="card-footer pointer text-center">
                                 <template v-if="!item.edit_unit_price">
-                                    <h5 class="font-weight-semibold text-right text-white">
+                                    <h5 class="font-weight-semibold text-center">                                        
+                                        {{currency.symbol}} 
+                                        <template v-if="!advanced_configuration.item_tax_included">
+                                            {{ getFormatDecimal(item.sale_unit_price) }}
+                                        </template>
+                                        <template v-else>
+                                            {{ getFormatDecimal(item.sale_unit_price_with_tax) }}
+                                        </template>
                                         <button
                                             type="button"
-                                            class="btn btn-xs btn-primary-pos"
+                                            class="btn btn-xs btn-primary-pos edit-price"
                                             @click="clickOpenInputEditUP(index)">
-                                            <span style="font-size:16px;">&#9998;</span>
+                                            <span>&#9998;</span>
                                         </button>
-                                        {{currency.symbol}} {{ getFormatDecimal(item.sale_unit_price_with_tax) }}
                                     </h5>
                                 </template>
                                 <template v-else>
-                                    <el-input min="0" v-model="item.edit_sale_unit_price" class="mt-3 mb-3" size="mini">
+                                    <el-input
+                                        min="0"
+                                        v-model="items[index].edit_sale_unit_price"
+                                        class="mt-3 mb-3"
+                                        size="mini"
+                                    >
                                         <el-button slot="append" icon="el-icon-check" type="primary" @click="clickEditUnitPriceItem(index)"></el-button>
-                                        <el-button slot="append" icon="el-icon-close" type="danger" @click="clickCancelUnitPriceItem(index)"></el-button>
+                                        <el-button class="second-buton btn-close-pos" slot="append" icon="el-icon-close" @click="clickCancelUnitPriceItem(index)"></el-button>
                                     </el-input>
                                 </template>
                             </div>
 
-                            <div v-if="configuration.options_pos" class=" card-footer  bg-primary btn-group flex-wrap" style="width:100% !important; padding:0 !important; ">
-                                <el-row style="width:100%">
-                                    <el-col :span="6">
+                            <div v-if="configuration.options_pos" class="card-footer btn-group flex-wrap configuration-options">
+                                <el-row style="width:100%; gap: 5px;"">
+                                    <el-col :span="4">
                                         <el-tooltip class="item" effect="dark" content="Visualizar stock" placement="bottom-end">
                                             <button type="button" style="width:100% !important;" class="btn btn-xs btn-primary-pos" @click="clickWarehouseDetail(item)">
                                                 <i class="fa fa-search"></i>
                                             </button>
                                         </el-tooltip>
                                     </el-col>
-                                    <el-col :span="6">
+                                    <el-col :span="4">
                                         <el-tooltip class="item" effect="dark" content="Visualizar historial de ventas del producto (precio venta) y cliente" placement="bottom-end">
                                             <button type="button" style="width:100% !important;" class="btn btn-xs btn-primary-pos" @click="clickHistorySales(item.item_id)"><i class="fa fa-list"></i></button>
                                         </el-tooltip>
                                     </el-col>
-                                    <el-col :span="6">
+                                    <el-col :span="4">
                                         <el-tooltip class="item" effect="dark" content="Visualizar historial de compras del producto (precio compra)" placement="bottom-end">
                                             <button type="button" style="width:100% !important;" class="btn btn-xs btn-primary-pos" @click="clickHistoryPurchases(item.item_id)"><i class="fas fa-cart-plus"></i></button>
                                         </el-tooltip>
                                     </el-col>
-                                    <el-col :span="6">
+                                    <el-col :span="4">
                                         <el-tooltip class="item" effect="dark" content="Visualizar lista de precios disponibles" placement="bottom-end">
                                             <el-popover placement="top" title="Precios" width="400" trigger="click">
                                                 <el-table v-if="item.item_unit_types" :data="item.item_unit_types">
@@ -145,6 +198,16 @@
                                                 </el-table>
                                                 <button type="button" slot="reference" style="width:100% !important;" class="btn btn-xs btn-primary-pos"><i class="fas fa-money-bill-alt"></i></button>
                                             </el-popover>
+                                        </el-tooltip>
+                                    </el-col>
+                                    <el-col :span="4">
+                                        <el-tooltip class="item" effect="dark" :content="isFavorite(item) ? 'Quitar de favoritos' : 'Marcar como favorito'" placement="bottom-end">
+                                            <button type="button"
+                                                style="width:100% !important;"
+                                                class="btn btn-xs btn-primary-pos"
+                                                @click.stop="toggleFavorite(item)">
+                                                <i :class="isFavorite(item) ? 'fas fa-star text-warning' : 'far fa-star text-secondary'"></i>
+                                            </button>
                                         </el-tooltip>
                                     </el-col>
                                 </el-row>
@@ -207,55 +270,88 @@
                     </div>
                 </div>
             </div>
-            <div class="col-lg-4 col-md-6 bg-white m-0 p-0" style="height: calc(100vh - 110px)">
-                <div class="h-75 bg-light" style="overflow-y: auto">
-                    <div class="row py-3 border-bottom m-0 p-0">
-                        <div class="col-8">
-                            <el-select ref="select_person" v-model="form.customer_id" filterable placeholder="Cliente" @change="changeCustomer" @keyup.native="keyupCustomer" @keyup.enter.native="keyupEnterCustomer">
-                                <el-option v-for="option in all_customers" :key="option.id" :label="option.description" :value="option.id"></el-option>
-                            </el-select>
-                        </div>
-                        <div class="col-4">
-                            <div class="btn-group d-flex" role="group">
-                                <a class="btn btn-sm btn-default w-100" @click.prevent="showDialogNewPerson = true">
-                                    <i class="fas fa-plus fa-wf"></i>
-                                </a>
-                                <a class="btn btn-sm btn-default w-100" @click="clickDeleteCustomer">
-                                    <i class="fas fa-trash fa-wf"></i>
-                                </a>
-                                <!-- <a class="btn btn-sm btn-default w-100" @click="selectCurrencyType"> -->
-                                <!-- <template v-if="form.currency_id == 'PEN'">
-                        <strong>S/</strong>
-                      </template>
-                      <template v-else>
-                        <strong>$</strong>
-                      </template> -->
-                                <!-- <i class="fa fa-usd" aria-hidden="true"></i> -->
-                                <!-- </a> -->
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row py-1 border-bottom m-0 p-0">
-                        <div class="col-12">
-                            <table class="table table-sm table-borderless mb-0">
-                                <tr v-for="(item,index) in form.items" :key="index">
-                                    <td width="20%">
-                                        <el-input v-model="item.item.aux_quantity" :readonly="item.item.calculate_quantity" class @input="clickAddItem(item,index,true)"></el-input>
+            <div class="col-lg-4 col-md-6 bg-white m-0 p-0 order-list" style="height: calc(100vh - 110px)">
+                <div class="pt-1" style="overflow-y: auto; height: 60%;">                    
+                    <div class="row py-1 m-0 p-0">
+                        <div class="col-12 px-2">
+                            <!-- Responsive tabla SOLO en móvil -->
+                            <table v-show="isMobile" class="table table-sm table-borderless mb-0 table-pos-products">
+                                <tr v-for="(item,index) in form.items" :key="index" class="pos-product-row">
+                                    <td width="20%" class="td-main">
+                                        <div class="row-main">
+                                            <div style="width: 45%;">
+                                                <div class="product-info">
+                                                    <div class="product-name">
+                                                        <span v-html="clearText(item.item.name)"></span>
+                                                    </div>
+                                                    <div class="product-details">
+                                                        <small v-if="item.unit_type">{{ item.unit_type.name }}</small>
+                                                        <template v-if="item.item.lot_code || item.item.date_of_due">
+                                                            <small class="text-muted lote-info">
+                                                                <span v-if="item.item.lot_code">Lote: {{item.item.lot_code}}</span>
+                                                                <span v-if="item.item.lot_code && item.item.date_of_due"> - </span>
+                                                                <span v-if="item.item.date_of_due">FV: {{item.item.date_of_due}}</span>
+                                                            </small>
+                                                        </template>
+                                                        <small> {{nameSets(item.item_id)}} </small>
+                                                    </div>
+                                                </div>                                                
+                                            </div>
+                                            <div class="row-secondary">
+                                                <el-input v-model="item.item.aux_quantity" :readonly="scale.connected" class="input-qty" @focus="startContinuousWeight(item, index)" @blur="stopContinuousWeight(item, index)" @change="onQuantityInput(item, index)" @keyup.enter="onEnterQuantity(item, index)"></el-input>
+                                                <el-input v-model="item.sale_unit_price_with_tax" class="input-price input-text-right" @input="clickAddItem(item,index,true)" :readonly="item.item.calculate_quantity"></el-input>
+                                                <span class="input-text-right">
+                                                  {{currency.symbol}} {{ item.total }}
+                                                </span>
+                                                <a class="btn btn-sm btn-default btn-trash text-danger" @click="clickDeleteItem(index)">
+                                                    <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-trash text-danger"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                                                </a>
+                                            </div>
+                                        </div>                                        
                                     </td>
+                                </tr>
+                                <!-- Refund items (puedes adaptar igual si lo necesitas) -->
+                                <tr v-for="(item,index) in items_refund" :key="index + 'R'" class="pos-product-row">
+                                    <td class="td-main">
+                                        <div class="row-main">
+                                            <span v-if="item.unit_type" class="pos-list-label">{{ item.unit_type.name }}</span>
+                                            <el-input :value=" '-' +item.quantity" :readonly="true" class="input-qty"></el-input>
+                                            <div class="product-name">
+                                                {{item.item.name}}
+                                                <small> {{nameSets(item.item_id)}} </small>
+                                            </div>
+                                        </div>
+                                        <div class="row-secondary">
+                                            <span>{{currency.symbol}}</span>
+                                            <el-input v-model="item.sale_unit_price_with_tax" class="input-price" @input="clickAddItem(item,index,true)" :readonly="item.item.calculate_quantity"></el-input>
+                                            <el-input :value="'-' + item.total" :readonly="true" class="input-total"></el-input>
+                                            <a class="btn btn-sm btn-default btn-trash" @click="clickDeleteItemRefund(index)">
+                                                <i class="fas fa-trash fa-wf"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                            <!-- Tabla tradicional SOLO en escritorio -->
+                            <table v-show="!isMobile" class="table table-sm table-borderless mb-0">
+                                <tr v-for="(item,index) in form.items" :key="index" class="pos-product-row">
                                     <td width="20%">
-                                        <p class="m-0" style="line-height: 1em;">
+                                        <p class="m-0 product-name-desktop" style="line-height: 1em;">
                                             <span v-html="clearText(item.item.name)"></span><br>
                                             <small v-if="item.unit_type">{{ item.unit_type.name }}</small>
                                             <template v-if="item.item.lot_code || item.item.date_of_due">
-                                                <br>
-                                                <small class="text-muted">
-                                                    {{item.item.lot_code ? 'Lote:' + item.item.lot_code : ''}}<br>
-                                                    {{item.item.date_of_due ? 'FV: ' + item.item.date_of_due : ''}}
+                                                <small class="text-muted lote-info">
+                                                    <span v-if="item.item.lot_code">Lote: {{item.item.lot_code}}</span>
+                                                    <span v-if="item.item.lot_code && item.item.date_of_due"> - </span>
+                                                    <span v-if="item.item.date_of_due">FV: {{item.item.date_of_due}}</span>
                                                 </small>
                                             </template>
                                         </p>
                                         <small> {{nameSets(item.item_id)}} </small>
                                     </td>
+                                    <td width="20%">
+                                        <el-input v-model="item.item.aux_quantity" :readonly="scale.connected" class="input-qty" @focus="startContinuousWeight(item, index)" @blur="stopContinuousWeight(item, index)" @change="onQuantityInput(item, index)" @keyup.enter="onEnterQuantity(item, index)"></el-input>
+                                    </td>                                    
                                     <td width="20%">
                                         <p class="font-weight-semibold m-0 text-center">
                                             <el-input v-model="item.sale_unit_price_with_tax" class="input-text-right" @input="clickAddItem(item,index,true)" :readonly="item.item.calculate_quantity">
@@ -310,20 +406,46 @@
                         </div>
                     </div>
                 </div>
-                <div class="h-25 bg-light" style="overflow-y: auto">
-                    <div class="row border-top bg-light m-0 p-0 h-50 d-flex align-items-right pr-3 pt-2">
+                <div class="bg-light border-top-dashed" style="overflow-y: auto; height: 40%;">
+                    <div class="row py-3 border-bottom m-0 p-0">
+                        <div class="col-8">
+                            <el-select ref="select_person" v-model="form.customer_id" filterable placeholder="Cliente" @change="changeCustomer" @keyup.native="keyupCustomer" @keyup.enter.native="keyupEnterCustomer">
+                                <el-option v-for="option in all_customers" :key="option.id" :label="option.description" :value="option.id"></el-option>
+                            </el-select>
+                        </div>
+                        <div class="col-4">
+                            <div class="btn-group d-flex" role="group">
+                                <a class="btn btn-sm btn-default w-100" @click.prevent="showDialogNewPerson = true">
+                                    <i class="fas fa-plus fa-wf"></i>
+                                </a>
+                                <a class="btn btn-sm btn-default w-100" @click="clickDeleteCustomer">
+                                    <i class="fas fa-trash fa-wf"></i>
+                                </a>
+                                <!-- <a class="btn btn-sm btn-default w-100" @click="selectCurrencyType"> -->
+                                <!-- <template v-if="form.currency_id == 'PEN'">
+                        <strong>S/</strong>
+                      </template>
+                      <template v-else>
+                        <strong>$</strong>
+                      </template> -->
+                                <!-- <i class="fa fa-usd" aria-hidden="true"></i> -->
+                                <!-- </a> -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row bg-light m-0 p-0 h-50 d-flex align-items-right pr-3 pt-2 h-auto">
 
                         <div class="col-md-12" style="display: flex; flex-direction: column; align-items: flex-end;">
                             <table>
                                 <tr class="font-weight-semibold  m-0" v-if="form.sale > 0">
                                     <td class="font-weight-semibold">SUBTOTAL</td>
                                     <td class="font-weight-semibold">:</td>
-                                    <td class="text-right text-blue">{{currency.symbol}} {{ getFormatDecimal(form.sale) }}</td>
+                                    <td class="text-right text-blue">{{ form.sale | numberFormat }}</td>
                                 </tr>
                                 <tr class="font-weight-semibold  m-0" v-if="form.total_discount > 0">
                                     <td class="font-weight-semibold">TOTAL DESCUENTO (-)</td>
                                     <td class="font-weight-semibold">:</td>
-                                    <td class="text-right text-blue">{{currency.symbol}} {{ getFormatDecimal(form.total_discount) }}</td>
+                                    <td class="text-right text-blue">{{ form.total_discount | numberFormat }}</td>
                                 </tr>
                                 <template v-for="(tax, index) in form.taxes">
                                     <tr v-if="((tax.total > 0) && (!tax.is_retention))" :key="index" class="font-weight-semibold  m-0">
@@ -331,25 +453,33 @@
                                             {{tax.name}}[+]
                                         </td>
                                         <td class="font-weight-semibold">:</td>
-                                        <td class="text-right text-blue">{{currency.symbol}} {{ getFormatDecimal(tax.total) }}</td>
+                                        <td class="text-right text-blue">{{ tax.total | numberFormat }}</td>
                                     </tr>
                                 </template>
                                 <tr class="font-weight-semibold  m-0" v-if="form.subtotal > 0">
                                     <td class="font-weight-semibold">TOTAL VENTA</td>
                                     <td class="font-weight-semibold">:</td>
-                                    <td class="text-right text-blue">{{currency.symbol}} {{ getFormatDecimal(form.subtotal) }}</td>
+                                    <td class="text-right text-blue">{{ form.subtotal | numberFormat }}</td>
                                 </tr>
                             </table>
                         </div>
                     </div>
-                    <div class="row text-white m-0 p-0 h-50 d-flex align-items-center" @click="clickPayment" v-bind:class="[form.total > 0 ? 'bg-info pointer' : 'bg-dark']">
-                        <div class="col-6 text-center h5">
+                    <div class="px-3 h-25 mt-2">
+                        <button
+                        type="button"
+                        class="row text-white m-0 p-0 h-100 d-flex align-items-center border-0 payment-btn"
+                        @click="clickPayment"
+                        :disabled="form.total <= 0"
+                        :class="[form.total > 0 ? 'btn-warning pointer' : 'bg-dark']"
+                    >
+                        <div class="col-6 text-center h5 m-0 p-0 text-white">
                             <i class="fa fa-chevron-circle-right"></i>
                             <span class="font-weight-semibold">PAGO</span>
                         </div>
                         <div class="col-6 text-center">
-                            <h5 class="font-weight-semibold h5">{{currency.symbol}} {{ getFormatDecimal(form.total) }}</h5>
+                            <h5 class="font-weight-semibold h5">{{ form.total | numberFormat }}</h5>
                         </div>
+                    </button>
                     </div>
                 </div>
             </div>
@@ -395,6 +525,18 @@
 
 <style>
 /* The heart of the matter */
+.favorite-star .fa-star,
+.btn-primary-pos .fa-star {
+    color: #fff !important;
+}
+.favorite-star .fa-star.text-warning,
+.btn-primary-pos .fa-star.text-warning {
+    color: #ffc107 !important;
+}
+.favorite-star .fa-star.text-secondary,
+.btn-primary-pos .fa-star.text-secondary {
+    color: #fff !important;
+}
 .testimonial-group>.row {
     overflow-x: auto;
     white-space: nowrap;
@@ -462,6 +604,167 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
+.lote-info {
+  display: block;
+  font-size: 11px !important;
+  color: #888 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1.1 !important;
+  white-space: normal !important;
+}
+
+.product-pos-container {
+    display: grid;
+}
+
+.product-pos-container.default {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    gap: 1rem;
+}
+
+.product-pos-container.comfortable {
+    grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+    gap: 0.9rem;
+}
+
+.product-pos-container.compact {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.5rem;
+}
+
+.product-pos-container.stacked {
+    grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+    gap: 0.25rem;
+}
+
+/* --- INICIO: Responsive para listado de items --- */
+@media (max-width: 1000px) {
+  .row.pos-items > div[class^="col-"], 
+  .row.pos-items > div[class*=" col-"] {
+    flex: 0 0 100%;
+    max-width: 100%;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  .row.pos-items {
+    flex-direction: column;
+    display: flex;
+  }
+}
+@media (max-width: 1800px) {
+  /* Estilos para la tabla de productos seleccionados en modo responsive */
+  .table-pos-products .pos-product-row {
+    display: block;
+    border-bottom: 1px dashed var(--black-highlight);
+    margin-bottom: 2px;
+    padding-bottom: 2px;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .table-pos-products .td-main {
+    display: block;
+    width: 100% !important;
+    padding: 4px 2px !important;
+    box-sizing: border-box;
+    white-space: nowrap;
+  }
+  .table-pos-products .row-main {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 8px;
+    min-width: fit-content;
+  }
+  .table-pos-products .input-qty {
+    flex: 0 0 60px;
+    max-width: 60px;
+    min-width: 40px;
+    margin-right: 6px;
+  }
+  .table-pos-products .product-info {
+    flex: 1 1 auto;
+    white-space: normal;
+    min-width: 150px;
+  }
+  .table-pos-products .product-name {
+    font-size: 14px;
+    line-height: 1.2;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    max-height: calc(1.2em * 2); /* 2 líneas * line-height */
+    word-break: break-word;
+    margin-bottom: 2px;
+  }
+  .table-pos-products .product-details {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    white-space: normal;
+  }
+  .table-pos-products .product-details small {
+    display: block;
+    font-size: 12px;
+    color: #888;
+    margin-top: 0;
+    margin-bottom: 0;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.1;
+  }
+  .table-pos-products .row-secondary {
+    display: flex;
+    align-items: center;
+    width: 55%;
+    gap: 8px;
+    margin-top: 2px;
+    min-width: 256px !important;
+  }
+  .table-pos-products .row-secondary input{
+    padding: 0 5px !important;
+  }
+  .table-pos-products .input-price,
+  .table-pos-products .input-total {
+    flex: 1 1 0;
+    min-width: 0;
+    font-size: 13px !important;
+    height: 28px !important;
+    min-height: 28px !important;
+  }
+  .table-pos-products .btn-trash {
+    flex: 0 0 36px;
+    max-width: 36px;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+/* --- FIN: Responsive para tabla de productos seleccionados --- */
+.product-image-responsive {
+  /* fallback: ocultar imagen en pantallas pequeñas */
+  display: block;
+}
+@media (max-width: 600px) {
+  .product-image-responsive {
+    display: none !important;
+  }
+}
+
+/* Clase para limitar el nombre del producto en vista de escritorio a 2 líneas */
+.product-name-desktop {
+  max-height: calc(1em * 2 + 0.5em); /* 2 líneas + espacio para el <br> */
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+}
 </style>
 
 <script>
@@ -473,7 +776,8 @@ import HistoryPurchasesForm from "../../../../../modules/Pos/Resources/assets/js
 import PersonForm from "../persons/form.vue";
 import WarehousesDetail from '../items/partials/warehouses.vue'
 import queryString from "query-string";
-import {functions} from '@mixins/functions'
+import {functions} from '@mixins/functions';
+import scaleMixin from '@mixins/scaleMixin'
 
 export default {
     props: ['configuration', 'soapCompany'],
@@ -485,7 +789,7 @@ export default {
         PersonForm,
         WarehousesDetail
     },
-    mixins: [functions],
+    mixins: [functions, scaleMixin],
     data() {
         return {
             place: 'cat',
@@ -526,14 +830,25 @@ export default {
             category_selected: "",
             plate_number_valid: true,
             electronic: false,
+            advanced_configuration: {},
+            isMobile: window.innerWidth <= 1800,
+            windowWidth: window.innerWidth, // <-- agregar para computada
         };
     },
 
     mounted(){
+        window.addEventListener('resize', this.handleResize);
     },
-
+    beforeDestroy() {
+        window.removeEventListener('resize', this.handleResize);
+        this.disconnectScale();
+    },
     async created() {
         try {
+            // Cargar configuración avanzada antes de todo
+            await this.$http.get('/co-advanced-configuration/record').then(response => {
+                this.advanced_configuration = response.data.data
+            })
             // Verificar y establecer plate_number inicial
             const configPlateNumber = this.configuration?.configuration_pos?.plate_number;
             let storedPlateNumber = localStorage.getItem("plate_number");
@@ -579,40 +894,62 @@ export default {
     },
 
     computed: {
-        classObjectCol() {
-
-            let cols = this.configuration.colums_grid_item
-
-            let clase = 'c3'
+        gridLayoutClass() {
+            let cols = this.configuration?.colums_grid_item || "4"
+            
+            // Asegurar que sea string para la comparación
+            cols = String(cols)
+            
+            console.log('Grid layout cols:', cols) // Debug temporal
+            
             switch (cols) {
-                case 2:
-                    clase = '6'
-
-                    break;
-                case 3:
-                    clase = '4'
-
-                    break;
-                case 4:
-                    clase = '3'
-
-                    break;
-                case 5:
-                    clase = '2'
-
-                    break;
-                case 6:
-                    clase = '2'
-                    break;
+                case "3":
+                    return 'default'
+                case "4":
+                    return 'comfortable'
+                case "5":
+                    return 'compact'
+                case "6":
+                    return 'stacked'
                 default:
-
+                    return 'default'
             }
-            return {
-                [`col-md-${clase}`]: true
-            }
+        },
+        hideProductImage() {
+            return this.windowWidth < 600;
+        },
+    },
+    watch: {
+        'configuration.colums_grid_item': {
+            handler(newVal, oldVal) {
+                console.log('Configuration changed:', oldVal, '->', newVal) // Debug temporal
+            },
+            deep: true
         }
     },
     methods: {
+        async toggleFavorite(item) {
+            this.loading = true;
+            try {
+                const res = await this.$http.post(`/pos/toggle-favorite/${item.item_id}`);
+                item.is_favorite = res.data.is_favorite;
+                this.sortItemsByFavorites();
+                this.$message.success(res.data.message);
+            } catch (e) {
+                this.$message.error('Error al marcar favorito');
+            }
+            this.loading = false;
+        },
+        isFavorite(item) {
+            return !!item.is_favorite;
+        },
+        sortItemsByFavorites() {
+            this.items = [...this.items].sort((a, b) => {
+                const aFav = a.is_favorite ? 1 : 0;
+                const bFav = b.is_favorite ? 1 : 0;
+                return bFav - aFav;
+            });
+        },
         getQueryParameters() {
             return queryString.stringify({
                 page: this.pagination.current_page
@@ -645,6 +982,7 @@ export default {
                     } else {
                         this.pagination.total = 0;
                     }
+                    this.sortItemsByFavorites();
                 });
         },
         setListPriceItem(item_unit_type, index) {
@@ -731,17 +1069,24 @@ export default {
 
         },
         clickOpenInputEditUP(index) {
-            this.items[index].edit_unit_price = true
+            this.items[index].edit_unit_price = true;
+            // Inicializa el valor editable según la configuración
+            this.items[index].edit_sale_unit_price = !this.advanced_configuration.item_tax_included
+                ? this.items[index].sale_unit_price
+                : this.items[index].sale_unit_price_with_tax;
         },
         clickEditUnitPriceItem(index) {
-            // console.log(index)
-            let price_with_tax = this.items[index].edit_sale_unit_price //price with tax
-            this.items[index].sale_unit_price_with_tax = price_with_tax
-            this.items[index].sale_unit_price = price_with_tax / (1 + (this.items[index].tax.rate / this.items[index].tax.conversion))
-            this.items[index].edit_unit_price = false
-
-            // console.log(item_search)
-
+            if (!this.advanced_configuration.item_tax_included) {
+                // El precio editado ya incluye impuesto
+                this.items[index].sale_unit_price = this.items[index].edit_sale_unit_price;
+                this.items[index].sale_unit_price_with_tax = this.items[index].edit_sale_unit_price;
+            } else {
+                // El precio editado es sin impuesto, calcular el precio con impuesto
+                let price_with_tax = this.items[index].edit_sale_unit_price;
+                this.items[index].sale_unit_price_with_tax = price_with_tax;
+                this.items[index].sale_unit_price = price_with_tax / (1 + (this.items[index].tax.rate / this.items[index].tax.conversion));
+            }
+            this.items[index].edit_unit_price = false;
         },
         clickCancelUnitPriceItem(index) {
             // console.log(index)
@@ -816,6 +1161,31 @@ export default {
                 );
 
                 if (quantity) {
+                    // Validación de stock mínimo y stock suficiente
+                    if (
+                        this.advanced_configuration &&
+                        this.advanced_configuration.validate_min_stock &&
+                        this.form.items[index].item.warehouses &&
+                        this.form.items[index].item.unit_type_id !== 'ZZ'
+                    ) {
+                        const warehouse = this.form.items[index].item.warehouses.find(w => w.checked) || this.form.items[index].item.warehouses[0];
+                        const stock = warehouse ? warehouse.stock : 0;
+                        const stock_min = this.form.items[index].item.stock_min !== undefined ? this.form.items[index].item.stock_min : 0;
+                        if (Number(stock) < Number(stock_min)) {
+                            this.$message.error('El stock actual es menor al stock mínimo para este producto.');
+                            // Revertir cantidad
+                            this.form.items[index].quantity = stock;
+                            this.form.items[index].item.aux_quantity = stock;
+                            return;
+                        }
+                        if (Number(quantity) > Number(stock)) {
+                            this.$message.error('No hay stock suficiente para este producto.');
+                            // Revertir cantidad
+                            this.form.items[index].quantity = stock;
+                            this.form.items[index].item.aux_quantity = stock;
+                            return;
+                        }
+                    }
                     this.form.items[index].quantity = quantity;
                     this.form.items[index].item.aux_quantity = quantity;
                 } else {
@@ -823,7 +1193,7 @@ export default {
                     this.form.items[index].item.aux_quantity = 0;
                 }
             }
-
+            
         },
 
         changeCustomer() {
@@ -928,6 +1298,9 @@ export default {
                 payment_method_id: 1,
                 payments: [],
                 electronic: false,
+                seller_id: null,
+                head_note: this.advanced_configuration.head_note || '',
+                foot_note: this.advanced_configuration.foot_note || '',
             }
             this.initFormItem();
             this.changeDateOfIssue();
@@ -1000,12 +1373,60 @@ export default {
             this.setFormPosLocalStorage()
         },
         async clickAddItem(item, index, input = false) {
+            // Validar stock mínimo si la opción está activa y no es devolución
+            if (!this.type_refund && this.advanced_configuration && this.advanced_configuration.validate_min_stock) {
+                if (item.warehouses && item.unit_type_id !== 'ZZ') {
+                    const warehouse = item.warehouses.find(w => w.checked) || item.warehouses[0];
+                    const stock = warehouse ? warehouse.stock : 0;
+                    const stock_min = item.stock_min !== undefined ? item.stock_min : 0;
+                    if (Number(stock) < Number(stock_min)) {
+                        this.$message.error('El stock actual es menor al stock mínimo para este producto.');
+                        return;
+                    }
+                    // Si ya existe el item, sumar la cantidad
+                    let exist_item = null;
+                    if(!item.presentation) {
+                        exist_item = _.find(this.form.items, {
+                            item_id: item.item_id,
+                            unit_type_id: item.unit_type_id
+                        })
+                    } else {
+                        exist_item = _.find(this.form.items, {
+                            item_id: item.item_id,
+                            presentation: item.presentation,
+                            unit_type_id: item.unit_type_id
+                        })
+                    }
+                    let next_quantity = exist_item ? (parseFloat(exist_item.item.aux_quantity) + (input ? 0 : 1)) : 1;
+                    if (Number(next_quantity) > Number(stock)) {
+                        this.$message.error('No hay stock suficiente para este producto.');
+                        return;
+                    }
+                }
+            }
             const presentation = item.presentation
             // console.log(item)
             if (this.type_refund) {
 //                console.log("Aqui devolucion...")
                 this.form_item.item = item;
-                this.form_item.unit_price_value = this.form_item.item.sale_unit_price;
+                if (!this.advanced_configuration.item_tax_included) {
+                    // El precio mostrado incluye impuesto, pero internamente debe ser sin impuesto
+                    if (item.tax && item.tax.rate && item.tax.conversion) {
+                        this.form_item.unit_price_value = item.sale_unit_price / (1 + (item.tax.rate / item.tax.conversion));
+                    } else {
+                        // Si no hay impuesto, usa el precio tal cual
+                        this.form_item.unit_price_value = item.sale_unit_price;
+                    }
+                    this.form_item.unit_price = this.form_item.unit_price_value;
+                    this.form_item.item.unit_price = this.form_item.unit_price_value;
+                    this.form_item.sale_unit_price = this.form_item.unit_price_value;
+                } else {
+                    // El precio mostrado es sin impuesto
+                    this.form_item.unit_price_value = item.sale_unit_price;
+                    this.form_item.unit_price = item.sale_unit_price;
+                    this.form_item.item.unit_price = item.sale_unit_price;
+                    this.form_item.sale_unit_price = item.sale_unit_price;
+                }
                 this.form_item.quantity = 1;
                 this.form_item.aux_quantity = 1;
 
@@ -1067,17 +1488,20 @@ export default {
                             return this.$message.error(response.message);
                         }
 
-                        exist_item.quantity = exist_item.item.aux_quantity;
+                        exist_item.quantity = Number(Number(exist_item.item.aux_quantity).toFixed(4));
                     } else {
-                        response = await this.getStatusStock(item.item_id, parseFloat(exist_item.item.aux_quantity) + 1);
+                        // Corregir suma de cantidades para evitar decimales extraños
+                        let newQty = Number(Number(exist_item.item.aux_quantity) + 1);
+                        newQty = Number(newQty.toFixed(4));
+                        response = await this.getStatusStock(item.item_id, newQty);
 
                         if (!response.success) {
                             this.loading = false;
                             return this.$message.error(response.message);
                         }
 
-                        exist_item.quantity++;
-                        exist_item.item.aux_quantity++;
+                        exist_item.quantity = newQty;
+                        exist_item.item.aux_quantity = newQty;
                     }
 
                     let search_item_bd = await _.find(this.items, {
@@ -1106,8 +1530,22 @@ export default {
 
                     this.form_item.item = { ...item }
                     // this.form_item.item = item;
-
-                    this.form_item.unit_price_value = this.form_item.item.sale_unit_price;
+                    if (!this.advanced_configuration.item_tax_included) {
+                        if (item.tax && item.tax.rate && item.tax.conversion) {
+                            this.form_item.unit_price_value = item.sale_unit_price / (1 + (item.tax.rate / item.tax.conversion));
+                        } else {
+                            // Si no hay impuesto, usa el precio tal cual
+                            this.form_item.unit_price_value = item.sale_unit_price;
+                        }
+                        this.form_item.unit_price = this.form_item.unit_price_value;
+                        this.form_item.item.unit_price = this.form_item.unit_price_value;
+                        this.form_item.sale_unit_price = this.form_item.unit_price_value;
+                    } else {
+                        this.form_item.unit_price_value = item.sale_unit_price;
+                        this.form_item.unit_price = item.sale_unit_price;
+                        this.form_item.item.unit_price = item.sale_unit_price;
+                        this.form_item.sale_unit_price = item.sale_unit_price;
+                    }
                     this.form_item.quantity = 1;
                     this.form_item.aux_quantity = 1;
 
@@ -1226,8 +1664,8 @@ export default {
                         if(!item.edited_price){
                             item.total_tax = (
                                 (item.unit_price * item.quantity -
-                                    (item.discount < item.unit_price * item.quantity ?
-                                        item.discount :
+                                    (item.discount < item.unit_price * item.quantity ? 
+                                        item.discount : 
                                         0)) *
                                 (item.tax.rate / item.tax.conversion)
                             ).toFixed(2);
@@ -1242,9 +1680,9 @@ export default {
                             item.unit_price = (item.sale_unit_price_with_tax / (1 + (item.tax.rate / item.tax.conversion)))
 //                            console.log(item.unit_price)
                             item.total_tax = (
-                                (item.unit_price * item.quantity -
-                                    (item.discount < item.sale_unit_price_with_tax * item.quantity ?
-                                        item.discount :
+                                (item.unit_price * item.quantity - 
+                                    (item.discount < item.sale_unit_price_with_tax * item.quantity ? 
+                                        item.discount : 
                                         0)) *
                                 (item.tax.rate / item.tax.conversion)
                             ).toFixed(2);
@@ -1259,6 +1697,9 @@ export default {
                     tax.total = (Number(tax.total) + Number(item.total_tax)).toFixed(2);
 //                    console.log(tax.total)
                 }
+                // Asegurar que las cantidades y totales sean números con precisión controlada
+                item.quantity = Number(Number(item.quantity).toFixed(4));
+                item.item.aux_quantity = Number(Number(item.item.aux_quantity).toFixed(4));
                 if(!item.edited_price){
                     item.subtotal = (
                         Number(item.unit_price * item.quantity) + Number(item.total_tax)
@@ -1273,14 +1714,14 @@ export default {
                 this.$set(
                     item,
                     "total",
-                    (Number(item.subtotal) - Number(item.discount)).toFixed(2)
+                    Math.round(Number(item.subtotal) - Number(item.discount))
                 );
 
                 if(!item.edited_price){
                     this.$set(
                         item,
                         "sale_unit_price_with_tax",
-                        (Number(item.subtotal) / Number(item.quantity)).toFixed(2)
+                        Math.round(Number(item.subtotal) / Number(item.quantity))
                     );
                 }
             });
@@ -1293,16 +1734,16 @@ export default {
                     let tax = val.taxes.find(tax => tax.id == item.tax.id);
                     if (item.tax.is_fixed_value) {
                         item.total_tax = (
-                            item.tax.rate * item.quantity -
+                            item.tax.rate * item.quantity - 
                             (item.discount < item.unit_price * item.quantity ? item.discount : 0)
                         ).toFixed(2);
                     }
 
                     if (item.tax.is_percentage) {
                         item.total_tax = (
-                            (item.unit_price * item.quantity -
-                                (item.discount < item.unit_price * item.quantity ?
-                                    item.discount :
+                            (item.unit_price * item.quantity - 
+                                (item.discount < item.unit_price * item.quantity ? 
+                                    item.discount : 
                                     0)) *
                             (item.tax.rate / item.tax.conversion)
                         ).toFixed(2);
@@ -1530,6 +1971,7 @@ export default {
         },
         filterItems() {
             this.items = this.all_items;
+            this.sortItemsByFavorites();
         },
         reloadDataCustomers(customer_id) {
             this.$http.get(`/${this.resource}/table/customers`).then(response => {
@@ -1585,7 +2027,126 @@ export default {
         },
         clearText(texto) {
             return texto.replace(/&nbsp;/g, ' ').replace(/\s{2,}/g, ' ').trim();
-        }
+        },
+        onQuantityInput(item, index) {
+            // Solo valida si está activa la validación y no es servicio
+            if (
+                this.advanced_configuration &&
+                this.advanced_configuration.validate_min_stock &&
+                item.item.warehouses &&
+                item.item.unit_type_id !== 'ZZ'
+            ) {
+                const warehouse = item.item.warehouses.find(w => w.checked) || item.item.warehouses[0];
+                const stock = warehouse ? Number(warehouse.stock) : 0;
+                const stock_min = item.item.stock_min !== undefined ? Number(item.item.stock_min) : 0;
+                let qty = Number(item.item.aux_quantity);
+
+                if (stock < stock_min) {
+                    this.$message.error('El stock actual es menor al stock mínimo para este producto.');
+                    item.item.aux_quantity = stock;
+                    item.quantity = stock;
+                    this.calculateTotal();
+                    return;
+                }
+                if (qty > stock) {
+                    this.$message.error('No hay stock suficiente para este producto.');
+                    item.item.aux_quantity = stock;
+                    item.quantity = stock;
+                    this.calculateTotal();
+                    return;
+                }
+                if (qty < 0.001) { // Cambia de 1 a 0.001 para permitir decimales pequeños
+                    // Si hay un valor leído válido, no lo sobrescribas por 0
+                    if (this.scale.lastWeightValue && Number(this.scale.lastWeightValue) > 0) {
+                        item.item.aux_quantity = Number(this.scale.lastWeightValue).toFixed(3);
+                        item.quantity = Number(this.scale.lastWeightValue).toFixed(3);
+                    } else {
+                        item.item.aux_quantity = 1;
+                        item.quantity = 1;
+                    }
+                    this.calculateTotal();
+                    return;
+                }
+                item.quantity = qty;
+                this.calculateTotal();
+            } else {
+                item.quantity = Number(item.item.aux_quantity);
+                this.calculateTotal();
+            }
+        },
+        handleResize() {
+            this.isMobile = window.innerWidth <= 1800;
+            this.windowWidth = window.innerWidth; // <-- actualizar para computada
+        },
+        getFormatDecimal(value) {
+            return Math.round(Number(value));
+        },
     }
 };
 </script>
+<style scoped>
+.page-header .header-controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 8px;
+    margin-top: 8px;
+    width: 100%;
+    min-height: 48px;
+    max-width: 100%;
+    padding-left: 24px; /* <-- Ajusta este valor según lo que necesites */
+}
+
+.page-header .header-controls-row > * {
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.page-header .el-switch {
+    min-width: 110px;
+    max-width: 160px;
+    font-size: 15px;
+    flex: 1 1 110px;
+}
+
+.page-header .el-switch__label {
+    font-size: 14px !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.page-header .balanza-btn-group {
+    gap: 8px;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    max-width: 180px;
+    flex: 1 1 120px;
+}
+.el-switch-barcode {
+    min-width: 190px !important;
+    max-width: 260px !important;
+}
+.page-header .btn-balanza {
+    height: 30px;
+    padding: 0 10px;    
+    overflow: hidden;    
+}
+.page-header .btn-balanza .balanza-btn-text{
+    max-width: 110px;
+    font-size: 13px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    display: inline-block;
+}
+.page-header .balanza-tooltip {
+    margin-left: 6px;
+    font-size: 13px !important;
+}
+
+/* Responsive: apila verticalmente los controles y separa del campo de búsqueda */
+</style>

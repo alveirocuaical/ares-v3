@@ -1,31 +1,7 @@
 <template>
     <div class="card mb-0 pt-2 pt-md-0">
-        <!-- <div class="card-header bg-info">
-            <h3 class="my-0">Cotización</h3>
-        </div> -->
         <div class="card-body" v-if="loading_form">
             <div class="invoice">
-                <!-- <header class="clearfix">
-                    <div class="row">
-                        <div class="col-sm-2 text-center mt-3 mb-0">
-                            <logo url="/" :path_logo="(company.logo != null) ? `/storage/uploads/logos/${company.logo}` : ''" ></logo>
-                        </div>
-                        <div class="col-sm-6 text-left mt-3 mb-0">
-                            <address class="ib mr-2" >
-                                <span class="font-weight-bold d-block">COTIZACIÓN</span>
-                                <span class="font-weight-bold d-block">COT-XXX</span>
-                                <span class="font-weight-bold">{{company.name}}</span>
-                                <br>
-                                <div v-if="establishment.address != '-'">{{ establishment.address }}, </div> {{ establishment.city.name }}, {{ establishment.department.name }} - {{ establishment.country.name }}
-                                <br>
-                                {{establishment.email}} - <span v-if="establishment.telephone != '-'">{{establishment.telephone}}</span>
-                            </address>
-                        </div>
-                        <div class="col-sm-4">
-                            <el-checkbox class="mt-3" v-model="form.active_terms_condition" @change="changeTermsCondition">Términos y condiciones del contrato</el-checkbox>
-                        </div>
-                    </div>
-                </header> -->
                 <form autocomplete="off" @submit.prevent="submit">
                     <div class="form-body">
                         <div class="row mt-1">
@@ -49,7 +25,6 @@
                             </div>
                             <div class="col-lg-2">
                                 <div class="form-group" :class="{ 'has-danger': errors.date_of_issue }">
-                                    <!--<label class="control-label">Fecha de emisión</label>-->
                                     <label class="control-label">Fec. Emisión</label>
                                     <el-date-picker v-model="form.date_of_issue" type="date" value-format="yyyy-MM-dd"
                                         :clearable="false" @change="changeDateOfIssue"></el-date-picker>
@@ -176,7 +151,7 @@
                                 <div class="form-group" :class="{ 'has-danger': errors.exchange_rate_sale }">
                                     <label class="control-label">Descripcion
                                     </label>
-                                    <el-input type="textarea" :rows="3" v-model="form.description"></el-input>
+                                    <el-input type="textarea" :rows="3" v-model="form.description" maxlength="250" show-word-limit></el-input>
                                     <small class="form-control-feedback" v-if="errors.description"
                                         v-text="errors.description[0]"></small>
                                 </div>
@@ -213,14 +188,19 @@
                                                 <td class="text-center">{{ row.item.unit_type.name }}</td>
                                                 <td class="text-right">{{ row.quantity }}</td>
                                                 <td class="text-right">{{ ratePrefix() }} {{
-                                                    getFormatUnitPriceRow(row.unit_price) }}</td>
-                                                <td class="text-right">{{ ratePrefix() }} {{ row.subtotal }}</td>
-                                                <td class="text-right">{{ ratePrefix() }} {{ row.discount }}</td>
-                                                <td class="text-right">{{ ratePrefix() }} {{ row.total }}</td>
+                                                    getFormatUnitPriceRow(row.unit_price ) | numberFormat}}</td>
+                                                <td class="text-right">{{ ratePrefix() }} {{ row.subtotal | numberFormat }}</td>
+                                                <td class="text-right">{{ ratePrefix() }} {{ row.discount | numberFormat }}</td>
+                                                <td class="text-right">{{ ratePrefix() }} {{ row.total | numberFormat }}</td>
                                                 <td class="text-right">
                                                     <button type="button"
                                                         class="btn waves-effect waves-light btn-xs btn-danger"
                                                         @click.prevent="clickRemoveItem(index)">x</button>
+                                                    <button type="button"
+                                                        class="btn waves-effect waves-light btn-xs btn-info"
+                                                        @click="clickEditItem(row, index)"><span
+                                                            style='font-size:10px;'>&#9998;</span>
+                                                    </button>
                                                 </td>
                                             </tr>
                                             <tr>
@@ -242,12 +222,30 @@
                                     <tr>
                                         <td>TOTAL VENTA</td>
                                         <td>:</td>
-                                        <td class="text-right">{{ ratePrefix() }} {{ form.sale }}</td>
+                                        <td class="text-right">{{ ratePrefix() }} {{ form.sale | numberFormat }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            DESCUENTO
+                                            <el-switch v-model="global_discount_is_amount" :active-text="ratePrefix()" 
+                                                inactive-text="%" @change="calculateTotal">
+                                            </el-switch>
+                                        </td>
+                                        <td>:</td>
+                                        <td class="text-right" id="input-with-select">
+                                            <el-input v-model="total_global_discount" :min="0" class="input-discount"
+                                                @input="calculateTotal">
+                                                <template slot="prefix">
+                                                    <span v-if="global_discount_is_amount">{{ ratePrefix() }}</span>
+                                                    <span v-else>%</span>
+                                                </template>
+                                            </el-input>
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td>TOTAL DESCUENTO (-)</td>
                                         <td>:</td>
-                                        <td class="text-right">{{ ratePrefix() }} {{ form.total_discount }}</td>
+                                        <td class="text-right">{{ ratePrefix() }} {{ form.total_discount | numberFormat }}</td>
                                     </tr>
                                     <template v-for="(tax, index) in form.taxes">
                                         <tr v-if="((tax.total > 0) && (!tax.is_retention))" :key="index">
@@ -255,28 +253,24 @@
                                                 {{ tax.name }}(+)
                                             </td>
                                             <td>:</td>
-                                            <td class="text-right">{{ ratePrefix() }} {{ Number(tax.total).toFixed(2) }}
+                                            <td class="text-right">{{ ratePrefix() }} {{ Number(tax.total).toFixed(2) | numberFormat }}
                                             </td>
                                         </tr>
                                     </template>
                                     <tr>
                                         <td>SUBTOTAL</td>
                                         <td>:</td>
-                                        <td class="text-right">{{ ratePrefix() }} {{ form.subtotal }}</td>
+                                        <td class="text-right">{{ ratePrefix() }} {{ form.subtotal | numberFormat }}</td>
                                     </tr>
                                     <template v-for="(tax, index) in form.taxes">
                                         <tr v-if="((tax.is_retention) && (tax.apply))" :key="index">
                                             <td>{{ tax.name }}(-)</td>
                                             <td>:</td>
-                                            <!-- <td class="text-right">
-                                                {{ratePrefix()}} {{Number(tax.retention).toFixed(2)}}
-                                            </td> -->
                                             <td class="text-right" width=35%>
                                                 <el-input v-model="tax.retention" readonly>
                                                     <span slot="prefix" class="c-m-top">{{ ratePrefix() }}</span>
                                                     <i slot="suffix" class="el-input__icon el-icon-delete pointer"
                                                         @click="clickRemoveRetention(index)"></i>
-                                                    <!-- <el-button slot="suffix" icon="el-icon-delete" @click="clickRemoveRetention(index)"></el-button> -->
                                                 </el-input>
                                             </td>
                                         </tr>
@@ -286,8 +280,7 @@
                             <div class="col-md-8 mt-3">
                             </div>
                             <div class="col-md-4">
-                                <h3 class="text-right" v-if="form.total > 0"><b>TOTAL A PAGAR: </b>{{ ratePrefix() }} {{
-                                    form.total }}</h3>
+                                <h3 class="text-right" v-if="form.total > 0"><b>TOTAL A PAGAR: </b>{{ ratePrefix() }} {{ form.total | numberFormat }}</h3>
                             </div>
                         </div>
                     </div>
@@ -307,22 +300,35 @@
             :showDialog.sync="showDialogAddItem"
             @add="addRow"
             :recordItem="recordItem"
-            :isEditItemNote="false"
             :currency-type-id-active="form.currency_id"
             :currency-type-symbol-active="ratePrefix()"
             :exchange-rate-sale="form.exchange_rate_sale"
-            :typeUser="typeUser"></document-form-item>
+            :typeUser="typeUser">
+        </document-form-item>
+        <discount-code-dialog
+            :visible.sync="showDiscountCodeDialog"
+            @validated="onDiscountCodeValidated"
+        />
     </div>
 </template>
+<style>
+@media only screen and (min-width: 768px) {
+    html.fixed .inner-wrapper {
+        padding-top: 60px !important;
+    }
+}
+</style>
 <script>
 import TermsCondition from './partials/terms_condition.vue'
 import PersonForm from '../persons/form.vue'
 import QuotationOptions from '../quotations/partials/options.vue'
 import Logo from '../companies/logo.vue'
 import DocumentFormItem from '@viewsModuleProColombia/tenant/document/partials/item.vue'
+import DiscountCodeDialog from '../../../components/DiscountCodeDialog.vue'
+
 export default {
     props: ['typeUser', 'saleOpportunityId'],
-    components: { PersonForm, QuotationOptions, Logo, TermsCondition, DocumentFormItem },
+    components: { PersonForm, QuotationOptions, Logo, TermsCondition, DocumentFormItem, DiscountCodeDialog },
     data() {
         return {
             resource: 'quotations',
@@ -351,6 +357,11 @@ export default {
             currencies: [],
             loading_search: false,
             recordItem: null,
+            total_global_discount: 0,
+            global_discount_is_amount: true,
+            advanced_configuration: {},
+            showDiscountCodeDialog: false,
+            discount_code_validated: false,
         }
     },
     async created() {
@@ -372,6 +383,10 @@ export default {
                 this.changeCurrencyType()
                 this.allCustomers()
             })
+        // Cargar configuración avanzada para validación de stock
+        await this.$http.get('/co-advanced-configuration/record').then(response => {
+            this.advanced_configuration = response.data.data
+        })
         this.loading_form = true
         this.$eventHub.$on('reloadDataPersons', (customer_id) => {
             this.reloadDataCustomers(customer_id)
@@ -430,7 +445,6 @@ export default {
         },
         getFormatUnitPriceRow(unit_price) {
             return _.round(unit_price, 6)
-            // return unit_price.toFixed(6)
         },
         async changePaymentMethodType(flag_submit = true) {
             let payment_method_type = await _.find(this.payment_method_types, { 'id': this.form.payment_method_type_id })
@@ -439,12 +453,6 @@ export default {
                     this.form.date_of_issue = moment().add(payment_method_type.number_days, 'days').format('YYYY-MM-DD');
                     this.changeDateOfIssue()
                 }
-                // else{
-                //     if(flag_submit){
-                //         this.form.date_of_issue = moment().format('YYYY-MM-DD')
-                //         this.changeDateOfIssue()
-                //     }
-                // }
             }
         },
         searchRemoteCustomers(input) {
@@ -515,12 +523,27 @@ export default {
             this.form.customer_id = null;
         },
         changeDateOfIssue() {
-            // this.form.date_of_due = this.form.date_of_issue > this.form.date_of_due ? this.form.date_of_issue:null
         },
         allCustomers() {
             this.customers = this.all_customers
         },
         addRow(row) {
+            // Validar stock mínimo si la opción está activa
+            if (this.advanced_configuration && this.advanced_configuration.validate_min_stock) {
+                if (row.item && row.item.warehouses && row.item.unit_type_id !== 'ZZ') {
+                    const warehouse = row.item.warehouses.find(w => w.checked) || row.item.warehouses[0];
+                    const stock = warehouse ? warehouse.stock : 0;
+                    const stock_min = row.item.stock_min !== undefined ? row.item.stock_min : 0;
+                    if (Number(stock) < Number(stock_min)) {
+                        this.$message.error('El stock actual es menor al stock mínimo para este producto.');
+                        return;
+                    }
+                    if (Number(row.quantity) > Number(stock)) {
+                        this.$message.error('No hay stock suficiente para este producto.');
+                        return;
+                    }
+                }
+            }
             if(row.tax_included_in_price) {
                 const tax_caculable = parseFloat(row.tax.rate) / row.tax.conversion;
                 const price_without_tax = row.price / (1 + tax_caculable);
@@ -529,7 +552,6 @@ export default {
                 row.unit_price = row.price;
             }
             if (this.recordItem) {
-                //this.form.items.$set(this.recordItem.indexi, row)
                 this.form.items[this.recordItem.indexi] = row
                 this.recordItem = null
             }
@@ -537,10 +559,15 @@ export default {
                 this.form.items.push(JSON.parse(JSON.stringify(row)));
             }
             this.calculateTotal();
+            this.showDialogAddItem = false;
         },
         clickRemoveItem(index) {
             this.form.items.splice(index, 1)
             this.calculateTotal()
+        },
+        clickEditItem(row, index) {
+            this.recordItem = { ...row, indexi: index };
+            this.showDialogAddItem = true;
         },
         changeCurrencyType() {
         },
@@ -548,16 +575,12 @@ export default {
             this.setDataTotals()
         },
         setDataTotals() {
-            // console.log(val)
             let val = this.form
             val.taxes = JSON.parse(JSON.stringify(this.taxes));
             val.items.forEach(item => {
-                item.tax = this.taxes.find(tax => tax.id == item.tax_id);
-                // seteo de descuento en caso no posea o sea superior al precio por cantidad
                 if (item.discount == null || item.discount == "" || item.discount > (item.unit_price * item.quantity)) {
                     this.$set(item, "discount", 0);
                 }
-                // defino el total de descuento
                 let total_discount = 0;
                 if (item.discount > 0 && item.discount < (item.unit_price * item.quantity)) {
                     total_discount = item.discount;
@@ -587,11 +610,18 @@ export default {
             });
             val.total_tax = val.items.reduce((p, c) => Number(p) + Number(c.total_tax), 0).toFixed(2);
             let total = val.items.reduce((p, c) => Number(p) + Number(c.total), 0).toFixed(2);
+            let amount_total_dicount_global = this.total_global_discount;
+
+            if (!this.global_discount_is_amount && amount_total_dicount_global > 0) {
+                amount_total_dicount_global = (Number(total) * Number(amount_total_dicount_global)) / 100;
+            }
+
             val.subtotal = val.items.reduce((p, c) => Number(p) + (Number(c.subtotal) - Number(c.total_discount)), 0).toFixed(2);
             val.sale = val.items.reduce((p, c) => Number(p) + Number(c.unit_price * c.quantity) - Number(c.total_discount), 0).toFixed(2);
-            val.total_discount = val.items.reduce((p, c) => Number(p) + Number(c.total_discount), 0).toFixed(2);
+            val.total_discount = (val.items.reduce((p, c) => Number(p) + Number(c.total_discount), 0) + Number(amount_total_dicount_global)).toFixed(2);
+            total = (Number(total) - Number(amount_total_dicount_global)).toFixed(2);
+            
             let totalRetentionBase = Number(0);
-            // this.taxes.forEach(tax => {
             val.taxes.forEach(tax => {
                 if (tax.is_retention && tax.in_base && tax.apply) {
                     tax.retention = (
@@ -614,10 +644,10 @@ export default {
                     tax.retention = Number(
                         Number(row.total) * (tax.rate / tax.conversion)
                     ).toFixed(2);
-                    if (Number(tax.retention) > Number(row.total))
+                    if (Number(tax.retencion) > Number(row.total))
                         this.$set(tax, "retention", Number(0).toFixed(2));
                     row.retention = Number(tax.retention).toFixed(2);
-                    total -= Number(tax.retention).toFixed(2);
+                    total -= Number(tax.retencion).toFixed(2);
                 }
             });
             val.total = Number(total).toFixed(2)
@@ -627,7 +657,6 @@ export default {
             return (this.company.currency != null) ? this.company.currency.symbol : '$';
         },
         validate_payments() {
-            //eliminando items de pagos
             for (let index = 0; index < this.form.payments.length; index++) {
                 if (parseFloat(this.form.payments[index].payment) === 0)
                     this.form.payments.splice(index, 1)
@@ -652,8 +681,16 @@ export default {
                 return this.$message.error('La fecha de emisión no puede ser posterior a la de vencimiento');
             if (this.form.date_of_issue > this.form.delivery_date)
                 return this.$message.error('La fecha de emisión no puede ser posterior a la de entrega');
+            if (
+                this.advanced_configuration &&
+                this.advanced_configuration.validate_discount_code &&
+                Number(this.form.total_discount) > 0 &&
+                !this.discount_code_validated
+            ) {
+                this.showDiscountCodeDialog = true;
+                return;
+            }
             this.loading_submit = true
-            // await this.changePaymentMethodType(false)
             await this.$http.post(`/${this.resource}`, this.form).then(response => {
                 if (response.data.success) {
                     this.resetForm();
@@ -692,6 +729,32 @@ export default {
             this.recordItem = null
             this.showDialogAddItem = true
         },
-    }
+        onDiscountCodeValidated(success) {
+        if (success) {
+            this.discount_code_validated = true;
+            this.showDiscountCodeDialog = false;
+            this.submit();
+        }
+    },
+    },
+    watch: {
+        'form.total_discount'(nuevo, anterior) {
+            if (this.discount_code_validated && Number(nuevo) !== Number(anterior)) {
+                this.discount_code_validated = false;
+            }
+        }
+    },
 }
 </script>
+<style>
+.input-discount .el-input__inner {
+    text-align: right;
+    max-width: 100px;
+}
+
+.input-discount .el-input__prefix {
+    left: 10px; 
+    top: 5px;
+    color: #66789C;
+}
+</style>

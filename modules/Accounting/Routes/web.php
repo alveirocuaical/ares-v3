@@ -16,7 +16,7 @@ $hostname = app(Hyn\Tenancy\Contracts\CurrentHostname::class);
 
 if($hostname) {
     Route::domain($hostname->fqdn)->group(function () {
-        Route::prefix('accounting')->middleware(['auth'])->group(function() {
+        Route::prefix('accounting')->middleware(['auth','redirect.module'])->group(function() {
             Route::get('/', 'AccountingController@index');
             Route::get('/columns', 'AccountingController@columns');
 
@@ -41,6 +41,7 @@ if($hostname) {
             Route::apiResource('journal/entries', 'JournalEntryController')->names([
                 'index'   => 'tenant.accounting.journal.entries.index',
             ]);
+            Route::get('journal/entries/pdf/{id}', 'JournalEntryController@getPdf');
             Route::put('journal/entries/{id}/request-approval', 'JournalEntryController@requestApproval');
             Route::put('journal/entries/{id}/approve', 'JournalEntryController@approve');
             Route::put('journal/entries/{id}/reject', 'JournalEntryController@reject');
@@ -57,6 +58,11 @@ if($hostname) {
             // Reporte de Estado de Resultados
             Route::get('/income-statement', 'ReportIncomeStatementController@index')->name('tenant.accounting.report.income-statement');
             Route::get('/income-statement/records', 'ReportIncomeStatementController@records');
+            Route::get('/income-statement/export', 'ReportIncomeStatementController@export');
+            // Reporte de Movimientos Auxiliares
+            Route::get('/auxiliary-movement', 'ReportAuxiliaryMovementController@index')->name('tenant.accounting.report.auxiliary-movement');
+            Route::get('/auxiliary-movement/records', 'ReportAuxiliaryMovementController@records');
+            Route::get('/auxiliary-movement/export', 'ReportAuxiliaryMovementController@export');
 
             Route::prefix('clasification-sale')->group(function () {
                 Route::get('records', 'ChartAccountSaleConfigurationController@records');

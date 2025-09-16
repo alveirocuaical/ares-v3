@@ -17,7 +17,7 @@ if($current_hostname) {
                 Route::get('records', 'SupportDocumentController@records');
                 Route::get('tables', 'SupportDocumentController@tables');
                 Route::get('item/tables', 'SupportDocumentController@item_tables');
-                Route::post('', 'SupportDocumentController@store');
+                Route::post('', 'SupportDocumentController@store')->middleware('check.tenant.limits');
                 Route::get('record/{id}', 'SupportDocumentController@record');
                 Route::get('downloadFile/{filename}', 'SupportDocumentController@downloadFile');
 
@@ -66,7 +66,7 @@ if($current_hostname) {
 
                 Route::get('download-attached/{external_id}', 'PurchaseOrderController@downloadAttached');
                 Route::get('sale-opportunity/{id}', 'PurchaseOrderController@generateFromSaleOpportunity');
-
+                Route::post('send-email', 'PurchaseOrderController@sendEmailApi');
             });
 
             Route::prefix('purchase-payments')->group(function () {

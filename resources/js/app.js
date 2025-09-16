@@ -1,4 +1,3 @@
-
 /**
  * First we will load all of this project's JavaScript dependencies which
  * includes Vue and other libraries. It is a great starting point when
@@ -36,6 +35,20 @@ Vue.prototype.$getStorage = function(name){
 Vue.prototype.$removeStorage = function(name){
     localStorage.removeItem(name)
 }
+
+Vue.filter('numberFormat', function (value) {
+  if (value === undefined || value === null) return '0,00';
+  if (typeof value === 'string') {
+    if (value.match(/^\d{1,3}(,\d{3})*\.\d{2}$/)) {
+      value = value.replace(/,/g, '');
+    }
+    else if (value.match(/^\d{1,3}(\.\d{3})*,\d{2}$/)) {
+      value = value.replace(/\./g, '').replace(',', '.');
+    }
+  }
+  if (isNaN(value)) return '0,00';
+  return Number(value).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+});
 
 // Vuetify es
 // Vue.use(Vuetify, {
@@ -104,7 +117,7 @@ Vue.component('tenant-client-client', require('@viewsModuleProColombia/tenant/cl
 Vue.component('tenant-import-import', require('@viewsModuleProColombia/tenant/import/Import.vue'));
 
 Vue.component('tenant-coupon-co', require('@viewsModuleProColombia/tenant/coupon/index.vue'));
-
+Vue.component('tenant-seller-index', require('@viewsModuleProColombia/tenant/seller/index.vue'));
 
 //components colombia
 // Vue.component('tenant-document-form', require('@viewsModuleProColombia/tenant/configuration/Configuration.vue'));
@@ -121,6 +134,7 @@ Vue.component('tenant-configuration-documents', require('@viewsModuleProColombia
 Vue.component('tenant-configuration-change-ambient', require('@viewsModuleProColombia/tenant/configuration/Production.vue'))
 Vue.component('tenant-configuration-software-payroll', require('@viewsModuleProColombia/tenant/configuration/SoftwarePayroll.vue'));
 Vue.component('tenant-configuration-software-eqdocs', require('@viewsModuleProColombia/tenant/configuration/SoftwareEqDocs.vue'));
+Vue.component('tenant-configuration-whatsapp-api', require('@viewsModuleProColombia/tenant/configuration/WhatsappApiConfig.vue'));
 
 //colombia
 
@@ -232,7 +246,7 @@ Vue.component('tenant-report-sale_notes-index', require('../../modules/Report/Re
 Vue.component('tenant-report-quotations-index', require('../../modules/Report/Resources/assets/js/views/quotations/index.vue'));
 Vue.component('tenant-report-cash-index', require('../../modules/Report/Resources/assets/js/views/cash/index.vue'));
 Vue.component('tenant-index-configuration', require('../../modules/BusinessTurn/Resources/assets/js/views/configurations/index.vue'));
-Vue.component('tenant-report-document_hotels-index', require('../../modules/Report/Resources/assets/js/views/document_hotels/index.vue'));
+Vue.component('tenant-report-document-hotels-index', require('../../modules/Report/Resources/assets/js/views/document_hotels/index.vue'));
 Vue.component('tenant-report-commercial_analysis-index', require('../../modules/Report/Resources/assets/js/views/commercial_analysis/index.vue'));
 Vue.component('tenant-offline-configurations-index', require('../../modules/Offline/Resources/assets/js/views/offline_configurations/index.vue'));
 Vue.component('tenant-series-configurations-index', require('../../modules/Document/Resources/assets/js/views/series_configurations/index.vue'));
@@ -245,6 +259,9 @@ Vue.component('tenant-report-order-notes-general-index', require('../../modules/
 Vue.component('tenant-report-sales-consolidated-index', require('../../modules/Report/Resources/assets/js/views/sales_consolidated/index.vue'));
 
 Vue.component('tenant-report-user-commissions-index', require('../../modules/Report/Resources/assets/js/views/user_commissions/index.vue'));
+
+//report seller
+Vue.component('tenant-report-sellers-index', require('../../modules/Report/Resources/assets/js/views/sellers/index.vue'));
 
 Vue.component('tenant-report-tax-index', require('../../modules/Report/Resources/assets/js/views/taxes/index.vue'));
 
@@ -382,7 +399,10 @@ Vue.component('tenant-accounting-journal-entries-index', require('@viewsModuleAc
 Vue.component('tenant-accounting-charts-index', require('@viewsModuleAccounting/chart_of_accounts/index.vue'));
 Vue.component('tenant-accounting-reports-financial-position-index', require('@viewsModuleAccounting/reports/financial_position.vue'));
 Vue.component('tenant-accounting-reports-income-statement-index', require('@viewsModuleAccounting/reports/income_statement.vue'));
+Vue.component('tenant-accounting-reports-auxiliary-movement-index', require('@viewsModuleAccounting/reports/auxiliary_movement.vue'));
 
+Vue.component('system-support-configuration', require('./views/system/configuration/supportConfiguration.vue'));
+Vue.component('system-config-login', require('./views/system/configuration/configLogin.vue'));
 
 
 const app = new Vue({

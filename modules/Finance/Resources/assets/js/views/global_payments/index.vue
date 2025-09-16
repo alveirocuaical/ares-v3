@@ -1,13 +1,36 @@
 <template>
+<div>
+    <div class="page-header pr-0">
+        <h2>
+            <a href="/finances/global-payments">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-calculator" style="margin-top: -5px;">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M4 3m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                    <path d="M8 7m0 1a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v1a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1z"></path>
+                    <path d="M8 14l0 .01"></path>
+                    <path d="M12 14l0 .01"></path>
+                    <path d="M16 14l0 .01"></path>
+                    <path d="M8 17l0 .01"></path>
+                    <path d="M12 17l0 .01"></path>
+                    <path d="M16 17l0 .01"></path>
+                </svg>
+            </a>
+        </h2>
+        <ol class="breadcrumbs">
+            <li class="active">
+                <span>Pagos</span>
+            </li>
+        </ol>
+    </div>
     <div class="card mb-0 pt-2 pt-md-0">
-        <div class="card-header bg-info">
+        <!-- <div class="card-header bg-info">
             <h3 class="my-0">Pagos</h3>
-        </div>
+        </div> -->
         <div class="card mb-0">
                 <div class="card-body">
                     <data-table :resource="resource">
                         <tr slot="heading">
-                            <th class="">#</th>
+                            <!-- <th class="">#</th> -->
                             <th class="">Adquiriente</th>
                             <th class="">Documento</th>
                             <th class="">Moneda</th>
@@ -18,9 +41,9 @@
                             <th class="">Referencia</th>
                             <th class="">Pago</th>
  
-                        <tr>
+                        </tr>
                         <tr slot-scope="{ index, row }">
-                            <td>{{ index }}</td>
+                            <!-- <td>{{ index }}</td> -->
                             <td>{{ row.person_name }}<br/><small v-text="row.person_number"></small></td>
                             <td>
                                 {{row.number_full}}<br/>
@@ -32,7 +55,7 @@
                             <td>{{row.date_of_payment}}</td>
                             <td>{{row.payment_method_type_description}}</td>
                             <td>{{row.reference}}</td>
-                            <td>{{formatNumber(row.total)}}</td> 
+                            <td>{{row.total | numberFormat}}</td>
                         </tr>
                     </data-table>
 
@@ -41,6 +64,7 @@
         </div>
 
     </div>
+</div>
 </template>
 
 <script>
@@ -59,12 +83,6 @@
         async created() {
         },
         methods: {
-            formatNumber(number) {
-                return number ? new Intl.NumberFormat('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                }).format(number) : '0.00'
-            },
         }
     }
 </script>

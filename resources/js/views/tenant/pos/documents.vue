@@ -1,7 +1,9 @@
 <template>
     <div>
         <div class="page-header pr-0">
-            <h2><a href="/dashboard"><i class="fas fa-tachometer-alt"></i></a></h2>
+            <h2><a href="/document-pos/index">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-cash-register" style="margin-top: -5px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M21 15h-2.5c-.398 0 -.779 .158 -1.061 .439c-.281 .281 -.439 .663 -.439 1.061c0 .398 .158 .779 .439 1.061c.281 .281 .663 .439 1.061 .439h1c.398 0 .779 .158 1.061 .439c.281 .281 .439 .663 .439 1.061c0 .398 -.158 .779 -.439 1.061c-.281 .281 -.663 .439 -1.061 .439h-2.5"></path><path d="M19 21v1m0 -8v1"></path><path d="M13 21h-7c-.53 0 -1.039 -.211 -1.414 -.586c-.375 -.375 -.586 -.884 -.586 -1.414v-10c0 -.53 .211 -1.039 .586 -1.414c.375 -.375 .884 -.586 1.414 -.586h2m12 3.12v-1.12c0 -.53 -.211 -1.039 -.586 -1.414c-.375 -.375 -.884 -.586 -1.414 -.586h-2"></path><path d="M16 10v-6c0 -.53 -.211 -1.039 -.586 -1.414c-.375 -.375 -.884 -.586 -1.414 -.586h-4c-.53 0 -1.039 .211 -1.414 .586c-.375 .375 -.586 .884 -.586 1.414v6m8 0h-8m8 0h1m-9 0h-1"></path><path d="M8 14v.01"></path><path d="M8 17v.01"></path><path d="M12 13.99v.01"></path><path d="M12 17v.01"></path></svg>
+            </a></h2>
             <ol class="breadcrumbs">
                 <li class="active"><span>Documentos POS</span></li>
             </ol>
@@ -27,7 +29,7 @@
                 </div>
                 <data-table :resource="resource">
                     <tr slot="heading">
-                        <th>#</th>
+                        <!-- <th>#</th> -->
                         <th class="text-center">Fecha Emisión</th>
                         <th>Cliente</th>
                         <th>Nota de Venta</th>
@@ -51,7 +53,7 @@
                         <th class="text-right">Acciones</th>
                     </tr>
                     <tr slot-scope="{ index, row }">
-                        <td>{{ index }}</td>
+                        <!-- <td>{{ index }}</td> -->
                         <td class="text-center">{{ row.date_of_issue }}</td>
                         <td>{{ row.customer_name }}<br/><small v-text="row.customer_number"></small><br/></td>
                         <td>{{ row.full_number }}
@@ -60,15 +62,15 @@
                             <span class="badge bg-secondary text-white" :class="{'bg-danger': (row.state_type_id === '11'), 'bg-warning': (row.state_type_id === '13'), 'bg-secondary': (row.state_type_id === '01'), 'bg-info': (row.state_type_id === '03'), 'bg-success': (row.state_type_id === '05'), 'bg-secondary': (row.state_type_id === '07'), 'bg-dark': (row.state_type_id === '09')}">{{row.state_type_description}}</span>
                         </td>
                         <td class="text-center">{{ row.currency_type_id }}</td>
-                        <td class="text-right">{{ row.total }}</td>
+                        <td class="text-right">{{ row.total | numberFormat }}</td>
                         <td class="text-center">
                             <span class="badge text-white" :class="{ 'bg-success': (row.electronic), 'bg-primary' : (!row.electronic) }">{{ row.electronic ? 'Electronico' : 'Ticket Papel' }}</span>
                         </td>
                         <td class="text-center" v-if="columns.total_paid.visible">
-                            {{row.total_paid}}
+                            {{row.total_paid | numberFormat }}
                         </td>
                         <td class="text-center" v-if="columns.total_pending_paid.visible">
-                            {{row.total_pending_paid}}
+                            {{row.total_pending_paid | numberFormat }}
                         </td>
                         <td class="text-center">
                             <span class="badge text-white" :class="{'bg-success': (row.paid), 'bg-warning': (!row.paid)}">{{row.paid ? 'Pagado':'Pendiente'}}</span>

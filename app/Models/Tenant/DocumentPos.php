@@ -15,6 +15,7 @@ class DocumentPos extends ModelTenant
 
     protected $fillable = [
         'user_id',
+        'seller_id',
         'external_id',
         'establishment_id',
         'establishment',
@@ -151,6 +152,11 @@ class DocumentPos extends ModelTenant
     public function payments()
     {
         return $this->hasMany(DocumentPosPayment::class, 'document_pos_id');
+    }
+
+    public function seller()
+    {
+        return $this->belongsTo(Seller::class, 'seller_id');
     }
 
    /* public function documents()
@@ -419,7 +425,8 @@ class DocumentPos extends ModelTenant
                         'sale',
                         'total_tax',
                         'subtotal',
-                        'state_type_id'
+                        'state_type_id',
+                        'total_discount',
                     ]);
     }
 
@@ -475,6 +482,8 @@ class DocumentPos extends ModelTenant
             'currency_code' => $this->currency->code,
             'customer_name' => $customer_data->name ?? '',
             'customer_number' => $customer_data->number ?? '',
+            'customer_email' => $customer_data->email ?? '',
+            'customer_telephone' => $customer_data->telephone ?? '',
             'customer_address' => $customer_data->address ?? '',
             'net_total' => $this->generalApplyNumberFormat($this->net_total),
             'total' => $this->generalApplyNumberFormat($this->total),
@@ -562,5 +571,16 @@ class DocumentPos extends ModelTenant
         if($establishment_id) $query->where('establishment_id', $establishment_id);
 
         return $query;
+    }
+
+    /**
+     * Obtener el campo taxes sin formateo ni filtro
+     *
+     * @return mixed
+     */
+    public function getRawTaxes()
+    {
+        // Devuelve el string JSON tal cual está en la base de datos
+        return $this->attributes['taxes'] ?? null;
     }
 }

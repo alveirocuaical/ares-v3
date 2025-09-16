@@ -45,6 +45,8 @@ use Modules\Accounting\Models\JournalPrefix;
 use Modules\Accounting\Models\ChartOfAccount;
 use Modules\Accounting\Models\ChartAccountSaleConfiguration;
 use Modules\Accounting\Models\AccountingChartAccountConfiguration;
+use Modules\Accounting\Helpers\AccountBalanceHelper;
+use Modules\Accounting\Helpers\AccountingEntryHelper;
 
 class PurchaseController extends Controller
 {
@@ -91,7 +93,25 @@ class PurchaseController extends Controller
                             })
                             ->whereTypeUser()
                             ->latest();
+                break;
 
+            case 'date_of_issue':
+                if (strlen($request->value) == 7) {
+                    // Si el valor es un mes (YYYY-MM), filtrar por todo el mes
+                    $year_month = explode('-', $request->value);
+                    $year = $year_month[0];
+                    $month = $year_month[1];
+
+                    $records = Purchase::whereYear('date_of_issue', $year)
+                                     ->whereMonth('date_of_issue', $month)
+                                     ->whereTypeUser()
+                                     ->latest();
+                } else {
+                    // Si es una fecha específica (YYYY-MM-DD)
+                    $records = Purchase::whereDate('date_of_issue', $request->value)
+                                     ->whereTypeUser()
+                                     ->latest();
+                }
                 break;
 
             case 'date_of_payment':
@@ -176,182 +196,159 @@ class PurchaseController extends Controller
 
     public function store(PurchaseRequest $request) {
         $data = self::convert($request);
-        
-        $purchase = DB::connection('tenant')->transaction(function () use ($data) {
-            $doc = Purchase::create($data);
-            foreach ($data['items'] as $row) {
-                $p_item = new PurchaseItem;
-                $p_item->fill($row);
-                $p_item->purchase_id = $doc->id;
-                $p_item->save();
 
-                $item = Item::find($row['item_id']);
-                if($item) {
-                    $item->purchase_unit_price = $row['unit_price'];
-                    if(isset($row['sale_unit_price'])) {
-                        $item->sale_unit_price = $row['sale_unit_price'];
+        try {
+            $purchase = DB::connection('tenant')->transaction(function () use ($data) {
+                $doc = Purchase::create($data);
+                foreach ($data['items'] as $row) {
+                    $p_item = new PurchaseItem;
+                    $p_item->fill($row);
+                    $p_item->purchase_id = $doc->id;
+                    $p_item->save();
+
+                    $item = Item::find($row['item_id']);
+                    if($item) {
+                        $item->purchase_unit_price = $row['unit_price'];
+                        if(isset($row['sale_unit_price'])) {
+                            $item->sale_unit_price = $row['sale_unit_price'];
+                        }
+                        $item->save();
                     }
-                    $item->save();
-                }
 
-                if(array_key_exists('lots', $row)){
-                    foreach ($row['lots'] as $lot){
-                        $p_item->lots()->create([
-                            'date' => $lot['date'],
-                            'series' => $lot['series'],
-                            'item_id' => $row['item_id'],
-                            'warehouse_id' => $row['warehouse_id'],
-                            'has_sale' => false,
-                            'state' => $lot['state']
-                        ]);
+                    if(array_key_exists('lots', $row)){
+                        foreach ($row['lots'] as $lot){
+                            $p_item->lots()->create([
+                                'date' => $lot['date'],
+                                'series' => $lot['series'],
+                                'item_id' => $row['item_id'],
+                                'warehouse_id' => $row['warehouse_id'],
+                                'has_sale' => false,
+                                'state' => $lot['state']
+                            ]);
+                        }
                     }
-                }
 
-                if(array_key_exists('item', $row))
-                {
-                    if( $row['item']['lots_enabled'] == true)
+                    if(array_key_exists('item', $row))
                     {
-                        ItemLotsGroup::create([
-                            'code'  => $row['lot_code'],
-                            'quantity'  => $row['quantity'],
-                            'date_of_due'  => $row['date_of_due'],
-                            'item_id' => $row['item_id']
-                        ]);
+                        if( $row['item']['lots_enabled'] == true)
+                        {
+                            ItemLotsGroup::create([
+                                'code'  => $row['lot_code'],
+                                'quantity'  => $row['quantity'],
+                                'date_of_due'  => $row['date_of_due'],
+                                'item_id' => $row['item_id']
+                            ]);
+                        }
                     }
                 }
-            }
 
-            foreach ($data['payments'] as $payment) {
-                $record_payment = $doc->purchase_payments()->create($payment);
-                if(isset($payment['payment_destination_id'])){
-                    $this->createGlobalPayment($record_payment, $payment);
+                foreach ($data['payments'] as $payment) {
+                    $record_payment = $doc->purchase_payments()->create($payment);
+                    if(isset($payment['payment_destination_id'])){
+                        $this->createGlobalPayment($record_payment, $payment);
+                    }
                 }
-            }
 
-            // Registrar asientos contables
-            if($doc->document_type_id == '01'){
-                $this->registerAccountingPurchaseEntries($doc);
-            }
+                // Registrar asientos contables compra/debito
+                if($doc->document_type_id == '01' || $doc->document_type_id == '09') {
+                    $this->registerAccountingPurchaseEntries($doc);
+                }
 
-            if($doc->document_type_id == '07'){
-                $this->registerAccountingCreditNotePurchase($doc);
-            }
-            
-            return $doc;
-        });
+                // Registrar asientos contables credito
+                if($doc->document_type_id == '07') {
+                    $this->registerAccountingCreditNotePurchase($doc);
+                }
 
-        return [
-            'success' => true,
-            'data' => [
-                'id' => $purchase->id,
-                'number_full' => "{$purchase->series}-{$purchase->number}",
+                return $doc;
+            });
+
+            return [
+                'success' => true,
+                'data' => [
+                    'id' => $purchase->id,
+                    'number_full' => "{$purchase->series}-{$purchase->number}",
+                ],
+            ];
+        } catch (\Exception $e) {
+            \Log::error($e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'No se pudo registrar la compra: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    private function registerAccountingPurchaseEntries($document)
+    {
+        $accountConfiguration = AccountingChartAccountConfiguration::first();
+        if(!$accountConfiguration) return;
+        $accountIdInventory = ChartOfAccount::where('code',$accountConfiguration->inventory_account)->first();
+        $accountIdLiability = ChartOfAccount::where('code',$accountConfiguration->supplier_payable_account)->first();
+        $document_type = DocumentType::find($document->document_type_id);
+
+        AccountingEntryHelper::registerEntry([
+            'prefix_id' => 2,
+            'description' => $document_type->description . ' #' . $document->series . '-' . $document->number,
+            'purchase_id' => $document->id,
+            'movements' => [
+                [
+                    'account_id' => $accountIdInventory->id,
+                    'debit' => $document->sale,
+                    'credit' => 0,
+                    'affects_balance' => true,
+                ],
+                [
+                    'account_id' => $accountIdLiability->id,
+                    'debit' => 0,
+                    'credit' => $document->total,
+                    'affects_balance' => true,
+                ],
             ],
-        ];
-    }
-
-    private function registerAccountingPurchaseEntries($document) {
-        $total = $document->total;
-        $iva = $document->total_tax;
-        $subtotal = $document->sale; // Neto de la compra
-
-        $accountConfiguration = AccountingChartAccountConfiguration::first();
-        if($accountConfiguration){
-            $accountIdInventory = ChartOfAccount::where('code',$accountConfiguration->inventory_account)->first();
-        }
-
-        $taxIva = Tax::where('name','IVA5')->first();
-        if($taxIva){
-            $accountIdIva = ChartOfAccount::where('code',$taxIva->chart_account_purchase)->first();
-        }
-
-        if($accountConfiguration){
-            $accountIdLiability = ChartOfAccount::where('code',$accountConfiguration->supplier_payable_account)->first();
-        }
-
-        //1 Registrar la entrada en el libro diario
-        $entry = JournalEntry::create([
-            'date' => date('Y-m-d'),
-            'journal_prefix_id' => 2, // Prefijo para compras
-            'description' => 'Factura de Compra #'.$document->series . '-' . $document->number,
-            'purchase_id' => $document->id,
-            'status' => 'posted'
-        ]);
-    
-        // 2 Registrar los detalles contables
-    
-        //Inventario de Mercancías (Activo)
-        $entry->details()->create([
-            'chart_of_account_id' => $accountIdInventory->id, // ID de cuenta de inventario
-            'debit' => $subtotal,
-            'credit' => 0,
-        ]);
-    
-        //IVA descontable (Activo)
-        $entry->details()->create([
-            'chart_of_account_id' => $accountIdIva->id, // ID de cuenta de IVA descontable
-            'debit' => $iva,
-            'credit' => 0,
-        ]);
-    
-        //Cuentas por pagar a proveedores (Pasivo)
-        $entry->details()->create([
-            'chart_of_account_id' => $accountIdLiability->id, // ID de cuenta de cuentas por pagar
-            'debit' => 0,
-            'credit' => $total,
+            'taxes' => $document->taxes ?? [],
+            'tax_config' => [
+                'tax_field' => 'chart_account_purchase',
+                'tax_debit' => true,
+                'tax_credit' => false,
+                'retention_debit' => false,
+                'retention_credit' => true,
+            ],
         ]);
     }
 
-    private function registerAccountingCreditNotePurchase($document) {
-        $total = $document->total;
-        $iva = $document->total_tax;
-        $subtotal = $document->sale; // Neto de la compra
-
+    private function registerAccountingCreditNotePurchase($document)
+    {
         $accountConfiguration = AccountingChartAccountConfiguration::first();
-        if($accountConfiguration){
-            $accountIdInventory = ChartOfAccount::where('code',$accountConfiguration->inventory_account)->first();
-        }
+        $accountIdInventory = ChartOfAccount::where('code',$accountConfiguration->inventory_account)->first();
+        $accountIdLiability = ChartOfAccount::where('code',$accountConfiguration->supplier_payable_account)->first();
+        $document_type = DocumentType::find($document->document_type_id);
 
-        $taxIva = Tax::where('name','IVA5')->first();
-        if($taxIva){
-            $accountIdIva = ChartOfAccount::where('code',$taxIva->chart_account_return_purchase)->first();
-        }
-
-        if($accountConfiguration){
-            $accountIdLiability = ChartOfAccount::where('code',$accountConfiguration->supplier_returns_account)->first();
-        }
-
-        //1 Registrar la entrada en el libro diario
-        $entry = JournalEntry::create([
-            'date' => date('Y-m-d'),
-            'journal_prefix_id' => 2, // Prefijo para compras
-            'description' => 'Nota de Crédito #'.$document->series . '-' . $document->number,
+        AccountingEntryHelper::registerEntry([
+            'prefix_id' => 2,
+            'description' => $document_type->description . ' #' . $document->series . '-' . $document->number,
             'purchase_id' => $document->id,
-            'status' => 'posted'
+            'movements' => [
+                [
+                    'account_id' => $accountIdInventory->id,
+                    'debit' => $document->sale,
+                    'credit' => 0,
+                    'affects_balance' => true,
+                ],
+                [
+                    'account_id' => $accountIdLiability->id,
+                    'debit' => 0,
+                    'credit' => $document->total,
+                    'affects_balance' => true,
+                ],
+            ],
+            'taxes' => $document->taxes ?? [],
+            'tax_config' => [
+                'tax_field' => 'chart_account_return_purchase',
+                'tax_debit' => false,
+                'tax_credit' => true,
+                'retention_debit' => true,
+                'retention_credit' => false,
+            ],
         ]);
-    
-        // 2 Registrar los detalles contables
-
-        //proveedores (Pasivo)
-        $entry->details()->create([
-            'chart_of_account_id' => $accountIdLiability->id, 
-            'debit' => $total,
-            'credit' => 0,
-        ]);
-    
-        //Inventario (Activo)
-        $entry->details()->create([
-            'chart_of_account_id' => $accountIdInventory->id,
-            'debit' => 0,
-            'credit' => $subtotal,
-        ]);
-    
-        //IVA descontable (Activo)
-        $entry->details()->create([
-            'chart_of_account_id' => $accountIdIva->id, 
-            'debit' => 0,
-            'credit' => $iva,
-        ]);
-        
     }
 
     public function update(PurchaseRequest $request)
@@ -399,7 +396,7 @@ class PurchaseController extends Controller
                         $item->save();
                     }
                 }
-                
+
                 if(array_key_exists('lots', $row)){
 
                     foreach ($row['lots'] as $lot){
@@ -616,10 +613,10 @@ class PurchaseController extends Controller
     {
         $search = $request->input('search');
         $newItemId = $request->input('new_item_id');
-        
+
         $query = Item::whereNotIsSet()
                     ->whereIsActive();
-                    
+
         // Si hay un nuevo item, asegurarse de incluirlo
         if ($newItemId) {
             $query->where(function($q) use($search, $newItemId) {
@@ -646,7 +643,7 @@ class PurchaseController extends Controller
 
         return collect($items)->transform(function($row) {
             $full_description = ($row->internal_id) ? $row->internal_id.' - '.$row->name : $row->name;
-            
+
             $establishment = Establishment::where('id', auth()->user()->establishment_id)->first();
             $stock = 0;
             if($establishment) {
@@ -703,6 +700,12 @@ class PurchaseController extends Controller
 
                 $row = Purchase::findOrFail($id);
                 $this->deleteAllPayments($row->purchase_payments);
+
+                // eliminar asientos contables
+                $journal = JournalEntry::where('purchase_id', $row->id)->first();
+                $journal->details()->delete();
+                $journal->delete();
+
                 $row->delete();
 
             });

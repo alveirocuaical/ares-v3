@@ -2,8 +2,14 @@
   <div>
     <div class="page-header pr-0">
       <h2>
-        <a href="/dashboard">
-          <i class="fas fa-tachometer-alt"></i>
+        <a href="/tags">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-shopping-cart" style="margin-top: -5px;">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+              <path d="M6 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
+              <path d="M17 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
+              <path d="M17 17h-11v-14h-2"></path>
+              <path d="M6 5l14 1l-1 7h-13"></path>
+          </svg>
         </a>
       </h2>
       <ol class="breadcrumbs">
@@ -26,20 +32,20 @@
       </div>
     </div>
     <div class="card mb-0">
-      <div class="card-header bg-info">
+      <!-- <div class="card-header bg-info">
         <h3 class="my-0">Listado de Tags Tienda Virtual</h3>
-      </div>
+      </div> -->
       <div class="card-body">
         <data-table :resource="resource">
           <tr slot="heading" width="100%">
-            <th>#</th>
+            <!-- <th>#</th> -->
             <th>Nombre</th>
             <th>Descripción</th>
             <th class="text-right">Acciones</th>
           </tr>
           <tr></tr>
           <tr slot-scope="{ index, row }">
-            <td>{{ index }}</td>
+            <!-- <td>{{ index }}</td> -->
             <td>{{ row.name }}</td>
             <td>{{ row.description }}</td>
             <td class="text-right">

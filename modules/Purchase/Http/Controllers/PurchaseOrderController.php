@@ -42,6 +42,9 @@ use Modules\Factcolombia1\Models\Tenant\{
     Currency,
     Tax,
 };
+use Modules\Factcolombia1\Models\TenantService\{
+    Company as ServiceTenantCompany
+};
 
 class PurchaseOrderController extends Controller
 {
@@ -163,6 +166,10 @@ class PurchaseOrderController extends Controller
 
             foreach ($data['items'] as $row) {
                 $this->purchase_order->items()->create($row);
+            }
+            if(isset($data['taxes'])) {
+                $this->purchase_order->taxes = $data['taxes'];
+                $this->purchase_order->save();
             }
 
             $temp_path = $request->input('attached_temp_path');
@@ -326,7 +333,7 @@ class PurchaseOrderController extends Controller
 
     public function download($external_id, $format = "a4") {
 
-        $purchase_order = PurchaseOrder::where('external_id', $external_id)->first();
+        $purchase_order = PurchaseOrder::with(['currency', 'currency_type'])->where('external_id', $external_id)->first();
 
         if (!$purchase_order) throw new Exception("El código {$external_id} es inválido, no se encontro la cotización de compra relacionada");
 
@@ -499,4 +506,89 @@ class PurchaseOrderController extends Controller
             'message' => 'Orden de compra anulada con éxito'
         ];
     }
+    
+    public function sendEmailApi(Request $request)
+    {
+        $purchase_order = PurchaseOrder::findOrFail($request->id);
+        $pdf_content = $this->getStorage($purchase_order->filename, 'purchase_order');
+        $base64_pdf = base64_encode($pdf_content);
+        // Normalizar correos
+        $emails = $request->email_cc;
+        if (is_string($emails)) {
+            $emails = array_map('trim', explode(';', $emails));
+        }
+        if (!is_array($emails)) {
+            $emails = [$emails];
+        }
+        $emails = array_filter($emails);
+        
+        $company = ServiceTenantCompany::firstOrFail();
+        $token = $company->api_token;
+        $base_url = rtrim(config('tenant.service_fact'), '/');
+        $endpoint = '/ubl2.1/send-email/external';
+        $url = $base_url . $endpoint;
+        $results = [];
+
+        foreach ($emails as $email) {
+            $payload = array(
+                "email" => $email,
+                "subject" => "Orden de Compra N° {$purchase_order->id}",
+                "message" => "Adjunto encontrará la orden de compra.",
+                "document_base64" => $base64_pdf,
+                "filename" => $purchase_order->filename,
+                "document_type" => "pdf"
+            );
+
+            try {
+                $ch = curl_init($url);
+
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+                    "Authorization: Bearer {$token}",
+                    "Content-Type: application/json",
+                    "Accept: application/json"
+                ));
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+
+                $response = curl_exec($ch);
+
+                if (curl_errno($ch)) {
+                    throw new \Exception(curl_error($ch));
+                }
+
+                $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+
+                $response_data = json_decode($response, true);
+
+                $results[] = array(
+                    'email' => $email,
+                    'success' => $http_code >= 200 && $http_code < 300,
+                    'response' => $response_data,
+                );
+            } catch (\Exception $e) {
+                $results[] = array(
+                    'email' => $email,
+                    'success' => false,
+                    'response' => $e->getMessage(),
+                );
+            }
+        }
+
+        $all_success = true;
+        foreach ($results as $r) {
+            if (!$r['success']) {
+                $all_success = false;
+                break;
+            }
+        }
+
+        return array(
+            'success' => $all_success,
+            'results' => $results,
+            'message' => $all_success ? 'Todos los correos enviados correctamente' : 'Algunos correos no se enviaron',
+        );
+    }
+
 }

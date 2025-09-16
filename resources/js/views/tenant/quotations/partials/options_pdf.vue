@@ -1,6 +1,6 @@
 <template>
     <div>
-        <el-dialog :title="titleDialog" :visible="showDialog" @open="create" width="30%">
+        <el-dialog :title="titleDialog" :visible="showDialog" @open="create" @close="clickClose"  width="30%">
             <div class="row">
                 <div class="col-lg-4 col-md-4 col-sm-4 text-center font-weight-bold">
                     <p>Imprimir A4</p>
@@ -42,8 +42,23 @@
                     <div class="form-group">
                         <label class="control-label">Enviar por WhatsApp</label>
                         <div class="input-group">
-                            <el-input v-model="whatsapp_number" placeholder="Número WhatsApp">
+                            <el-input v-model="whatsapp_number" placeholder="Número WhatsApps">
                                 <el-button slot="append" icon="el-icon-chat-dot-round" @click="clickSendWhatsapp" :loading="loadingWhatsapp">
+                                    Enviar
+                                </el-button>
+                            </el-input>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-lg-12 col-md-12 col-sm-12">
+                    <div class="form-group">
+                        <label class="control-label">Enviar por correo electrónico</label>
+                        <div class="input-group">
+                            <el-input v-model="customer_email" placeholder="Correo electrónico">
+                                <el-button slot="append" icon="el-icon-message" @click="clickSendEmail" :loading="loading">
                                     Enviar
                                 </el-button>
                             </el-input>
@@ -81,6 +96,7 @@
                 resource: 'quotations',
                 form: {},
                 loading: false,
+                customer_email: "",
                 whatsapp_number: "",
                 loadingWhatsapp: false,
             }
@@ -116,9 +132,7 @@
             clickSendEmail()
             {
                 this.loading = true
-                console.log(this.resource)
                 this.$http.post(`/${this.resource}/email`, {
-
                     customer_email: this.customer_email,
                     id: this.form.id,
                     customer_id: this.form.quotation.customer_id

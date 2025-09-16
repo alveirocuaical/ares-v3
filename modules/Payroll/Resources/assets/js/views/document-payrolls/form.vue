@@ -1,4 +1,13 @@
 <template>
+<div>
+    <div class="page-header pr-0">
+        <h2><a href="/payroll/document-payrolls">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-clipboard-list" style="margin-top: -5px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"></path><path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"></path><path d="M9 12l.01 0"></path><path d="M13 12l2 0"></path><path d="M9 16l.01 0"></path><path d="M13 16l2 0"></path></svg>
+        </a></h2>
+        <ol class="breadcrumbs">
+            <li class="active"><span>Nueva nómina</span></li>
+        </ol>
+    </div>
     <div class="card mb-0 pt-2 pt-md-0" v-loading="loading">
 
         <div class="card-body" v-if="loading_form">
@@ -25,7 +34,6 @@
                                         <template v-if="!isAdjustNote">
                                             <a href="#" @click.prevent="showDialogNewWorker = true">[+ Nuevo]</a>
                                         </template>
-
                                     </label>
                                     <el-select
                                         v-model="form.worker_id"
@@ -44,6 +52,13 @@
                                     </el-select>
                                     <small class="form-control-feedback" v-if="errors.worker_id" v-text="errors.worker_id[0]"></small>
                                 </div>
+                                <el-checkbox
+                                    :indeterminate="isIndeterminate"
+                                    v-model="checkAll"
+                                    @change="handleCheckAll"
+                                    style="margin-left: 10px;">
+                                    Seleccionar todos
+                                </el-checkbox>
                             </div>
 
 
@@ -83,17 +98,20 @@
                                     <div class="col-md-3">
                                         <div class="form-group" :class="{'has-danger': errors['period.admision_date']}">
                                             <label class="control-label">Fecha de admisión<span class="text-danger"> *</span>
-                                                <el-tooltip class="item" effect="dark" content="Fecha de inicio de labores del empleado" placement="top-start">
+                                                <el-tooltip class="item" effect="dark" content="Fecha de ingreso del trabajador a la empresa" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
                                             </label>
-                                            <el-date-picker v-model="form.period.admision_date" type="date" value-format="yyyy-MM-dd" :clearable="false" :disabled="form_disabled.admision_date"></el-date-picker>
+                                            <el-date-picker v-model="form.period.admision_date" type="date" value-format="yyyy-MM-dd" :clearable="false" :disabled="form_disabled.admision_date" @change="calculateWorkedTime"></el-date-picker>
                                             <small class="form-control-feedback" v-if="errors['period.admision_date']" v-text="errors['period.admision_date'][0]"></small>
                                         </div>
                                     </div>
                                     <div class="col-md-3">
                                         <div class="form-group" :class="{'has-danger': errors['period.settlement_start_date']}">
                                             <label class="control-label">F. Inicio de periodo de liquidación<span class="text-danger"> *</span></label>
+                                                <el-tooltip class="item" effect="dark" content="Fecha de inicio del período de liquidación del documento" placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
                                             <el-date-picker v-model="form.period.settlement_start_date" type="date" value-format="yyyy-MM-dd" :clearable="false" @change="changePeriodSettlement"></el-date-picker>
                                             <small class="form-control-feedback" v-if="errors['period.settlement_start_date']" v-text="errors['period.settlement_start_date'][0]"></small>
                                         </div>
@@ -101,6 +119,9 @@
                                     <div class="col-md-3">
                                         <div class="form-group" :class="{'has-danger': errors['period.settlement_end_date']}">
                                             <label class="control-label">F. Finalización de periodo de liquidación<span class="text-danger"> *</span></label>
+                                            <el-tooltip class="item" effect="dark" content="Fecha de fin del período de liquidación del documento" placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
                                             <el-date-picker v-model="form.period.settlement_end_date" type="date" value-format="yyyy-MM-dd" :clearable="false" @change="changePeriodSettlement"></el-date-picker>
                                             <small class="form-control-feedback" v-if="errors['period.settlement_end_date']" v-text="errors['period.settlement_end_date'][0]"></small>
                                         </div>
@@ -108,6 +129,9 @@
                                     <div class="col-md-3">
                                         <div class="form-group" :class="{'has-danger': errors['period.issue_date']}">
                                             <label class="control-label">Fecha de emisión<span class="text-danger"> *</span></label>
+                                            <el-tooltip class="item" effect="dark" content="Fecha de emisión del documento" placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
                                             <el-date-picker v-model="form.period.issue_date" type="date" value-format="yyyy-MM-dd" :clearable="false"></el-date-picker>
                                             <small class="form-control-feedback" v-if="errors['period.issue_date']" v-text="errors['period.issue_date'][0]"></small>
                                         </div>
@@ -116,7 +140,10 @@
                                     <div class="col-md-3">
                                         <div class="form-group" :class="{'has-danger': errors['period.worked_time']}">
                                             <label class="control-label">Tiempo trabajado<span class="text-danger"> *</span></label>
-                                            <el-input-number v-model="form.period.worked_time" :min="0" controls-position="right"></el-input-number>
+                                            <el-tooltip class="item" effect="dark" content="Tiempo que lleva laborando el trabajador en la empresa. Se calcula automáticamente." placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
+                                            <el-input-number v-model="form.period.worked_time" :min="0" controls-position="right" disabled></el-input-number>
                                             <small class="form-control-feedback" v-if="errors['period.worked_time']" v-text="errors['period.worked_time'][0]"></small>
                                         </div>
                                     </div>
@@ -1508,7 +1535,7 @@
 
 
                     <div class="form-actions text-right mt-4">
-                        <el-button type="primary" @click.prevent="preeliminarView" :loading="loading_preview">Vista Preliminar</el-button>
+                        <el-button v-if="!isAdjustNote" type="primary" @click.prevent="preeliminarView" :loading="loading_preview">Vista Preliminar</el-button>
                         <el-button @click.prevent="close()">Cancelar</el-button>
                         <el-button class="submit" type="primary" native-type="submit" :loading="loading_submit">Generar</el-button>
                     </div>
@@ -1548,6 +1575,7 @@
         </div>
 
     </div>
+</div>
 </template>
 
 <script>
@@ -1604,7 +1632,23 @@
                 quantity_days_month: 30,
                 quantity_days_year: 360,
                 loading: false,
-                loading_preview: false
+                loading_preview: false,
+                checkAll: false,
+                isIndeterminate: false,
+            }
+        },
+        watch: {
+            'form.worker_id'(val) {
+                // Actualiza el estado del checkbox "Seleccionar todos"
+                const total = this.workers.map(w => w.id)
+                this.checkAll = val && val.length === total.length
+                this.isIndeterminate = val && val.length > 0 && val.length < total.length
+            },
+            workers(val) {
+                // Si cambia la lista de empleados (por búsqueda), actualiza el checkbox
+                const total = val.map(w => w.id)
+                this.checkAll = this.form.worker_id && this.form.worker_id.length === total.length
+                this.isIndeterminate = this.form.worker_id && this.form.worker_id.length > 0 && this.form.worker_id.length < total.length
             }
         },
         async created() {
@@ -1613,7 +1657,25 @@
             await this.getTables()
             await this.events()
             await this.checkDocumentPayrollAdjustNote()
+            const params = new URLSearchParams(window.location.search)
+            const duplicateId = params.get('duplicate_id')
 
+            if (duplicateId) {
+                try {
+                    const response = await this.$http.get(`/payroll/document-payrolls/duplicate/${duplicateId}`)
+                    if (response.data) {
+                        this.form = {
+                            ...this.form,
+                            ...response.data
+                        }
+                        this.form.type_document_id = null
+                        this.form.resolution_number = null
+                        this.normalizeFormArrays();
+                    }
+                } catch (e) {
+                    this.$message.error('No se pudo cargar la nómina a duplicar')
+                }
+            }
             this.loading_form = true
         },
         computed: {
@@ -1637,6 +1699,40 @@
             }
         },
         methods: {
+            handleCheckAll(val) {
+                if (val) {
+                    // Selecciona todos los empleados filtrados
+                    this.form.worker_id = this.workers.map(w => w.id)
+                } else {
+                    // Deselecciona todos
+                    this.form.worker_id = []
+                }
+                this.isIndeterminate = false
+                if (this.form.worker_id && this.form.worker_id.length > 0) {
+                    this.changeWorker()
+                }
+            },
+            normalizeFormArrays() {
+                const accruedArrays = [
+                    'work_disabilities', 'service_bonus', 'severance', 'common_vacation', 'paid_vacation', 'bonuses', 'aid', 'other_concepts',
+                    'maternity_leave', 'paid_leave', 'non_paid_leave', 'commissions', 'advances', 'epctv_bonuses', 'third_party_payments',
+                    'compensations', 'legal_strike', 'heds', 'hens', 'hrns', 'heddfs', 'hrddfs', 'hendfs', 'hrndfs'
+                ];
+                accruedArrays.forEach(key => {
+                    if (!Array.isArray(this.form.accrued[key])) {
+                        this.form.accrued[key] = [];
+                    }
+                });
+
+                const deductionArrays = [
+                    'labor_union', 'sanctions', 'orders', 'third_party_payments', 'advances', 'other_deductions'
+                ];
+                deductionArrays.forEach(key => {
+                    if (!Array.isArray(this.form.deduction[key])) {
+                        this.form.deduction[key] = [];
+                    }
+                });
+            },
             async checkDocumentPayrollAdjustNote(){
 
                 if(this.isAdjustNote)
@@ -1657,7 +1753,7 @@
 
                 this.form.period = data.period
                 this.form.payroll_period_id = data.payroll_period_id
-                this.form.worker_id = data.worker_id
+                this.form.worker_id = [data.worker_id]
                 this.form.payment = data.payment
                 this.form.payment_dates = data.payment_dates
                 this.form.number_full = data.number_full
@@ -1869,13 +1965,21 @@
                 this.form.period.worked_time = moment(this.form.period.settlement_end_date).diff(moment(this.form.period.settlement_start_date), 'days', true)
 
             },
+            calculateWorkedTime() {
+        if (this.form.period.admision_date) {
+            // Calcular diferencia en días entre fecha actual y fecha de admisión
+            const admisionDate = moment(this.form.period.admision_date)
+            const today = moment()
+            this.form.period.worked_time = today.diff(admisionDate, 'days')
+        }
+    },
             setInitialDataPeriod(){
 
                 let last_month = moment().subtract(1, 'months')
 
                 this.form.period.settlement_start_date = last_month.startOf('month').format('YYYY-MM-DD')
                 this.form.period.settlement_end_date = last_month.endOf('month').format('YYYY-MM-DD')
-                this.form.period.worked_time = this.quantity_days_month
+                this.form.period.worked_time = this.calculateWorkedTime()
 
             },
             initForm() {
@@ -1995,7 +2099,7 @@
             },
             salaryValidation(){
 
-                
+
 
                 return {
                     success : true
@@ -2395,6 +2499,7 @@
                     //autocompletar campos
                     await this.autocompleteDataFromWorker(this.form.select_worker)
 
+
                     //recalcular campos que utilizan el salario base del empleado para calculos, estos se ven afectados por el mismo
                     await this.recalculateData()
 
@@ -2440,6 +2545,8 @@
 
                 this.form.period.admision_date = worker.work_start_date
                 this.form_disabled.admision_date = worker.work_start_date ? true : false
+
+                this.calculateWorkedTime()
 
                 this.autocompleteDataSalary(worker.salary)
 
@@ -2613,13 +2720,13 @@
             async preeliminarView() {
                 try {
                     if (!this.form.worker_id?.length) {
-                        return this.$message.error('Debe seleccionar al menos un empleado')  
+                        return this.$message.error('Debe seleccionar al menos un empleado')
                     }
-                    
-                    // Crear una copia del formulario 
+
+                    // Crear una copia del formulario
                     const formData = _.cloneDeep(this.form);
                     const worker = await _.find(this.workers, {id: this.form.worker_id[0]});
-                    
+
                     // Asegurar que todos los campos del trabajador estén presentes
                     formData.worker = {
                         type_worker_id: worker.type_worker_id || 1,
@@ -2642,7 +2749,7 @@
                     formData.period = formData.period || {};
                     formData.accrued = formData.accrued || {};
                     formData.deduction = formData.deduction || {};
-                    
+
                     this.loading_preview = true;
                     const response = await this.$http.post(`/${this.resource}/preeliminar-view`, formData);
 
@@ -2650,11 +2757,11 @@
                         const base64 = response.data.base64payrollpdf;
                         const byteCharacters = atob(base64);
                         const byteNumbers = new Array(byteCharacters.length);
-                        
+
                         for (let i = 0; i < byteCharacters.length; i++) {
                             byteNumbers[i] = byteCharacters.charCodeAt(i);
                         }
-                        
+
                         const byteArray = new Uint8Array(byteNumbers);
                         const file = new Blob([byteArray], { type: 'application/pdf' });
                         const fileURL = URL.createObjectURL(file);

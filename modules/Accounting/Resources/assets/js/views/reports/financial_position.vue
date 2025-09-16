@@ -2,8 +2,16 @@
     <div>
         <div class="page-header pr-0">
             <h2>
-                <a href="/dashboard">
-                    <i class="fas fa-tachometer-alt"></i>
+                <a href="/accounting/financial-position">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chart-histogram" style="margin-top: -5px;">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                        <path d="M3 3v18h18"></path>
+                        <path d="M20 18v3"></path>
+                        <path d="M16 16v5"></path>
+                        <path d="M12 13v8"></path>
+                        <path d="M8 16v5"></path>
+                        <path d="M3 11c6 0 5 -5 9 -5s3 5 9 5"></path>
+                    </svg>
                 </a>
             </h2>
             <ol class="breadcrumbs">
@@ -14,7 +22,7 @@
         </div>
         <div class="card mb-0">
             <div class="card-body">
-                <div class="row">
+                <div class="row mb-2">
                     <div class="col-6">
                         <div class="filter-container">
                             <el-date-picker
@@ -37,37 +45,36 @@
                 </div>
                 <div class="row">
                     <div class="col-lg-6">
-                        <div class="d-flex justify-content-between">
-                            <h4>Activos</h4>
-                            <h4 class="text-right">{{ accounts.totals.assets || 0.00 }}</h4>
-                        </div>
-                        <data-table :data="accounts.assets" :columns="columns" />
+                        <data-table
+                            title="Activos"
+                            :data="accounts.assets"
+                            :columns="columns"
+                            :total="accounts.totals.assets" />
                     </div>
                     <div class="col-lg-6">
-                        <div class="d-flex justify-content-between">
-                            <h4>Pasivos</h4>
-                            <h4 class="text-right">{{ accounts.totals.liabilities || 0.00 }}</h4>
-                        </div>
-                        <data-table :data="accounts.liabilities" :columns="columns" />
-                        <hr>
-                        <div class="d-flex justify-content-between">
-                            <h4>Patrimonio</h4>
-                            <h4 class="text-right">{{ accounts.totals.equity || 0.00 }}</h4>
-                        </div>
-                        <data-table :data="accounts.equity" :columns="columns" />
+                        <data-table
+                            title="Pasivos"
+                            :data="accounts.liabilities"
+                            :columns="columns"
+                            :total="accounts.totals.liabilities" />
+                        <data-table
+                            title="Patrimonio"
+                            :data="accounts.equity"
+                            :columns="columns"
+                            :total="accounts.totals.equity"/>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-lg-6 bg-light">
                         <div class="d-flex justify-content-between">
                             <h4>Activos</h4>
-                            <h4 class="text-right">Total: {{ accounts.totals.assets || 0.00 }}</h4>
+                            <h4 class="text-right">Total: {{ accounts.totals.assets || 0.00 | numberFormat }}</h4>
                         </div>
                     </div>
                     <div class="col-lg-6 bg-light">
                         <div class="d-flex justify-content-between">
                             <h4>Pasivos + Patrimonio</h4>
-                            <h4 class="text-right">Total: {{ accounts.totals.liabilities + accounts.totals.equity || 0.00 }}</h4>
+                            <h4 class="text-right">Total: {{ accounts.totals.liabilities + accounts.totals.equity || 0.00 | numberFormat }}</h4>
                         </div>
                     </div>
                 </div>

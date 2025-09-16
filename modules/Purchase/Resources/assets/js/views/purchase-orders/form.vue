@@ -79,7 +79,17 @@
                                     <small class="form-control-feedback" v-if="errors.payment_method_type_id" v-text="errors.payment_method_type_id[0]"></small>
                                 </div>
                             </div>
-
+                            <div class="col-lg-12">
+                                <div class="form-group">
+                                    <label class="control-label">Notas del comprobante</label>
+                                    <el-input
+                                        type="textarea"
+                                        v-model="form.notes"
+                                        :rows="2"
+                                        placeholder="Notas generales del comprobante">
+                                    </el-input>
+                                </div>
+                            </div>
                             <div class="col-lg-3" style="margin-top:29px;">
                                 <div class="form-group" :class="{'has-danger': errors.file}">
                                     <el-upload
@@ -102,6 +112,7 @@
                             <div class="col-lg-12 col-md-6 d-flex align-items-end mt-4">
                                 <div class="form-group">
                                     <button type="button" class="btn waves-effect waves-light btn-primary" @click.prevent="showDialogAddItem = true">+ Agregar Producto</button>
+                                    <button type="button" class="btn waves-effect waves-light btn-primary" @click.prevent="dialogRetention = !dialogRetention">+ Agregar retención</button>
                                 </div>
                             </div>
                         </div>
@@ -132,9 +143,9 @@
                                             <td class="text-center">{{ row.item.unit_type.name }}</td>
                                             <td class="text-right">{{ row.quantity }}</td>
                                             <!-- <td class="text-right">{{ currency_type.symbol }} {{ row.unit_price }}</td> -->
-                                            <td class="text-right">{{ ratePrefix() }} {{ getFormatUnitPriceRow(row.unit_price) }}</td>
-                                            <td class="text-right">{{ ratePrefix() }} {{ row.discount }}</td>
-                                            <td class="text-right">{{ ratePrefix() }} {{ row.total }}</td>
+                                            <td class="text-right">{{ ratePrefix() }} {{ getFormatUnitPriceRow(row.unit_price) | numberFormat }}</td>
+                                            <td class="text-right">{{ ratePrefix() }} {{ row.discount | numberFormat }}</td>
+                                            <td class="text-right">{{ ratePrefix() }} {{ row.total | numberFormat }}</td>
                                             <td class="text-right">
                                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickRemoveItem(index)">x</button>
                                             </td>
@@ -150,12 +161,12 @@
                                     <tr>
                                         <td>TOTAL VENTA</td>
                                         <td>:</td>
-                                        <td class="text-right">{{ratePrefix()}} {{ form.sale }}</td>
+                                        <td class="text-right">{{ratePrefix()}} {{ form.sale | numberFormat }}</td>
                                     </tr>
                                     <tr >
                                         <td>TOTAL DESCUENTO (-)</td>
                                         <td>:</td>
-                                        <td class="text-right">{{ratePrefix()}} {{ form.total_discount }}</td>
+                                        <td class="text-right">{{ratePrefix()}} {{ form.total_discount | numberFormat }}</td>
                                     </tr>
                                     <template v-for="(tax, index) in form.taxes">
                                         <tr v-if="((tax.total > 0) && (!tax.is_retention))" :key="index">
@@ -163,15 +174,25 @@
                                                 {{tax.name}}(+)
                                             </td>
                                             <td>:</td>
-                                            <td class="text-right">{{ratePrefix()}} {{Number(tax.total).toFixed(2)}}</td>
+                                            <td class="text-right">{{ratePrefix()}} {{Number(tax.total).toFixed(2) | numberFormat}}</td>
                                         </tr>
                                     </template>
                                     <tr>
                                         <td>SUBTOTAL</td>
                                         <td>:</td>
-                                        <td class="text-right">{{ratePrefix()}} {{ form.subtotal }}</td>
+                                        <td class="text-right">{{ratePrefix()}} {{ form.subtotal | numberFormat }}</td>
                                     </tr>
-
+                                    <template v-for="(tax, index) in form.taxes">
+                                        <tr v-if="tax.is_retention && tax.retention > 0" :key="index">
+                                            <td>{{tax.name}}(-) </td>
+                                            <td>:</td>
+                                            <td class="text-right">
+                                                <el-input :value="tax.retention" readonly>
+                                                    <i slot="suffix" class="el-input__icon el-icon-delete pointer"  @click="deleteRetention(tax.id)"></i>
+                                                </el-input>
+                                            </td>
+                                        </tr>
+                                    </template>
                                     <template v-for="(tax, index) in form.taxes">
                                         <tr v-if="((tax.is_retention) && (tax.apply))" :key="index">
 
@@ -195,7 +216,7 @@
                             </div>
 
                             <div class="col-md-12">
-                                <h3 class="text-right" v-if="form.total > 0"><b>TOTAL COMPRAS: </b>{{ currency_type.symbol }} {{ form.total }}</h3>
+                                <h3 class="text-right" v-if="form.total > 0"><b>TOTAL COMPRAS: </b>{{ currency_type.symbol }} {{ form.total | numberFormat }}</h3>
 
                                 <template v-if="is_perception_agent">
                                     <hr>
@@ -249,7 +270,23 @@
                 </form>
             </div>
         </div>
-
+        <el-dialog
+            title="Retención"
+            :visible.sync="dialogRetention"
+            width="600px">
+            <el-select v-model="retention_selected" placeholder="Seleccione">
+                <el-option
+                    v-for="(item, index) in retention_taxes"
+                    :key="index"
+                    :label="item.name+' '+item.rate+'%'"
+                    :value="item.id">
+                </el-option>
+            </el-select>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="dialogRetention = false">Cancelar</el-button>
+                <el-button type="primary" @click="validateRetention">Confirmar</el-button>
+            </span>
+        </el-dialog>
         <purchase-form-item :showDialog.sync="showDialogAddItem"
                            :currency-type-id-active="form.currency_type_id"
                            @add="addRow"></purchase-form-item>
@@ -309,7 +346,10 @@
                 fileList: [],
                 currency_type: {},
                 taxes:  [],
-                purchaseNewId: null
+                purchaseNewId: null,
+                retention_selected: null,
+                dialogRetention: false,
+                retention_taxes: [],
             }
         },
         async created() {
@@ -333,6 +373,7 @@
                     this.changeDateOfIssue()
                     // this.changeDocumentType()
                     this.changeCurrencyType()
+                    this.retentiontaxes()
                 })
 
             this.$eventHub.$on('reloadDataPersons', (supplier_id) => {
@@ -820,6 +861,33 @@
                     this.filterSuppliers()
 
                 })
+            },
+            retentiontaxes() {
+                this.retention_taxes = this.taxes.filter(tax => tax.is_retention);
+            },
+            validateRetention() {
+                var current_tax = this.form.taxes.find(tax => tax.id == this.retention_selected);
+                if (!current_tax) {
+                    this.$message.error('No se encontró la retención seleccionada.');
+                    return;
+                }
+                current_tax.retention = (Number(current_tax.in_tax ? this.form.total : this.form.sale) * (current_tax.rate / current_tax.conversion)).toFixed(2);
+
+                var totalRetentionBase = 0;
+                totalRetentionBase += Number(current_tax.retention);
+
+                if (Number(totalRetentionBase) >= Number(this.form.total)) {
+                    current_tax.retention = Number(0).toFixed(2);
+                }
+
+                this.form.total -= Number(current_tax.retention).toFixed(2);
+                this.dialogRetention = false;
+                this.retention_selected = null;
+            },
+            deleteRetention(id) {
+                var current_tax = this.form.taxes.find(tax => tax.id === id);
+                current_tax.retention = 0;
+                this.calculateTotal()
             },
         }
     }

@@ -1,11 +1,17 @@
 <template>
     <div id="styleSwitcher" class="style-switcher">
 
-        <a id="styleSwitcherOpen" class="style-switcher-open" href="#"><i class="fas fa-cogs"></i></a>
+        <!-- Close button: pone style.right = -260px y quita clases open/active -->
+        <div class="d-flex justify-content-between align-items-center px-3 mt-3">
+            <h4 class="m-0">Configuraciones visuales</h4>
+            <button type="button" class="style-switcher-close btn-close" @click="closeSwitcher" aria-label="Cerrar">
+                <svg  xmlns="http://www.w3.org/2000/svg"  width="22"  height="22"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-x"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
+            </button>
+        </div>            
+
+        <!-- <a id="styleSwitcherOpen" class="style-switcher-open" href="#"><i class="fas fa-cogs"></i></a> -->
 
         <form class="style-switcher-wrap" autocomplete="off">
-
-            <h4>Configuraciones visuales</h4>
 
             <div v-if="visual == null">
                 <h5 class="">No posee ajustes actualmente</h5>
@@ -14,24 +20,12 @@
             </div>
             <div v-if="typeUser != 'integrator'">
 
-                <h5>Fondo oscuro</h5>
-                <el-switch
-                    v-model="visuals.bg"
-                    active-text="Dark"
-                    inactive-text="Light"
-                    active-value="dark"
-                    inactive-value="light"
-                    active-color="#383f48"
-                    inactive-color="#ccc"
-                    @change="submit">
-                </el-switch>
-
-                <div class="hidden-on-dark pt-3">
-                    <h5>Encabezado</h5>
+                <div class="switch-container">
+                    <h5>Tema de la interfaz</h5>
                     <el-switch
-                        v-model="visuals.header"
-                        active-text="Dark"
-                        inactive-text="Light"
+                        v-model="visuals.bg"
+                        active-text="Oscuro"
+                        inactive-text="Claro"
                         active-value="dark"
                         inactive-value="light"
                         active-color="#383f48"
@@ -40,12 +34,12 @@
                     </el-switch>
                 </div>
 
-                <div class="hidden-on-dark pt-3">
-                    <h5>Paneles</h5>
+                <div class="switch-container pt-3">
+                    <h5>Tema del menú lateral</h5>
                     <el-switch
                         v-model="visuals.sidebars"
-                        active-text="Dark"
-                        inactive-text="Light"
+                        active-text="Oscuro"
+                        inactive-text="Claro"
                         active-value="dark"
                         inactive-value="light"
                         active-color="#383f48"
@@ -54,7 +48,7 @@
                     </el-switch>
                 </div>
 
-                <div class="pt-3">
+                <div class="pt-3 switch-container">
                     <h5>Menú lateral contraído</h5>
                     <div :class="{'has-danger': errors.compact_sidebar}">
                         <el-switch
@@ -69,15 +63,20 @@
                 </div>
 
                 <div class="pt-3">
-                    <h5>Cantidad de columnas en POS</h5>
-                    <div :class="{'has-danger': errors.amount_plastic_bag_taxes}">
-                        <el-slider
-                            @change="submitForm"
-                            v-model="form.colums_grid_item"
-                            :min="3"
-                            :max="6">
-                        </el-slider>
-                        <small class="form-control-feedback" v-if="errors.amount_plastic_bag_taxes" v-text="errors.amount_plastic_bag_taxes[0]"></small>
+                    <h5>Visualización de productos en POS</h5>
+                    <div :class="{'has-danger': errors.colums_grid_item}">
+                        <el-select
+                          v-model="form.colums_grid_item"
+                          placeholder="Seleccionar diseño"
+                          @change="submitForm"
+                          style="width: 100%"
+                        >
+                          <el-option label="Predeterminado" :value="3" />
+                          <el-option label="Cómodo"         :value="4" />
+                          <el-option label="Compacto"       :value="5" />
+                          <el-option label="Apilado"        :value="6" />
+                        </el-select>
+                        <small class="form-control-feedback" v-if="errors.colums_grid_item" v-text="errors.colums_grid_item[0]"></small>
                     </div>
                 </div>
 
@@ -120,12 +119,36 @@
             await this.getRecords()
         },
         methods: {
+            closeSwitcher() {
+              const el = document.getElementById('styleSwitcher')
+              if (!el) return
+
+              if (!el.classList.contains('open') && !el.classList.contains('active')) {
+                el.style.right = '-280px'
+                el.classList.remove('open', 'active', 'closing')
+                return
+              }
+          
+              el.classList.add('closing')
+          
+              void el.offsetWidth
+          
+              el.style.right = '-280px'
+          
+              const onEnd = () => {
+                el.classList.remove('closing')
+                el.classList.remove('open', 'active')
+                el.removeEventListener('transitionend', onEnd)
+              }
+              el.addEventListener('transitionend', onEnd)
+            },
+
             initForm() {
                 this.errors = {}
                 this.form = {
                     id: 1,
                     compact_sidebar: true,
-                    colums_grid_item: 4,
+                    colums_grid_item: "4",
                     enable_whatsapp: true,
                     phone_whatsapp: ''
                 }
@@ -135,6 +158,7 @@
                     if (response.data !== ''){
                         this.visuals = response.data.data.visual;
                         this.form = response.data.data;
+                        this.form.colums_grid_item = Number(this.form.colums_grid_item)
                     }
                 });
             },

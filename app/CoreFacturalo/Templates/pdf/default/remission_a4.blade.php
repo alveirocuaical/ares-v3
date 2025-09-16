@@ -6,6 +6,7 @@
     $tittle = $document->prefix.'-'.str_pad($document->id, 8, '0', STR_PAD_LEFT);
     $total_payments = $payments->sum('payment');
     $is_paid = $total_payments == $document->total;
+    $advanced_configuration = \Modules\Factcolombia1\Models\TenantService\AdvancedConfiguration::first();
 @endphp
 <html>
 <head>
@@ -131,6 +132,17 @@
                     </tr>
                     @endif
                 </table>
+                <table>
+                    <tr>
+                        <td>
+                            @if($advanced_configuration && $advanced_configuration->custom_remission_footer_enabled && $advanced_configuration->custom_remission_footer_message)
+                                <div style="width:100%;text-align:center;margin-top:10px;font-size:12px;">
+                                    {{ $advanced_configuration->custom_remission_footer_message }}
+                                </div>
+                            @endif
+                        </td>
+                    </tr>
+                </table>
             </td>
         </tr>
     </table>
@@ -246,6 +258,34 @@
             </p>
         </div>
     </div>
+
+    {{-- Mostrar cuentas bancarias si existen --}}
+    @if(isset($document->bank_accounts) && $document->bank_accounts->count())
+        <br>
+        <table class="table" style="width: 100%; font-size: 11px; border: 1px solid #ccc;">
+            <thead>
+                <tr>
+                    <th colspan="2" class="text-center" style="background: #f3f3f3;"><strong>Cuentas bancarias para pago</strong></th>
+                </tr>
+                <tr>
+                    <th>Banco</th>
+                    <th>Número de Cuenta</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($document->bank_accounts as $cuenta)
+                    <tr>
+                        <td>{{ $cuenta->bank->description ?? '' }}</td>
+                        <td>{{ $cuenta->number }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+        <span style="font-size: 10px;">
+            El pago debe realizarse únicamente a la cuenta bancaria indicada, no asumimos responsabilidad por consignaciones a otras cuentas.
+        </span>
+        <br>
+    @endif
 
 </body>
 </html>

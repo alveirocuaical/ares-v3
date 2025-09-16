@@ -21,11 +21,27 @@
                       </div>
                       <div class="col-md-4">
                           <div class="form-group">
+                              <label class="control-label">Inventario</label>
+                              <el-select v-model="form.inventory_account" filterable >
+                                  <el-option v-for="option in chart_accounts_sales" :key="option.code" :value="option.code" :label="`${option.code} - ${option.name}`"></el-option>
+                              </el-select>
+                          </div>
+                      </div>
+                      <div class="col-md-4">
+                          <div class="form-group">
+                              <label class="control-label">Costo de ventas</label>
+                              <el-select v-model="form.sale_cost_account" filterable >
+                                  <el-option v-for="option in chart_accounts_purchases" :key="option.code" :value="option.code" :label="`${option.code} - ${option.name}`"></el-option>
+                              </el-select>
+                          </div>
+                      </div>
+                      <div class="col-md-4">
+                          <div class="form-group">
                               <label class="control-label">	Clasificación contable</label>
                               <el-input v-model="form.accounting_clasification"/>
                           </div>
                       </div>
-                    
+
                 </div>
             </div>
             <div class="form-actions text-right pt-2">
@@ -49,8 +65,7 @@
                 resource: 'accounting/clasification-sale',
                 errors: {},
                 headers: headers_token,
-                form: {
-                },
+                form: {},
                 chart_accounts_sales: [],
                 chart_accounts_purchases: [],
             }
@@ -75,6 +90,8 @@
                     id: null,
                     income_account: null,
                     sales_returns_account: null,
+                    inventory_account: null,
+                    sale_cost_account: null,
                     accounting_clasification: null
                 }
             },
@@ -89,7 +106,7 @@
                         this.chart_accounts_sales = response.data.chart_accounts_sales
                         this.chart_accounts_purchases = response.data.chart_accounts_purchases
                     })
-                    
+
                 if (this.recordId) {
                     this.$http.get(`/${this.resource}/record/${this.recordId}`)
                         .then(response => {

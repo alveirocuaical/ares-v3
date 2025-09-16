@@ -119,6 +119,15 @@
                                         v-text="errors.payment_form_id[0]"></small>
                                 </div>
                             </div>
+                            <div class="col-lg-4 pb-2" v-if="advanced_configuration.enable_seller_views">
+                                <div class="form-group" :class="{ 'has-danger': errors.seller_id }">
+                                    <label class="control-label">Vendedor</label>
+                                    <el-select v-model="form.seller_id" filterable remote reserve-keyword placeholder="Seleccione un vendedor" :remote-method="searchRemoteSellers" :loading="loading_sellers">
+                                        <el-option v-for="seller in sellers" :key="seller.id" :label="seller.full_name" :value="seller.id"></el-option>
+                                    </el-select>
+                                    <small class="form-control-feedback" v-if="errors.seller_id" v-text="errors.seller_id[0]"></small>
+                                </div>
+                            </div>
                             <template v-if="is_edit">
                                 <div class="col-lg-2">
                                     <div class="form-group">
@@ -155,8 +164,7 @@
                             <div class="col-md-12">
                                 <div class="form-group">
                                     <label class="control-label">Observaciones</label>
-                                    <el-input type="textarea" autosize :rows="1" v-model="form.observation">
-                                    </el-input>
+                                    <el-input type="textarea" autosize:rows="1" v-model="form.observation" maxlength="250" show-word-limit></el-input>
                                 </div>
                             </div>
                         </div>
@@ -411,6 +419,7 @@
                 @addHealthData="addHealthData"></document-health-data>
             <document-health-user :showDialog.sync="showDialogAddHealthUser"
                 :recordItemHealthUser="recordItemHealthUser" @add="addRowHealthUser"></document-health-user>
+            <discount-code-dialog :visible.sync="showDiscountCodeDialog" @validated="onDiscountCodeValidated"/>
         </div>
     </div>
 </template>
@@ -464,9 +473,11 @@ import DocumentOptions from './partials/options.vue'
 import DocumentOrderReference from './partials/order_reference.vue'
 import DocumentHealthData from './partials/health_fields.vue'
 import DocumentHealthUser from './partials/health_users.vue'
+import DiscountCodeDialog from '../../../components/DiscountCodeDialog.vue'
+
 export default {
     props: ['typeUser', 'configuration', 'invoice', 'is_health', 'is_edit'],
-    components: { PersonForm, DocumentFormItem, DocumentFormRetention, DocumentOptions, DocumentOrderReference, DocumentHealthData, DocumentHealthUser },
+    components: { PersonForm, DocumentFormItem, DocumentFormRetention, DocumentOptions, DocumentOrderReference, DocumentHealthData, DocumentHealthUser, DiscountCodeDialog },
     mixins: [functions, exchangeRate],
     data() {
         return {
@@ -517,6 +528,13 @@ export default {
             correlative_api: null, // Aquí almacenarás el siguiente número consecutivo
             currentPrefix: null,
             global_discount_is_amount: true,
+            bank_accounts: [],
+            advanced_configuration: {},
+            showDiscountCodeDialog: false,
+            discount_code_validated: false,
+            sellers: [],
+            loading_sellers: false,
+            seller_search_timeout: null,
         }
     },
     //filtro de separadores de mil
@@ -531,6 +549,12 @@ export default {
     },
     async created() {
         //            console.log(this.invoice)
+        await this.$http.get('/co-advanced-configuration/record').then(response => {
+            this.advanced_configuration = response.data.data
+        })
+        if (this.advanced_configuration.enable_seller_views) {
+        await this.fetchSellers();
+        }
         await this.initForm()
         await this.fetchCompanyInfo();
         await this.$http.get(`/${this.resource}/tables`)
@@ -572,7 +596,11 @@ export default {
         })
         //            console.log(this.customers)
         await this.generatedFromExternalDocument()
-    },
+            await this.$http.get('/bank_accounts/records')
+                .then(response => {
+                    this.bank_accounts = response.data.data
+                })
+        },
     computed: {
         generatedFromPos() {
             const form_exceed_uvt = this.$getStorage('form_exceed_uvt')
@@ -626,6 +654,33 @@ export default {
             } catch (error) {
                 console.error('Error al obtener la información de la compañía:', error);
             }
+        },
+        async fetchSellers() {
+            try {
+                const response = await this.$http.get('/co-sellers/active');
+                this.sellers = response.data.data;
+            } catch (e) {
+                this.sellers = [];
+            }
+        },
+        searchRemoteSellers(query) {
+            if (this.seller_search_timeout) clearTimeout(this.seller_search_timeout);
+
+            if (!query || query.length < 3) {
+                this.sellers = [];
+                return;
+            }
+
+            this.loading_sellers = true;
+            this.seller_search_timeout = setTimeout(() => {
+                this.$http.get('/co-sellers/active', { params: { search: query } })
+                    .then(response => {
+                        this.sellers = response.data.data;
+                    })
+                    .finally(() => {
+                        this.loading_sellers = false;
+                    });
+            }, 400);
         },
         shouldShowResolution(option) {
             // Si ambientId es 2, no mostrar opciones con prefijo SETP
@@ -742,7 +797,7 @@ export default {
                 return value;
             }
             // Asumiendo que numericPrice es un número
-            const formattedPrice = numericPrice.toLocaleString('en-US', {
+            const formattedPrice = numericPrice.toLocaleString('es-CO', {
                 style: 'decimal',  // Estilo 'decimal' para separadores de mil y dos decimales
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
@@ -771,7 +826,9 @@ export default {
             // Configura el ítem para la edición
             row.indexi = index;
             this.recordItem = row;
-            this.showDialogAddItem = true;
+            this.$nextTick(() => {
+                this.showDialogAddItem = true;
+            });
         },
         clickEditUser(row, index) {
             row.indexi = index
@@ -863,7 +920,11 @@ export default {
                 total: this.invoice ? this.invoice.total : 0,
                 sale: this.invoice ? this.invoice.sale : 0,
                 observation: this.invoice ? this.invoice.observation : null,
-                format_print: this.invoice ? this.invoice.format_print : null,
+                format_print: this.invoice
+                    ? this.invoice.format_print
+                    : (this.advanced_configuration && this.advanced_configuration.default_format_print
+                        ? String(this.advanced_configuration.default_format_print)
+                        : "1"),
                 time_days_credit: this.invoice ? this.invoice.time_days_credit : 0,
                 service_invoice: {},
                 payment_form_id: this.invoice ? this.invoice.payment_form_id : null,
@@ -875,6 +936,18 @@ export default {
                 health_fields: {},
                 health_users: []
             }
+            this.form.head_note = this.invoice && this.invoice.head_note !== undefined
+                ? this.invoice.head_note
+                : (this.advanced_configuration.head_note || '');
+
+            this.form.foot_note = this.invoice && this.invoice.foot_note !== undefined
+                ? this.invoice.foot_note
+                : (this.advanced_configuration.foot_note || '');
+
+            // this.form.notes = this.invoice && this.invoice.notes !== undefined
+            //     ? this.invoice.notes
+            //     : (this.advanced_configuration.notes || '');
+            
             if (this.is_edit)
                 this.form.number = this.invoice ? this.invoice.number : null
             this.errors = {}
@@ -891,10 +964,11 @@ export default {
             this.activePanel = 0
             this.initForm()
             this.form.currency_id = (this.currencies.length > 0) ? 170 : null
+            this.discount_code_validated = false;
             // this.form.establishment_id = (this.establishments.length > 0)?this.establishments[0].id:null
             this.form.type_invoice_id = (this.type_invoices.length > 0) ? this.type_invoices[0].id : null
             this.form.payment_form_id = (this.payment_forms.length > 0) ? this.payment_forms[0].id : null;
-            this.form.payment_method_id = (this.payment_methods.length > 0) ? this.payment_methods[0].id : null;
+            this.form.payment_method_id = (this.payment_methods.length > 0) ? this.payment_methods[9].id : null;
             // this.form.operation_type_id = (this.operation_types.length > 0)?this.operation_types[0].id:null
             // this.selectDocumentType()
             // this.changeEstablishment()
@@ -958,7 +1032,26 @@ export default {
             // }
         },
         addRow(row) {
-            // si no selecciona la casilla de "impuesto incluido en el precio" se debe sumar el impuesto al precio
+            // Validar stock mínimo si la opción está activa
+            if (this.advanced_configuration && this.advanced_configuration.validate_min_stock) {
+                // Si el producto tiene warehouses y no es servicio
+                if (row.item && row.item.warehouses && row.item.unit_type_id !== 'ZZ') {
+                    // Buscar el almacén seleccionado o el primero
+                    const warehouse = row.item.warehouses.find(w => w.checked) || row.item.warehouses[0];
+                    const stock = warehouse ? warehouse.stock : 0;
+                    const stock_min = row.item.stock_min !== undefined ? row.item.stock_min : 0;
+                    // Validar stock real vs stock mínimo
+                    if (Number(stock) < Number(stock_min)) {
+                        this.$message.error('El stock actual es menor al stock mínimo para este producto.');
+                        return;
+                    }
+                    // Validar cantidad solicitada vs stock real
+                    if (Number(row.quantity) > Number(stock)) {
+                        this.$message.error('No hay stock suficiente para este producto.');
+                        return;
+                    }
+                }
+            }
             if(row.tax_included_in_price) {
                 const tax_caculable = parseFloat(row.tax.rate) / row.tax.conversion;
                 const price_without_tax = row.price / (1 + tax_caculable);
@@ -1210,6 +1303,29 @@ export default {
                 if (!this.form.health_fields.invoice_period_start_date || !this.form.health_fields.invoice_period_end_date)
                     return this.$message.error('Para facturas del sector salud debe incluir los datos del periodo de facturacion')
             }
+            if (
+                this.advanced_configuration &&
+                this.advanced_configuration.validate_discount_code &&
+                Number(this.form.total_discount) > 0 &&
+                !this.discount_code_validated
+            ) {
+                this.showDiscountCodeDialog = true;
+                return;
+            }
+            // Agregar flag is_edit cuando es edición
+            if (this.is_edit) {
+                this.form.is_edit = true;
+            }
+
+            // Agregar las cuentas bancarias al form antes de enviar
+            this.form.bank_accounts = this.bank_accounts;
+
+            ['foot_note', 'head_note'].forEach(key => {
+                if (this.form[key] === null || this.form[key] === undefined || this.form[key] === '') {
+                    delete this.form[key];
+                }
+            });
+
             this.form.service_invoice = await this.createInvoiceService();
             // return
             this.loading_submit = true
@@ -1419,7 +1535,8 @@ export default {
                         code: x.item.internal_id,
                         type_item_identification_id: 4,
                         price_amount: this.cadenaDecimales(Number(x.price) + (Number(x.total_tax) / Number(x.quantity))),
-                        base_quantity: x.quantity
+                        base_quantity: x.quantity,
+                        ...(x.purchase_order_number ? { purchase_order_number: x.purchase_order_number } : {})
                     }
                 }
                 else {
@@ -1441,7 +1558,8 @@ export default {
                         code: x.item.internal_id,
                         type_item_identification_id: 4,
                         price_amount: this.cadenaDecimales(Number(x.price) + (Number(x.total_tax) / Number(x.quantity))),
-                        base_quantity: x.quantity
+                        base_quantity: x.quantity,
+                        ...(x.purchase_order_number ? { purchase_order_number: x.purchase_order_number } : {})
                     };
                 }
             });
@@ -1490,6 +1608,20 @@ export default {
                 return amount.toString();
             else
                 return amount.toString() + ".00";
+        },
+        onDiscountCodeValidated(success) {
+            if (success) {
+                this.discount_code_validated = true;
+                this.showDiscountCodeDialog = false;
+                this.submit(); // vuelve a intentar el submit, ahora sí pasa
+            }
+        },
+        watch: {
+            'form.total_discount'(nuevo, anterior) {
+                if (this.discount_code_validated && Number(nuevo) !== Number(anterior)) {
+                    this.discount_code_validated = false;
+                }
+            }
         },
     }
 }

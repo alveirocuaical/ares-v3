@@ -95,12 +95,24 @@
                                         v-text="errors.payment_method_id[0]"></small>
                                 </div>
                             </div>
+                            <div class="col-lg-4 pb-2" v-if="advanced_configuration.enable_seller_views">
+                                <div class="form-group" :class="{ 'has-danger': errors.seller_id }">
+                                    <label class="control-label">Vendedor</label>
+                                    <el-select v-model="form.seller_id" filterable remote reserve-keyword
+                                        placeholder="Seleccione un vendedor"
+                                        :remote-method="searchRemoteSellers"
+                                        :loading="loading_sellers">
+                                        <el-option v-for="seller in sellers" :key="seller.id" :label="seller.full_name" :value="seller.id"></el-option>
+                                    </el-select>
+                                    <small class="form-control-feedback" v-if="errors.seller_id" v-text="errors.seller_id[0]"></small>
+                                </div>
+                            </div>
                         </div>
                         <div class="row mt-2">
                             <div class="col-md-12">
                                 <div class="form-group">
                                     <label class="control-label">Observaciones</label>
-                                    <el-input type="textarea" autosize :rows="1" v-model="form.observation">
+                                    <el-input type="textarea" autosize :rows="1" v-model="form.observation" maxlength="250" show-word-limit>
                                     </el-input>
                                 </div>
                             </div>
@@ -170,6 +182,24 @@
                                         <td class="text-right">{{ ratePrefix() }} {{ form.sale }}</td>
                                     </tr>
                                     <tr>
+                                        <td>
+                                            DESCUENTO
+                                            <el-switch v-model="global_discount_is_amount" :active-text="ratePrefix()"
+                                                inactive-text="%" @change="calculateTotal">
+                                            </el-switch>
+                                        </td>
+                                        <td>:</td>
+                                        <td class="text-right" id="input-with-select">
+                                            <el-input v-model="total_global_discount" :min="0" class="input-discount"
+                                                @input="calculateTotal">
+                                                <template slot="prefix">
+                                                    <span v-if="global_discount_is_amount">{{ ratePrefix() }}</span>
+                                                    <span v-else>%</span>
+                                                </template>
+                                            </el-input>
+                                        </td>
+                                    </tr>
+                                    <tr>
                                         <td>TOTAL DESCUENTO (-)</td>
                                         <td>:</td>
                                         <td class="text-right">{{ ratePrefix() }} {{ form.total_discount }}</td>
@@ -234,6 +264,10 @@
                 :exchange-rate-sale="form.exchange_rate_sale"
                 :typeUser="typeUser"
                 :configuration="configuration"></document-form-item>
+            <discount-code-dialog
+                :visible.sync="showDiscountCodeDialog"
+                @validated="onDiscountCodeValidated"
+            />
         </div>
     </div>
 </template>
@@ -257,9 +291,11 @@ import PersonForm from '@views/persons/form.vue'
 import { functions, exchangeRate } from '@mixins/functions'
 import DocumentOptions from './partials/options.vue'
 import DocumentFormItem from '@viewsModuleProColombia/tenant/document/partials/item.vue'
+import DiscountCodeDialog from './partials/DiscountCodeDialog.vue'
+
 export default {
     props: ['typeUser', 'configuration'],
-    components: { PersonForm, DocumentOptions, DocumentFormItem },
+    components: { PersonForm, DocumentOptions, DocumentFormItem, DiscountCodeDialog },
     mixins: [functions, exchangeRate],
     data() {
         return {
@@ -290,6 +326,7 @@ export default {
             currency_type: {},
             documentNewId: null,
             total_global_discount: 0,
+            global_discount_is_amount: true,
             loading_search: false,
             taxes: [],
             prefixes: [
@@ -300,6 +337,13 @@ export default {
                     value: 'FB'
                 }
             ],
+            advanced_configuration: {},
+            showDiscountCodeDialog: false,
+            discount_code_validated: false,
+            sellers: [],
+            loading_sellers: false,
+            seller_search_timeout: null,
+            seller_warehouse_id: null,
         }
     },
     async created() {
@@ -320,8 +364,42 @@ export default {
         this.$eventHub.$on('reloadDataPersons', (customer_id) => {
             this.reloadDataCustomers(customer_id)
         })
+        // Cargar configuración avanzada para validación de stock
+        await this.$http.get('/co-advanced-configuration/record').then(response => {
+            this.advanced_configuration = response.data.data
+        })
+        if (this.advanced_configuration.enable_seller_views) {
+            await this.fetchSellers();
+        }
     },
     methods: {
+        async fetchSellers() {
+            try {
+                const response = await this.$http.get('/co-sellers/active');
+                this.sellers = response.data.data;
+            } catch (e) {
+                this.sellers = [];
+            }
+        },
+        searchRemoteSellers(query) {
+            if (this.seller_search_timeout) clearTimeout(this.seller_search_timeout);
+
+            if (!query || query.length < 3) {
+                this.sellers = [];
+                return;
+            }
+
+            this.loading_sellers = true;
+            this.seller_search_timeout = setTimeout(() => {
+                this.$http.get('/co-sellers/active', { params: { search: query } })
+                    .then(response => {
+                        this.sellers = response.data.data;
+                    })
+                    .finally(() => {
+                        this.loading_sellers = false;
+                    });
+            }, 400);
+        },
         ratePrefix(tax = null) {
             if ((tax != null) && (!tax.is_fixed_value)) return null;
             return (this.company.currency != null) ? this.company.currency.symbol : '$';
@@ -378,6 +456,7 @@ export default {
                 prefix: 'RM',
                 number: null,
                 exchange_rate_sale: 0,
+                seller_id: null,
             }
             this.errors = {}
             this.initInputPerson()
@@ -400,6 +479,27 @@ export default {
             this.customers = this.all_customers
         },
         addRow(row) {
+            let selectedWarehouse = null;
+            if (row.item && row.item.warehouses) {
+                selectedWarehouse = row.item.warehouses.find(w => w.checked) || row.item.warehouses[0];
+            }
+            row.warehouse_id = selectedWarehouse ? selectedWarehouse.warehouse_id : null;
+            // Validar stock mínimo si la opción está activa
+            if (this.advanced_configuration && this.advanced_configuration.validate_min_stock) {
+                if (row.item && row.item.warehouses && row.item.unit_type_id !== 'ZZ') {
+                    const warehouse = row.item.warehouses.find(w => w.checked) || row.item.warehouses[0];
+                    const stock = warehouse ? warehouse.stock : 0;
+                    const stock_min = row.item.stock_min !== undefined ? row.item.stock_min : 0;
+                    if (Number(stock) < Number(stock_min)) {
+                        this.$message.error('El stock actual es menor al stock mínimo para este producto.');
+                        return;
+                    }
+                    if (Number(row.quantity) > Number(stock)) {
+                        this.$message.error('No hay stock suficiente para este producto.');
+                        return;
+                    }
+                }
+            }
             if(row.tax_included_in_price) {
                 const tax_caculable = parseFloat(row.tax.rate) / row.tax.conversion;
                 const price_without_tax = row.price / (1 + tax_caculable);
@@ -426,8 +526,6 @@ export default {
             this.setDataTotals()
         },
         setDataTotals() {
-            // crear mixins porque esta duplicado en varios componentes
-            // console.log(val)
             let val = this.form
             val.taxes = JSON.parse(JSON.stringify(this.taxes));
             val.items.forEach(item => {
@@ -464,11 +562,19 @@ export default {
             });
             val.total_tax = val.items.reduce((p, c) => Number(p) + Number(c.total_tax), 0).toFixed(2);
             let total = val.items.reduce((p, c) => Number(p) + Number(c.total), 0).toFixed(2);
+
+            // DESCUENTO GLOBAL
+            let amount_total_dicount_global = this.total_global_discount;
+            if (!this.global_discount_is_amount && amount_total_dicount_global > 0) {
+                amount_total_dicount_global = ((total - val.total_tax) * amount_total_dicount_global) / 100;
+            }
+
             val.subtotal = val.items.reduce((p, c) => Number(p) + (Number(c.subtotal) - Number(c.total_discount)), 0).toFixed(2);
             val.sale = val.items.reduce((p, c) => Number(p) + Number(c.price * c.quantity) - Number(c.total_discount), 0).toFixed(2);
-            val.total_discount = val.items.reduce((p, c) => Number(p) + Number(c.total_discount), 0).toFixed(2);
+            val.total_discount = (val.items.reduce((p, c) => Number(p) + Number(c.total_discount), 0) + Number(amount_total_dicount_global)).toFixed(2);
+            total = (Number(total) - Number(amount_total_dicount_global)).toFixed(2);
+
             let totalRetentionBase = Number(0);
-            // this.taxes.forEach(tax => {
             val.taxes.forEach(tax => {
                 if (tax.is_retention && tax.in_base && tax.apply) {
                     tax.retention = (
@@ -513,6 +619,16 @@ export default {
             if (!this.form.customer_id) {
                 return this.$message.error('Debe seleccionar un cliente')
             }
+            if (
+                this.advanced_configuration &&
+                this.advanced_configuration.validate_discount_code &&
+                Number(this.form.total_discount) > 0 &&
+                !this.discount_code_validated
+            ) {
+                this.showDiscountCodeDialog = true;
+                this.loading_submit = false;
+                return;
+            }
             this.loading_submit = true
             this.$http.post(`/${this.resource}`, this.form).then(response => {
                 if (response.data.success) {
@@ -534,6 +650,20 @@ export default {
                 this.loading_submit = false;
             });
         },
-    }
+        onDiscountCodeValidated(success) {
+            if (success) {
+                this.discount_code_validated = true;
+                this.showDiscountCodeDialog = false;
+                this.submit();
+            }
+        },
+    },
+    watch: {
+        'form.total_discount'(nuevo, anterior) {
+            if (this.discount_code_validated && Number(nuevo) !== Number(anterior)) {
+                this.discount_code_validated = false;
+            }
+        }
+    },
 }
 </script>

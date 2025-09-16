@@ -17,7 +17,7 @@
                                 <a href="#" @click.prevent="clickAddPrefix">[+ Nuevo]</a>
                             </label>
                             <el-select v-model="form.journal_prefix_id" placeholder="Seleccionar">
-                                <el-option v-for="prefix in prefixes" :key="prefix.id" :label="prefix.description+ ' - ' + prefix.prefix"
+                                <el-option v-for="prefix in filteredJournalPrefixes" :key="prefix.id" :label="prefix.description+ ' - ' + prefix.prefix"
                                     :value="prefix.id"></el-option>
                             </el-select>
                         </div>
@@ -34,7 +34,13 @@
                     <el-table :data="form.details" border show-summary :summary-method="getSummaries">
                         <el-table-column prop="account_id" label="Cuenta Contable">
                             <template slot-scope="{ row }">
-                                <el-select v-model="row.chart_of_account_id	" placeholder="Seleccionar cuenta">
+                                <el-select v-model="row.chart_of_account_id"
+                                    placeholder="Seleccionar cuenta"
+                                    filterable
+                                    clearable
+                                    remote
+                                    :remote-method="loadAccounts"
+                                    :loading="loadingAccounts">
                                     <el-option v-for="account in accounts" :key="account.id" :label="account.code + ' - ' + account.name" :value="account.id"></el-option>
                                 </el-select>
                             </template>
@@ -42,7 +48,7 @@
 
                         <el-table-column prop="debit" label="Débito">
                             <template slot-scope="{ row }">
-                                <el-input type="number" 
+                                <el-input type="number"
                                     v-model="row.debit"
                                     :disabled="row.credit > 0"
                                     step="0.01"
@@ -52,7 +58,7 @@
 
                         <el-table-column prop="credit" label="Crédito">
                             <template slot-scope="{ row }">
-                                <el-input type="number" 
+                                <el-input type="number"
                                     v-model="row.credit"
                                     :disabled="row.debit > 0"
                                     step="0.01"
@@ -78,11 +84,11 @@
         </form>
     </el-dialog>
 
-    <journal-entry-prefix 
-        :showDialog.sync="showDialogPrefix" 
+    <journal-entry-prefix
+        :showDialog.sync="showDialogPrefix"
         >
     </journal-entry-prefix>
-    
+
     </div>
 
 </template>
@@ -93,22 +99,30 @@ import JournalEntryPrefix from "./partials/prefix.vue";
 
 export default {
     components: { JournalEntryPrefix },
-    props: ["showDialog", "recordId"],
+    props: ["showDialog", "recordId", "journalPrefixes"],
     data() {
         return {
             loading_submit: false,
             titleDialog: null,
             resource: "accounting/journal/entries",
             form: {},
-            prefixes: [],
             accounts: [],
             showDialogPrefix: false,
+            loadingAccounts: false
         };
     },
     created() {
         this.initForm();
-        this.loadPrefixes();
+        // this.loadPrefixes();
         this.loadAccounts();
+    },
+    computed: {
+        filteredJournalPrefixes() {
+            if (!this.journalPrefixes || !Array.isArray(this.journalPrefixes)) {
+                return [];
+            }
+            return this.journalPrefixes.filter(p => p && p.modifiable === 1);
+        }
     },
     methods: {
         initForm() {
@@ -119,15 +133,22 @@ export default {
                 details: [],
             };
         },
-        async loadPrefixes() {
-            await this.$http.get("/accounting/journal/prefixes").then((response) => {
-                this.prefixes = response.data;
-            });
-        },
-        async loadAccounts() {
-            await this.$http.get("/accounting/charts/records?column=level&value=4").then((response) => {
-                this.accounts = response.data.data;
-            });
+        // async loadPrefixes() {
+        //     await this.$http.get("/accounting/journal/prefixes").then((response) => {
+        //         this.prefixes = response.data;
+        //     });
+        // },
+        async loadAccounts(query = null) {
+            this.loadingAccounts = true;
+
+            const params = {
+                column: query ? 'code' : 'level',
+                value: query || 4
+            };
+
+            await this.$http.get(`/accounting/charts/records`, { params })
+                .then(response => this.accounts = response.data.data)
+                .finally(() => this.loadingAccounts = false);
         },
         addDetail() {
             this.form.details.push({ chart_of_account_id: null, debit: 0, credit: 0 });

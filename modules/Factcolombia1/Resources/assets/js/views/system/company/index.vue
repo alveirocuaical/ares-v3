@@ -1,19 +1,22 @@
 <template>
     <div>
-        <header class="page-header">
+        <header class="page-header mx-0">
             <h2>
                 <a href="/co-companies">
-                    <i class="fa fa-list-alt"></i>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-layout-dashboard"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 4h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1"></path><path d="M5 16h4a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-2a1 1 0 0 1 1 -1"></path><path d="M15 12h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1"></path><path d="M15 4h4a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-2a1 1 0 0 1 1 -1"></path></svg>
                 </a>
             </h2>
             <ol class="breadcrumbs">
                 <li class="active">
                     <span>Dashboard</span>
                 </li>
-                <li>
-                    <span>Listado de compañias</span>
-                </li>
+                <li><span class="text-muted">Listado de compañias</span></li>
             </ol>
+
+            <button type="button" class="btn btn-custom btn-sm mt-2 mr-2 mb-3 pull-right"
+                @click.prevent="clickCreate()">
+                <i class="fa fa-plus-circle"></i> Crear nueva Compañia
+            </button>
         </header>
         <!-- <div class="row">
       <div class="col-lg-8 mb-3">
@@ -71,19 +74,8 @@
       </div>
         </div>-->
 
-        <div class="card" id="client-list">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col">
-                        <button
-                            type="button"
-                            class="btn btn-custom btn-sm mt-2 mr-2 mb-3"
-                            @click.prevent="clickCreate()"
-                        >
-                            <i class="fa fa-plus-circle"></i> Nuevo
-                        </button>
-                    </div>
-                </div>
+        <div class="card w-100" id="client-list">
+            <div class="card-body card-companies">
                 <div class="table-responsive">
                     <table class="table">
                         <thead>
@@ -102,9 +94,12 @@
 
                                 <th class="text-right">Limitar Doc.</th>
                                 <th class="text-center">Limitar Usuarios</th>
+                                <th class="text-center">Auto-renovar</th>
+                                <th class="text-center">Inicio plan</th>
+                                <th class="text-center">Vence plan</th>
                                 <th class="text-center">Pagos</th>
                                 <th class="text-right">E. Cuenta</th>
-                                <th class="text-right">Inicio Ciclo Facturacion</th>
+                                <!-- <th class="text-right">Inicio Ciclo Facturacion</th> -->
                                 <th class="text-right">Acciones</th>
                                 <!-- <th class="text-right">Pagos</th> -->
 
@@ -120,11 +115,11 @@
                                 <td>{{ row.name }}</td>
                                 <td>{{ row.email }}</td>
                                 <td>
-                                    <a :href="`${protocol}//${row.hostname}`"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        class="text-dark">
-                                        {{ row.hostname }}
+                                    <a :href="`http://${row.hostname}`" 
+                                        target="_blank" 
+                                        rel="noopener"
+                                        style="color:#0056b3; text-decoration: none;"
+                                        >{{ row.hostname }}
                                     </a>
                                 </td>
                                 <!-- <td>{{ row.plan }}</td> -->
@@ -145,21 +140,19 @@
                                             </label>
                                         </el-popover>
                                     </template>
-                                    <template v-else>
+<template v-else>
                                         <label>
                                             <strong>{{ row.count_doc }}</strong>
                                         </label>
                                     </template>
-                                    /
-                                    <template
-                                        v-if="row.max_documents == 0"
-                                    >
+/
+<template v-if="row.max_documents == 0">
                                         <i class="fas fa-infinity"></i>
                                     </template>
-                                    <template v-else>
+<template v-else>
                                         <strong>{{ row.max_documents }}</strong>
                                     </template>
-                                </td> -->
+</td> -->
                                 <!-- <td class="text-center">
                                     <template
                                         v-if="row.max_users !== 0 && row.count_user > row.max_users"
@@ -194,75 +187,67 @@
 
                                 <td class="text-center">
                                     <template v-if="!row.locked">
-                                      <el-switch
-                                        style="display: block"
-                                        v-model="row.locked_tenant"
-                                        @change="changeLockedTenant(row)"
-                                      ></el-switch>
+                                        <el-switch style="display: block" v-model="row.locked_tenant"
+                                            @change="changeLockedTenant(row)"></el-switch>
                                     </template>
                                 </td>
 
-                                 <td class="text-center">
-                                    <el-switch
-                                      style="display: block"
-                                      v-model="row.locked_emission"
-                                      @change="changeLockedEmission(row)"
-                                    ></el-switch>
+                                <td class="text-center">
+                                    <el-switch style="display: block" v-model="row.locked_emission"
+                                        @change="changeLockedEmission(row)"></el-switch>
                                 </td>
 
-                                    <td class="text-center">
-                                        <el-switch
-                                          style="display: block"
-                                          v-model="row.locked_users"
-                                          @change="changeLockedUser(row)"
-                                        ></el-switch>
-                                    </td>
-                                <td class="text-right">
-                                    <button
-                                        type="button"
-                                        class="btn waves-effect waves-light btn-xs btn-warning m-1__2"
-                                        @click.prevent="clickPayments(row.id)"
-                                    >Pagos</button>
+                                <td class="text-center">
+                                    <el-switch style="display: block" v-model="row.locked_users"
+                                        @change="changeLockedUser(row)"></el-switch>
+                                </td>
+                                <td class="text-center">
+                                    <el-switch v-model.lazy="row.plan_auto_renew" @change="toggleAutoRenew(row)"></el-switch>
+                                </td>
+                                <td class="text-center">
+                                    <span v-if="row.plan_started_at">{{ row.plan_started_at }}</span>
+                                    <span v-else>-</span>
+                                </td>
+                                <td class="text-center">
+                                    <span v-if="row.plan_expires_at">{{ row.plan_expires_at }}</span>
+                                    <span v-else>-</span>
                                 </td>
                                 <td class="text-right">
-                                    <button
-                                        type="button"
-                                        class="btn waves-effect waves-light btn-xs btn-primary m-1__2"
-                                        @click.prevent="clickAccountStatus(row.id)"
-                                    >E. Cuenta</button>
+                                    <button type="button" class="btn waves-effect waves-light btn-xs btn-warning m-1__2"
+                                        @click.prevent="clickPayments(row.id)">Pagos</button>
                                 </td>
                                 <td class="text-right">
+                                    <button type="button" class="btn waves-effect waves-light btn-xs btn-primary m-1__2"
+                                        @click.prevent="clickAccountStatus(row.id)">E. Cuenta</button>
+                                </td>
+                                <!-- <td class="text-right">
                                     <template v-if="row.start_billing_cycle">
                                         <span></span>
-                                        <span>{{row.start_billing_cycle}}</span>
+                                        <span>{{ row.start_billing_cycle }}</span>
                                     </template>
                                     <template v-else>
-                                        <el-date-picker
-                                        @change="setStartBillingCycle($event, row.id)"
-                                        v-model="row.select_date_billing"
-                                        value-format="yyyy-MM-dd"
-                                        type="date"
-                                        placeholder="..."
-                                        ></el-date-picker>
-                                    </template>
-                                </td>
+                                        <el-date-picker @change="setStartBillingCycle($event, row.id)"
+                                            v-model="row.select_date_billing" value-format="yyyy-MM-dd" type="date"
+                                            placeholder="..."></el-date-picker>
+                                    </template>fmm 
+                                </td> -->
                                 <td class="text-right">
                                     <template v-if="!row.locked">
-                                        <button
-                                            type="button"
-                                            class="btn waves-effect waves-light btn-xs btn-primary m-1__2"
-                                            @click.prevent="clickEdit(row.id)"
-                                        >Editar</button>
-                                        <!-- <button
-                      type="button"
-                      class="btn waves-effect waves-light btn-xs btn-info m-1__2"
-                      @click.prevent="clickPassword(row.id)"
-                                        >Resetear clave</button>-->
-                                        <button
-                                            type="button"
-                                            class="btn waves-effect waves-light btn-xs btn-danger m-1__2"
-                                            @click.prevent="clickDelete(row.id)"
-                                        >Eliminar</button>
+                                        <el-dropdown trigger="click">
+                                            <el-button type="secondary" size="mini" class="btn btn-default btn-sm btn-dropdown-toggle">
+                                                <i class="fas fa-ellipsis-h"></i>
+                                            </el-button>
+                                            <el-dropdown-menu slot="dropdown">
+                                                <el-dropdown-item @click.native="clickEdit(row.id)">Editar</el-dropdown-item>
+                                                <el-dropdown-item @click.native="openPasswordDialog(row.id)">Cambiar contraseña</el-dropdown-item>
+                                                <el-dropdown-item @click.native="clickDelete(row.id)" class="text-danger">
+                                                    <span class="dropdown-item-content">
+                                                        Eliminar
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash text-danger"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M4 7l16 0"></path><path d="M10 11l0 6"></path><path d="M14 11l0 6"></path><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path></svg>
+                                                    </span>                                                    
+                                                </el-dropdown-item>
+                                            </el-dropdown-menu>
+                                        </el-dropdown>
                                     </template>
                                 </td>
 
@@ -312,7 +297,38 @@
                 </div>
             </div>
         </div>
-
+        <el-dialog :visible.sync="showPasswordDialog" title="Cambiar contraseña">
+            <div>
+                <div class="form-group mb-2">
+                    <label for="newPassword">Nueva contraseña</label>
+                    <el-input id="newPassword" v-model="newPassword" :type="showNewPassword ? 'text' : 'password'"
+                        placeholder="Ingrese la nueva contraseña" autocomplete="new-password">
+                        <template slot="append">
+                            <i :class="showNewPassword ? 'fa fa-eye-slash' : 'fa fa-eye'" style="cursor:pointer"
+                                @click="showNewPassword = !showNewPassword"></i>
+                        </template>
+                    </el-input>
+                </div>
+                <div class="form-group mb-2">
+                    <label for="confirmPassword">Confirmar contraseña</label>
+                    <el-input id="confirmPassword" v-model="confirmPassword"
+                        :type="showConfirmPassword ? 'text' : 'password'" placeholder="Repita la nueva contraseña"
+                        autocomplete="new-password">
+                        <template slot="append">
+                            <i :class="showConfirmPassword ? 'fa fa-eye-slash' : 'fa fa-eye'" style="cursor:pointer"
+                                @click="showConfirmPassword = !showConfirmPassword"></i>
+                        </template>
+                    </el-input>
+                </div>
+                <div v-if="passwordError" class="text-danger mt-2">
+                    <i class="el-icon-warning"></i> {{ passwordError }}
+                </div>
+            </div>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="showPasswordDialog = false">Cancelar</el-button>
+                <el-button type="primary" @click="submitPassword">Guardar</el-button>
+            </span>
+        </el-dialog>
         <companies-form :showDialog.sync="showDialog" :recordId="recordId"></companies-form>
         <client-payments :showDialog.sync="showDialogPayments" :clientId="recordId"></client-payments>
 
@@ -325,7 +341,15 @@
         <account-status :showDialog.sync="showDialogAccountStatus" :clientId="recordId"></account-status>
     </div>
 </template>
-
+<style>
+.dropdown-item-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    min-width: 120px;
+}
+</style>
 <script>
 import CompaniesForm from "./form.vue";
 //   import CompaniesFormEdit from './form_edit.vue'
@@ -367,7 +391,13 @@ export default {
                     }
                 ]
             },
-            protocol: window.location.protocol,
+            showPasswordDialog: false,
+            newPassword: '',
+            confirmPassword: '',
+            passwordError: '',
+            passwordCompanyId: null,
+            showNewPassword: false,
+            showConfirmPassword: false,
         };
     },
     async mounted() {
@@ -410,9 +440,26 @@ export default {
                         console.log(error.response);
                     }
                 })
-                .then(() => {});
+                .then(() => { });
         },
-
+        toggleAutoRenew(row) {
+            const originalValue = row.plan_auto_renew;
+            // Cambia visualmente solo si el backend responde éxito
+            this.$http.post(`/co-companies/toggle-auto-renew/${row.id}`)
+                .then(response => {
+                    if (response.data.success) {
+                        row.plan_auto_renew = response.data.plan_auto_renew;
+                        this.$message.success('Renovación automática actualizada');
+                    } else {
+                        row.plan_auto_renew = originalValue;
+                        this.$message.error('No se pudo actualizar');
+                    }
+                })
+                .catch(() => {
+                    row.plan_auto_renew = originalValue;
+                    this.$message.error('Error al actualizar');
+                });
+        },
         changeLockedUser(row) {
             this.$http
                 .post(`${this.resource}/locked_user`, row)
@@ -431,7 +478,7 @@ export default {
                         console.log(error.response);
                     }
                 })
-                .then(() => {});
+                .then(() => { });
         },
 
         setStartBillingCycle(event, id) {
@@ -476,7 +523,7 @@ export default {
                         console.log(error.response);
                     }
                 })
-                .then(() => {});
+                .then(() => { });
         },
         getData() {
             this.$http.get(`/${this.resource}/records`).then(response => {
@@ -506,7 +553,33 @@ export default {
         clickEdit(recordId) {
             this.recordId = recordId;
             this.showDialog = true;
-        }
+        },
+        openPasswordDialog(id) {
+            this.passwordCompanyId = id;
+            this.newPassword = '';
+            this.confirmPassword = '';
+            this.passwordError = '';
+            this.showPasswordDialog = true;
+        },
+        submitPassword() {
+            this.passwordError = '';
+            if (this.newPassword !== this.confirmPassword) {
+                this.passwordError = 'Las contraseñas no coinciden';
+                return;
+            }
+            this.$http.post(`${this.resource}/password/${this.passwordCompanyId}`, {
+                password: this.newPassword
+            }).then(response => {
+                if (response.data.success) {
+                    this.$message.success(response.data.message);
+                    this.showPasswordDialog = false;
+                } else {
+                    this.$message.error(response.data.message);
+                }
+            }).catch(error => {
+                this.$message.error('Error al cambiar la contraseña');
+            });
+        },
     }
 };
 </script>

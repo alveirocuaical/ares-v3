@@ -45,7 +45,7 @@ class IncentiveController extends Controller
                                 })
                                 ->whereTypeUser()
                                 ->whereNotIsSet()
-                                ->orderBy('name');
+                                ->orderBy('id', 'desc');
                 break;
 
             case 'category':
@@ -54,15 +54,14 @@ class IncentiveController extends Controller
                                 })
                                 ->whereTypeUser()
                                 ->whereNotIsSet()
-                                ->orderBy('name');
+                                ->orderBy('id', 'desc');
                 break;
 
             default:
-                        
                 $records = Item::whereTypeUser()
                                 ->whereNotIsSet()
                                 ->where($request->column, 'like', "%{$request->value}%")
-                                ->orderBy('name');
+                                ->orderBy('id', 'desc');
                 break;
         }
 

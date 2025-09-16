@@ -25,7 +25,7 @@ use Modules\RadianEvent\Helpers\ZipHelper;
 use Illuminate\Support\Facades\DB;
 use Modules\Payroll\Traits\UtilityTrait;
 use Carbon\Carbon;
-
+use Doctrine\DBAL\Exception\ConnectionException;
 
 class SearchEmailController extends Controller
 {
@@ -126,6 +126,12 @@ class SearchEmailController extends Controller
 
                                         // registrar en bd
                                         $email_reading_detail = $this->saveEmailReadingDetail($email_reading, $mail);
+
+                                        // Si no es documento a crédito, actualizamos el detalle y continuamos con el siguiente
+                                        if(isset($send_request_to_api['skip_document'])) {
+                                            $this->updateEmailReadingDetail($email_reading_detail, $send_request_to_api);
+                                            continue;
+                                        }
 
                                         if($send_request_to_api['success'])
                                         {
@@ -228,7 +234,7 @@ class SearchEmailController extends Controller
             ];
 
         }
-        catch(PhpImap\Exceptions\ConnectionException $ex)
+        catch(ConnectionException $ex)
         {
             return $this->getGeneralResponse(false, 'Conexión IMAP fallida: ' . implode(",", $ex->getErrors('all')));
         }
@@ -278,7 +284,17 @@ class SearchEmailController extends Controller
      */
     private function updateEmailReadingDetail(&$email_reading_detail, $data)
     {
-        $email_reading_detail->api_validation_response = $data;
+        if (isset($data['skip_document'])) {
+            $email_reading_detail->api_validation_response = [
+                'success' => false,
+                'response_api' => [
+                    'success' => false,
+                    'message' => 'Documento omitido: No es un documento de crédito',
+                ]
+            ];
+        } else {
+            $email_reading_detail->api_validation_response = $data;
+        }
         $email_reading_detail->save();
     }
 
@@ -336,8 +352,63 @@ class SearchEmailController extends Controller
             'xml_document' => base64_encode($xml_content),
             'company_idnumber' => $company->identification_number,
         ];
+        
+        $advancedConfig = AdvancedConfiguration::first();
+        $showCreditAndContado = $advancedConfig ? $advancedConfig->radian_show_credit_only : true; // true por defecto
+        $isCredit = $this->isCreditFromXml($xml_content);
 
-        return $connection_api->sendRequestToApi('process-seller-document-reception', $params, 'POST');
+        // Solo filtrar si la configuración es true (solo crédito)
+        if (!$showCreditAndContado && !$isCredit) {
+            return [
+                'success' => false,
+                'message' => 'Documento omitido: No es un documento de crédito',
+                'skip_document' => true
+            ];
+        }
+
+        $response = $connection_api->sendRequestToApi('process-seller-document-reception', $params, 'POST');
+        
+        // Validar si es documento de crédito usando la lógica de RadianEventController
+        // if(!$this->isCreditFromXml($xml_content)) {
+        //     return [
+        //         'success' => false,
+        //         'message' => 'Documento omitido: No es un documento de crédito',
+        //         'skip_document' => true
+        //     ];
+        // }
+
+        return $response;
+    }   
+
+    /**
+     * Validar si el XML corresponde a un comprobante de crédito (igual que en RadianEventController)
+     * @param string $xmlContent
+     * @return bool
+     */
+    private function isCreditFromXml($xmlContent)
+    {
+        $matches = [];
+        preg_match('/<Invoice[\s\S]*<\/Invoice>/', $xmlContent, $matches);
+        if (!$matches) return false;
+
+        $invoiceXml = $matches[0];
+        try {
+            $invoice = new \SimpleXMLElement($invoiceXml);
+        } catch (\Exception $e) {
+            return false;
+        }
+        $namespaces = $invoice->getNamespaces(true);
+
+        // Buscar PaymentMeans
+        if (isset($namespaces['cac']) && isset($namespaces['cbc'])) {
+            foreach ($invoice->children($namespaces['cac'])->PaymentMeans as $paymentMeans) {
+                $id = (string)$paymentMeans->children($namespaces['cbc'])->ID;
+                if ($id === '2') {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
 

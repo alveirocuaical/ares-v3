@@ -57,6 +57,7 @@ use Modules\Factcolombia1\Models\Tenant\{
     CustomerPurchaseCoupon,
 };
 use Modules\Factcolombia1\Models\TenantService\{
+    AdvancedConfiguration,
     Company as ServiceTenantCompany
 };
 use App\Models\Tenant\Document;
@@ -68,6 +69,9 @@ use App\Http\Resources\Tenant\DocumentPosResource;
 use App\Models\Tenant\Cash;
 use Modules\Factcolombia1\Http\Controllers\Tenant\DocumentController;
 use Illuminate\Support\Facades\View;
+use Modules\Accounting\Models\AccountingChartAccountConfiguration;
+use Modules\Accounting\Helpers\AccountingEntryHelper;
+use Modules\Accounting\Models\ChartOfAccount;
 
 
 class DocumentPosController extends Controller
@@ -250,12 +254,12 @@ class DocumentPosController extends Controller
                 $line = [
                     'unit_measure_id' => $row['item']['unit_type']['code'],
                     'invoiced_quantity' => $row['quantity'],
-                    'line_extension_amount' => $line_net_amount, 
+                    'line_extension_amount' => $line_net_amount,
                     'free_of_charge_indicator' => false,
                     'description' => !empty($row['item']['description']) ? $row['item']['description'] : (!empty($row['item']['name']) ? $row['item']['name'] : 'Sin descripción'),
                     'code' => $row['item']['internal_id'],
                     'type_item_identification_id' => 4,
-                    'price_amount' => $row['item']['edit_sale_unit_price'], 
+                    'price_amount' => $row['item']['edit_sale_unit_price'],
                     'base_quantity' => $row['quantity']
                 ];
 
@@ -263,9 +267,9 @@ class DocumentPosController extends Controller
                 if($row['item']['tax'] !== null) {
                     $line['tax_totals'] = [[
                         'tax_id' => $tax_id,
-                        'tax_amount' => $row['total_tax'], 
-                        'taxable_amount' => $line_net_amount, 
-                        'percent' => $tax_rate 
+                        'tax_amount' => $row['total_tax'],
+                        'taxable_amount' => $line_net_amount,
+                        'percent' => $tax_rate
                     ]];
                 }
 
@@ -276,14 +280,14 @@ class DocumentPosController extends Controller
             $tax_totals = array_values(array_map(function($tax_group) {
                 return [
                     'tax_id' => $tax_group['tax_id'],
-                    'tax_amount' => $tax_group['tax_amount'], 
-                    'taxable_amount' => $tax_group['taxable_amount'], 
-                    'percent' => $tax_group['tax_rate'] 
+                    'tax_amount' => $tax_group['tax_amount'],
+                    'taxable_amount' => $tax_group['taxable_amount'],
+                    'percent' => $tax_group['tax_rate']
                 ];
             }, $tax_groups));
 
             // Procesar descuentos globales si existen
-            $total_discount = isset($data['allowance_charges']) ? 
+            $total_discount = isset($data['allowance_charges']) ?
                 collect($data['allowance_charges'])->sum('amount') : 0;
 
             // Calcular totales finales
@@ -294,9 +298,9 @@ class DocumentPosController extends Controller
             $tax_totals = array_values(array_map(function($tax) {
                 return [
                     'tax_id' => $tax['tax_id'],
-                    'tax_amount' => $tax['tax_amount'], 
-                    'taxable_amount' => $tax['taxable_amount'], 
-                    'percent' => $tax['percent'] 
+                    'tax_amount' => $tax['tax_amount'],
+                    'taxable_amount' => $tax['taxable_amount'],
+                    'percent' => $tax['percent']
                 ];
             }, $tax_totals));
 
@@ -350,15 +354,17 @@ class DocumentPosController extends Controller
                     'duration_measure' => "0",
                 ],
                 'legal_monetary_totals' => [
-                    'line_extension_amount' => $total_net_amount, 
-                    'tax_exclusive_amount' => $total_net_amount, 
-                    'tax_inclusive_amount' => $tax_inclusive_amount, 
-                    'allowance_total_amount' => $total_discount, 
-                    'payable_amount' => $payable_amount 
+                    'line_extension_amount' => $total_net_amount,
+                    'tax_exclusive_amount' => $total_net_amount,
+                    'tax_inclusive_amount' => $tax_inclusive_amount,
+                    'allowance_total_amount' => $total_discount,
+                    'payable_amount' => $payable_amount
                 ],
                 'tax_totals' => $tax_totals,
                 'allowance_charges' => $data['allowance_charges'] ?? [],
                 'invoice_lines' => $invoice_lines,
+                'head_note' => $request->input('head_note', null),
+                'foot_note' => $request->input('foot_note', null),
             ];
             // \Log::debug(json_encode($data_invoice_pos));
 //            return [
@@ -565,6 +571,8 @@ class DocumentPosController extends Controller
 
             // fin gestion DIAN
             $this->sale_note =  DocumentPos::create($data);
+            // asientos contables
+            $this->registerAccountingPosEntries($this->sale_note);
             // $this->sale_note->payments()->delete();
             $this->deleteAllPayments($this->sale_note->payments);
             foreach($data['items'] as $row) {
@@ -599,6 +607,7 @@ class DocumentPosController extends Controller
             $this->setFilename();
             $this->createPdf($this->sale_note,"ticket", $this->sale_note->filename);
             $this->registerCustomerCoupon($this->sale_note);
+
 //        });
         }catch(\Exception $e){
 //            \Log::debug(json_encode([
@@ -624,6 +633,44 @@ class DocumentPosController extends Controller
                 'id' => $this->sale_note->id,
             ],
         ];
+    }
+
+    private function registerAccountingPosEntries($document)
+    {
+        $accountConfiguration = AccountingChartAccountConfiguration::first();
+        if(!$accountConfiguration) return;
+
+        $accountIdCash = ChartOfAccount::where('code','110505')->first();
+        $accountIdIncome = ChartOfAccount::where('code','413595')->first();
+        $document_type = DocumentType::find('90');
+
+        AccountingEntryHelper::registerEntry([
+            'prefix_id' => 3, // Puedes ajustar el prefijo según tu configuración
+            'description' => $document_type->description . ' #' . $document->series . '-' . $document->number,
+            'document_pos_id' => $document->id,
+            'movements' => [
+                [
+                    'account_id' => $accountIdCash->id,
+                    'debit' => $document->total,
+                    'credit' => 0,
+                    'affects_balance' => true,
+                ],
+                [
+                    'account_id' => $accountIdIncome->id,
+                    'debit' => 0,
+                    'credit' => $document->sale,
+                    'affects_balance' => true,
+                ],
+            ],
+            'taxes' => $document->taxes ?? [],
+            'tax_config' => [
+                'tax_field' => 'chart_account_sale',
+                'tax_debit' => false,
+                'tax_credit' => true,
+                'retention_debit' => true,
+                'retention_credit' => false,
+            ],
+        ]);
     }
 
     public function destroy_sale_note_item($id)
@@ -669,22 +716,22 @@ class DocumentPosController extends Controller
             $existing_doc = DocumentPos::where('prefix', $config->prefix)
                                      ->where('number', $config_pos->generated + 1)
                                      ->first();
-            
+
             if (!$existing_doc) {
                 // Si no existe documento con ese número, lo usamos
                 $number = $config_pos->generated + 1;
             }
         }
-    
+
         // Si no se pudo usar el número de ConfigurationPos, buscamos el último documento
         if (!$number) {
             $document = DocumentPos::select('id', 'number')
                                 ->where('prefix', $config->prefix)
                                 ->orderBy('id', 'desc')
                                 ->first();
-                                
+
             $number_by_documents = ($document) ? (int)$document->number + 1 : 1;
-            
+
             if($number_by_documents < $config['generated']) {
                 $number = $config['generated'];
             } else {
@@ -713,6 +760,7 @@ class DocumentPosController extends Controller
             'prefix' => $config->prefix,
             'electronic' => (bool)$config->electronic,
             'total_discount' => $total_discount,
+            'seller_id' => $inputs['seller_id'] ?? null,
         ];
         unset($inputs['series_id']);
         $inputs->merge($values);
@@ -1177,7 +1225,7 @@ class DocumentPosController extends Controller
 
                 $base_url = config('tenant.service_fact');
                 $ch = curl_init("{$base_url}ubl2.1/send-email");
-                
+
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                 curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
                 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
@@ -1211,7 +1259,7 @@ class DocumentPosController extends Controller
                 // Envío para documentos no electrónicos usando el formato seleccionado
                 $this->createPdf($document, $format, $document->filename);
                 $pdf_content = $this->getStorage($document->filename, 'sale_note');
-                
+
                 $data = [
                     'email' => $request->input('customer_email'),
                     'document_base64' => base64_encode($pdf_content),
@@ -1224,7 +1272,7 @@ class DocumentPosController extends Controller
 
                 $base_url = config('tenant.service_fact');
                 $ch = curl_init("{$base_url}ubl2.1/send-email/external");
-                
+
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                 curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
                 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
@@ -1330,10 +1378,6 @@ class DocumentPosController extends Controller
             'number' => $data_consecutive->number,
             'date' => Carbon::now()->format('Y-m-d'),
             'time' => Carbon::now()->format('H:i:s'),
-//            'establishment_name' => $company->name,
-//            'establishment_address' => $document->establishment->address,
-//            'establishment_phone' => $document->establishment->telephone,
-//            'establishment_municipality' => $document->establishment->department_id,
             'billing_reference' => [
                 'number' => $request_api->prefix.$request_api->number,
                 'issue_date' => $request_api->date,
@@ -1351,7 +1395,8 @@ class DocumentPosController extends Controller
             'customer' => $request_api->customer,
             'tax_totals' => $request_api->tax_totals,
             'legal_monetary_totals' => $request_api->legal_monetary_totals,
-            'credit_note_lines' => $request_api->invoice_lines
+            'credit_note_lines' => $request_api->invoice_lines,
+            'allowance_charges' => $request_api->allowance_charges ?? [],
         ];
         return $json;
     }
@@ -1426,6 +1471,7 @@ class DocumentPosController extends Controller
 
             // Proceder con la anulación en base de datos independientemente si es electrónico o no
             $obj->state_type_id = 11;
+            $obj->date_of_issue = now()->format('Y-m-d');
             $obj->save();
 
             $establishment = Establishment::where('id', auth()->user()->establishment_id)->first();
@@ -1812,13 +1858,13 @@ class DocumentPosController extends Controller
         $purchaseCoupon = CustomerPurchaseCoupon::where('document_id',$id)->where('status',1)->first();
         if (!$purchaseCoupon) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => 'Cupón no encontrado'
             ], 404);
         }
-        
+
         $coupon = ConfigurationPurchaseCoupon::where('id',$purchaseCoupon->configuration_purchase_coupon_id)->where('status',1)->first();
-        
+
         if (!$coupon) {
             return response()->json([
                 'success' => false,
@@ -1833,7 +1879,7 @@ class DocumentPosController extends Controller
             'coupon_date' => $coupon->coupon_date,
             'document_number' => $purchaseCoupon->document_number,
             'customer_name' => $purchaseCoupon->customer_name,
-            'customer_number' => $purchaseCoupon->customer_number, 
+            'customer_number' => $purchaseCoupon->customer_number,
             'customer_phone' => $purchaseCoupon->customer_phone,
             'customer_email' => $purchaseCoupon->customer_email,
         ];
@@ -1864,7 +1910,7 @@ class DocumentPosController extends Controller
     private function registerCustomerCoupon($document) {
         $activeCoupon = ConfigurationPurchaseCoupon::where('status',1)->first();
         $customer = Person::where('id',$document->customer_id)->first();
-    
+
         if($activeCoupon && $customer && $document->total >= $activeCoupon->minimum_purchase_amount){
             CustomerPurchaseCoupon::create([
                 'configuration_purchase_coupon_id' => $activeCoupon->id,
@@ -1879,4 +1925,25 @@ class DocumentPosController extends Controller
             ]);
         }
     }
+    public function validateCash($resolution_id)
+{
+    // Busca una caja abierta para la resolución seleccionada
+    $user_id = auth()->id();
+    $cash = \App\Models\Tenant\Cash::where('user_id', $user_id)
+        ->where('state', true)
+        ->where('resolution_id', $resolution_id)
+        ->first();
+
+    if ($cash) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Caja abierta encontrada para esta resolución.'
+        ]);
+    } else {
+        return response()->json([
+            'success' => false,
+            'message' => 'No hay caja abierta para esta resolución POS.'
+        ]);
+    }
+}
 }

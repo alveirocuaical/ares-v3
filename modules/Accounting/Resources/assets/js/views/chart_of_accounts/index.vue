@@ -2,8 +2,16 @@
     <div>
         <div class="page-header pr-0">
             <h2>
-                <a href="/dashboard">
-                    <i class="fas fa-tachometer-alt"></i>
+                <a href="/accounting/charts">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chart-histogram" style="margin-top: -5px;">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                        <path d="M3 3v18h18"></path>
+                        <path d="M20 18v3"></path>
+                        <path d="M16 16v5"></path>
+                        <path d="M12 13v8"></path>
+                        <path d="M8 16v5"></path>
+                        <path d="M3 11c6 0 5 -5 9 -5s3 5 9 5"></path>
+                    </svg>
                 </a>
             </h2>
             <ol class="breadcrumbs">
@@ -22,26 +30,26 @@
         </div>
 
         <div class="card mb-3">
-            <div class="card-header bg-info">
+            <!-- <div class="card-header bg-info">
                 <h3 class="my-0">Listado de Cuentas Contables</h3>
-            </div>
+            </div> -->
             <div class="card-body">
                 <el-tree
-                :data="treeData"
-                :props="defaultProps"
-                node-key="id"
-                default-expand-all
-                draggable
-                @node-drop="handleDrop"
-                class="tree-border el-tree--compact custom-tree"
-                >
-                <span slot-scope="{ node, data }" class="tree-node-label d-flex justify-content-between align-items-center w-100">
-                    <span>{{ data.code }} - {{ data.label }}</span>
-                    <span v-if="data.level >= 4" class="ml-auto">
-                        <el-button size="mini" type="primary" icon="el-icon-edit" @click="openForm(data.id)">Editar</el-button>
-                        <el-button size="mini" type="danger" icon="el-icon-delete" @click="deleteRecord(data.id)">Eliminar</el-button>
+                    :data="treeData"
+                    :props="defaultProps"
+                    node-key="id"
+                    default-expand-all
+                    draggable
+                    @node-drop="handleDrop"
+                    class="tree-border el-tree--compact custom-tree"
+                    >
+                    <span slot-scope="{ node, data }" class="tree-node-label d-flex justify-content-between align-items-center w-100">
+                        <span>{{ data.code }} - {{ data.label }}</span>
+                        <span v-if="data.level >= 4" class="ml-auto d-flex">
+                            <el-button size="mini" type="primary" icon="el-icon-edit" @click="openForm(data.id)">Editar</el-button>
+                            <el-button size="mini" type="danger" icon="el-icon-delete" @click="deleteRecord(data.id)">Eliminar</el-button>
+                        </span>
                     </span>
-                </span>
                 </el-tree>
             </div>
         </div>

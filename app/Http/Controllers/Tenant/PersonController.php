@@ -51,9 +51,9 @@ class PersonController extends Controller
     public function records($type, Request $request)
     {
       //  return 'sd';
-        $records = Person::where($request->column, 'like', "%{$request->value}%")
-                            ->where('type', $type)
-                            ->orderBy('name');
+    $records = Person::where($request->column, 'like', "%{$request->value}%")
+                ->where('type', $type)
+                ->orderBy('id', 'desc');
 
         return new PersonCollection($records->paginate(config('tenant.items_per_page')));
     }

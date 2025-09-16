@@ -15,6 +15,7 @@ if($hostname) {
                 Route::get('record/{warehouse}', 'WarehouseController@record');
                 Route::post('/', 'WarehouseController@store');
                 Route::get('initialize', 'WarehouseController@initialize');
+                Route::get('all', 'WarehouseController@all')->name('warehouses.all');
             });
 
             Route::prefix('inventory')->group(function () {
@@ -32,6 +33,7 @@ if($hostname) {
                 Route::post('remove', 'InventoryController@remove');
                 Route::get('initialize', 'InventoryController@initialize');
                 Route::get('download', 'InventoryController@download');
+                Route::get('search-items', 'InventoryController@searchItems');
             });
 
             Route::prefix('reports')->group(function () {
@@ -48,6 +50,7 @@ if($hostname) {
 
 
                 Route::get('kardex', 'ReportKardexController@index')->name('reports.kardex.index');
+                Route::get('kardex_today', 'ReportKardexController@recordsToday')->name('reports.kardex_today');
                 Route::get('kardex/pdf', 'ReportKardexController@pdf')->name('reports.kardex.pdf');
                 Route::get('kardex/excel', 'ReportKardexController@excel')->name('reports.kardex.excel');
                 Route::get('kardex/filter', 'ReportKardexController@filter')->name('reports.kardex.filter');
@@ -68,6 +71,10 @@ if($hostname) {
                 Route::get('valued-kardex/filter', 'ReportValuedKardexController@filter');
                 Route::get('valued-kardex/records', 'ReportValuedKardexController@records');
 
+                Route::get('kardex_lots/pdf', 'ReportKardexController@pdf')->name('tenant.report.kardex.pdf');
+                Route::get('kardex_lots/excel', 'ReportKardexController@excel')->name('tenant.report.kardex.excel');
+                Route::get('kardex_series/pdf', 'ReportKardexController@pdf')->name('reports.kardex_series.pdf');
+                Route::get('kardex_series/excel', 'ReportKardexController@excel')->name('reports.kardex_series.excel');
             });
 
 

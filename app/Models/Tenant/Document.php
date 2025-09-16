@@ -38,6 +38,7 @@ class Document extends ModelTenant
 
     protected $fillable = [
         'user_id',
+        'seller_id',
         'external_id',
         'establishment_id',
         'establishment',
@@ -471,6 +472,11 @@ class Document extends ModelTenant
         return $this->hasOne(DocumentTransport::class);
     }
 
+    public function seller()
+    {
+        return $this->belongsTo(Seller::class, 'seller_id');
+    }
+
     // public function getNumberFullAttribute()
     // {
     //     return $this->series.'-'.$this->number;
@@ -717,7 +723,8 @@ class Document extends ModelTenant
                         'sale',
                         'total_tax',
                         'subtotal',
-                        'total_discount' 
+                        'total_discount',
+                        'taxes' // <-- Agrega esta línea
                     ]);
     }
 
@@ -792,6 +799,8 @@ class Document extends ModelTenant
                 'currency_code' => $this->currency->code,
                 'customer_name' => $customer_data->name ?? '',
                 'customer_number' => $customer_data->number ?? '', // Agregamos el número de identificación
+                'customer_email' => $customer_data->email ?? '',
+                'customer_telephone' => $customer_data->telephone ?? '',
                 'customer_address' => $customer_address,
                 'total_discount' => $this->getGlobalDiscountFormatted(),
                 'net_total' => $this->generalApplyNumberFormat($this->sale),
@@ -807,6 +816,8 @@ class Document extends ModelTenant
                 'currency_code' => $this->currency->code,
                 'customer_name' => '',
                 'customer_number' => '', // Agregamos el número de identificación
+                'customer_email' => '',
+                'customer_telephone' => '', 
                 'customer_address' => '',
                 'total_discount' => $this->getGlobalDiscountFormatted(),
                 'net_total' => $this->generalApplyNumberFormat($this->sale),
@@ -815,8 +826,8 @@ class Document extends ModelTenant
                 'consolidated_taxes' => [
                     'total_base' => '0.00',
                     'total_tax' => '0.00'
-                ],
-            ];
+                    ],
+                ];
         }
     }
 
@@ -885,11 +896,12 @@ class Document extends ModelTenant
     public function getTotalExempt()
     {
         return $this->items
-                    ->filter(function($row){
-                        $tax_code = $row->tax->code ?? null;
-                        return $tax_code === self::EXEMPT_TAX_CODE;
-                    })
-                    ->sum('total');
+            ->filter(function($row){
+                $tax = is_array($row->tax) ? (object)$row->tax : $row->tax;
+                $tax_code = $tax->code ?? null;
+                return $tax_code === self::EXEMPT_TAX_CODE;
+            })
+            ->sum('subtotal');
     }
 
     public function scopeFilterByEstablishment($query, $establishment_id)
@@ -920,5 +932,16 @@ class Document extends ModelTenant
             'total_base' => $this->generalApplyNumberFormat($totals['total_base']),
             'total_tax' => $this->generalApplyNumberFormat($totals['total_tax'])
         ];
+    }
+
+    /**
+     * Obtener el campo taxes sin formateo ni filtro
+     *
+     * @return mixed
+     */
+    public function getRawTaxes()
+    {
+        // Devuelve el string JSON tal cual está en la base de datos
+        return $this->attributes['taxes'] ?? null;
     }
 }

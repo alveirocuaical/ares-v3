@@ -1,8 +1,8 @@
 <template>
     <div class="card mb-0 pt-2 pt-md-0">
-        <div class="card-header bg-info">
+        <!-- <div class="card-header bg-info">
             {{ note ? `Nueva Nota (${note.prefix}-${note.number})` : 'Nota Contable Sin Referencia a Factura' }}
-        </div>
+        </div> -->
         <div class="card-body" v-if="loading_form">
             <div class="invoice">
                 <form autocomplete="off" @submit.prevent="submit">
@@ -84,7 +84,9 @@
                                             type="textarea"
                                             autosize
                                             :rows="1"
-                                            v-model="form.observation">
+                                            v-model="form.observation"
+                                            maxlength="250"
+                                            show-word-limit>
                                     </el-input>
                                 </div>
                             </div>
@@ -122,13 +124,13 @@
                                                 <td class="text-right">{{row.quantity}}</td>
                                                 <!--<td class="text-right" v-else ><el-input-number :min="0.01" v-model="row.quantity"></el-input-number> </td> -->
 
-                                                <td class="text-right">{{ratePrefix()}} {{getFormatDecimal(row.price)}}</td>
+                                                <td class="text-right">{{ratePrefix()}} {{row.price | numberFormat}}</td>
                                                 <!--<td class="text-right" v-else ><el-input-number :min="0.01" v-model="row.unit_price"></el-input-number> </td> -->
 
 
-                                                <td class="text-right">{{ratePrefix()}} {{getFormatDecimal(row.subtotal)}}</td>
-                                                <td class="text-right">{{ratePrefix()}} {{getFormatDecimal(row.discount)}}</td>
-                                                <td class="text-right">{{ratePrefix()}} {{getFormatDecimal(row.total)}}</td>
+                                                <td class="text-right">{{ratePrefix()}} {{row.subtotal | numberFormat}}</td>
+                                                <td class="text-right">{{ratePrefix()}} {{row.discount | numberFormat}}</td>
+                                                <td class="text-right">{{ratePrefix()}} {{row.total | numberFormat}}</td>
                                                 <td class="text-right">
                                                     <button type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickRemoveItem(index)">x</button>
                                                     <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click="ediItem(row, index)" ><span style='font-size:10px;'>&#9998;</span> </button>
@@ -153,12 +155,12 @@
                                     <tr>
                                         <td>TOTAL VENTA</td>
                                         <td>:</td>
-                                        <td class="text-right">{{ratePrefix()}} {{ getFormatDecimal(form.sale) }}</td>
+                                        <td class="text-right">{{ratePrefix()}} {{ form.sale | numberFormat }}</td>
                                     </tr>
                                     <tr >
                                         <td>TOTAL DESCUENTO (-)</td>
                                         <td>:</td>
-                                        <td class="text-right">{{ratePrefix()}} {{ getFormatDecimal(form.total_discount) }}</td>
+                                        <td class="text-right">{{ratePrefix()}} {{ form.total_discount | numberFormat }}</td>
                                     </tr>
                                     <template v-for="(tax, index) in form.taxes">
                                         <tr v-if="((tax.total > 0) && (!tax.is_retention))" :key="index">
@@ -166,13 +168,13 @@
                                                 {{tax.name}}(+)
                                             </td>
                                             <td>:</td>
-                                            <td class="text-right">{{ratePrefix()}} {{ getFormatDecimal(Number(tax.total).toFixed(2)) }}</td>
+                                            <td class="text-right">{{ratePrefix()}} {{ Number(tax.total).toFixed(2) | numberFormat }}</td>
                                         </tr>
                                     </template>
                                     <tr>
                                         <td>SUBTOTAL</td>
                                         <td>:</td>
-                                        <td class="text-right">{{ratePrefix()}} {{ getFormatDecimal(form.subtotal) }}</td>
+                                        <td class="text-right">{{ratePrefix()}} {{ form.subtotal | numberFormat }}</td>
                                     </tr>
 
                                     <template v-for="(tax, index) in form.taxes">
@@ -196,7 +198,7 @@
                                 </table>
 
                                 <template>
-                                    <h3 class="text-right"><b>TOTAL: </b>{{ratePrefix()}} {{ getFormatDecimal(form.total) }}</h3>
+                                    <h3 class="text-right"><b>TOTAL: </b>{{ratePrefix()}} {{ form.total | numberFormat }}</h3>
                                 </template>
                             </div>
 
@@ -259,7 +261,11 @@
     height: 65px !important;
     min-height: 65px !important;
 }
-
+@media only screen and (min-width: 768px) {
+    html.fixed .inner-wrapper {
+        padding-top: 60px !important;
+    }
+}
 </style>
 <script>
     import DocumentFormItem from './partials/item.vue'
@@ -402,24 +408,6 @@
                 // return unit_price.toFixed(6)
             },
 
-            getFormatDecimal(value){
-                // Convierte la cadena a un número (si es posible)
-                const numericPrice = parseFloat(value);
-                if (isNaN(numericPrice)) {
-                    // En caso de que la conversión no sea exitosa, maneja el error como desees
-                    console.error('No se pudo convertir la cadena a un número.');
-                    return value;
-                }
-
-                // Asumiendo que numericPrice es un número
-                const formattedPrice = numericPrice.toLocaleString('en-US', {
-                    style: 'decimal',  // Estilo 'decimal' para separadores de mil y dos decimales
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                });
-
-                return formattedPrice;
-            },
 
             ediItem(row, index)
             {
@@ -867,7 +855,12 @@
                 this.noteService.resolution_number = typeDocument ? typeDocument.resolution_number : '';
 
                 if(!this.note){
-                    this.noteService.type_operation_id = "8"
+                    if (this.form.type_document_id == 2) {
+                        this.noteService.type_operation_id = "5";
+                    }
+                    else if (this.form.type_document_id == 3) {
+                        this.noteService.type_operation_id = "8";
+                    }
                     this.noteService.invoice_period = {
                         start_date: moment(this.form.start_invoice_period).format('YYYY-MM-DD'),
                         end_date: moment(this.form.end_invoice_period).format('YYYY-MM-DD')

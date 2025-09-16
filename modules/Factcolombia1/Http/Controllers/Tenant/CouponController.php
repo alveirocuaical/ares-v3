@@ -24,7 +24,7 @@ class CouponController extends Controller
 
     public function records(Request $request)
     {
-        $records = ConfigurationPurchaseCoupon::query();
+    $records = ConfigurationPurchaseCoupon::query()->orderBy('id', 'desc');
 
         return new CouponCollection($records->paginate(config('tenant.items_per_page')));
     }

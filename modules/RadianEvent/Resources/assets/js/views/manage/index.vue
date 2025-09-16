@@ -1,7 +1,9 @@
 <template>
     <div>
         <div class="page-header pr-0">
-            <h2><a href="/dashboard"><i class="fas fa-tachometer-alt"></i></a></h2>
+            <h2><a href="/co-radian-events/manage">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-calendar-check" style="margin-top: -5px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M11.5 21h-5.5a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v6"></path><path d="M16 3v4"></path><path d="M8 3v4"></path><path d="M4 11h16"></path><path d="M15 19l2 2l4 -4"></path></svg>
+            </a></h2>
             <ol class="breadcrumbs">
                 <li class="active"><span>Documentos recibidos</span></li>
             </ol>
@@ -9,13 +11,13 @@
             </div>
         </div>
         <div class="card mb-0" v-loading="loading">
-            <div class="card-header bg-info">
+            <!-- <div class="card-header bg-info">
                 <h3 class="my-0">Eventos RADIAN - Documentos recibidos</h3>
-            </div>
+            </div> -->
             <div class="card-body">
                 <data-table :resource="resource">
                     <tr slot="heading">
-                        <th>#</th>
+                        <!-- <th>#</th> -->
                         <th>Tipo Documento</th>
                         <th>Fecha</th>
                         <th>Nit Empresa</th>
@@ -34,7 +36,7 @@
                         <th>Historial</th>
                     </tr>
                     <tr slot-scope="{ index, row }">
-                        <td>{{ index }}</td>
+                        <!-- <td>{{ index }}</td> -->
 
                         <td>{{ row.type_document_name }}</td>
 

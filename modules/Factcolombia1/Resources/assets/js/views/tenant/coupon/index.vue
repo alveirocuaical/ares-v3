@@ -1,7 +1,15 @@
 <template>
     <div>
         <div class="page-header pr-0">
-            <h2><a href="/dashboard"><i class="fas fa-tachometer-alt"></i></a></h2>
+            <h2><a href="/co-coupon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text" style="margin-top: -5px;">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+            </a></h2>
             <ol class="breadcrumbs">
                 <li class="active"><span>Cupones</span></li>
             </ol>
@@ -10,13 +18,13 @@
             </div>
         </div>
         <div class="card mb-m0">
-            <div class="card-header bg-info">
+            <!-- <div class="card-header bg-info">
                 <h3 class="my-0">Listado de cupones</h3>
-            </div>
+            </div> -->
             <div class="card-body">
                 <data-table :resource="resource" :loading="loadDataTable">
                     <tr slot="heading" width="100%">
-                        <th>#</th>
+                        <!-- <th>#</th> -->
                         <th>Título</th>
                         <th>Descripción</th>
                         <th>Monto mínimo compras</th>
@@ -26,10 +34,10 @@
                         <th class="text-right">Acciones</th>
                     </tr>
                     <tr slot-scope="{ index, row }">
-                        <td>{{ index }}</td>
+                        <!-- <td>{{ index }}</td> -->
                         <td>{{ row.title }}</td>
                         <td>{{ row.description }}</td>
-                        <td>{{ row.minimum_purchase_amount }}</td>
+                        <td>{{ row.minimum_purchase_amount | numberFormat }}</td>
                         <td>{{ row.establishment }}</td>
                         <td>{{ row.coupon_date }}</td>
                         <td>{{ (row.status)?'Activo':'Inactivo' }}</td>

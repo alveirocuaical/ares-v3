@@ -1,3 +1,6 @@
+@php
+    use App\CoreFacturalo\Helpers\Number\NumberLetter;
+@endphp
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -28,7 +31,9 @@
 </head>
 <body>
     <h1>Reporte de Situación Financiera</h1>
-    <p>Rango de fechas: {{ $dateStart }} a {{ $dateEnd }}</p>
+    @if ($dateStart || $dateEnd)
+        <p>Rango de fechas: {{ $dateStart }} a {{ $dateEnd }}</p>
+    @endif
 
     <h2>Activos</h2>
     <table>
@@ -44,12 +49,12 @@
                 <tr>
                     <td>{{ $asset['code'] }}</td>
                     <td>{{ $asset['name'] }}</td>
-                    <td>{{ number_format($asset['saldo'], 2) }}</td>
+                    <td>{{ NumberLetter::numberFormat($asset['saldo'], 2) }}</td>
                 </tr>
             @endforeach
             <tr class="totals">
                 <td colspan="2">Total Activos</td>
-                <td>{{ number_format($totals['assets'], 2) }}</td>
+                <td>{{ NumberLetter::numberFormat($totals['assets'], 2) }}</td>
             </tr>
         </tbody>
     </table>
@@ -68,12 +73,12 @@
                 <tr>
                     <td>{{ $liability['code'] }}</td>
                     <td>{{ $liability['name'] }}</td>
-                    <td>{{ number_format($liability['saldo'], 2) }}</td>
+                    <td>{{ NumberLetter::numberFormat($liability['saldo'], 2) }}</td>
                 </tr>
             @endforeach
             <tr class="totals">
                 <td colspan="2">Total Pasivos</td>
-                <td>{{ number_format($totals['liabilities'], 2) }}</td>
+                <td>{{ NumberLetter::numberFormat($totals['liabilities'], 2) }}</td>
             </tr>
         </tbody>
     </table>
@@ -92,12 +97,12 @@
                 <tr>
                     <td>{{ $item['code'] }}</td>
                     <td>{{ $item['name'] }}</td>
-                    <td>{{ number_format($item['saldo'], 2) }}</td>
+                    <td>{{ NumberLetter::numberFormat($item['saldo'], 2) }}</td>
                 </tr>
             @endforeach
             <tr class="totals">
                 <td colspan="2">Total Patrimonio</td>
-                <td>{{ number_format($totals['equity'], 2) }}</td>
+                <td>{{ NumberLetter::numberFormat($totals['equity'], 2) }}</td>
             </tr>
         </tbody>
     </table>

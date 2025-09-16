@@ -36,39 +36,55 @@
                         <td>{{ index }}</td>
                         <td class="text-center">{{ row.date_of_issue }}</td>
                         <td>{{ row.customer_name }}<br/><small v-text="row.customer_number"></small></td>
-                        <td>{{ row.number_full }}<br/></td>
+                        <td>{{ row.number_full }}
+                            <br/>
+                            <span v-if="row.state_type_id == '01'" class="badge badge-success">Activo</span>
+                            <span v-else-if="row.state_type_id == '11'" class="bg-danger text-white px-2 py-1 rounded small">Anulado</span>
+                            <span v-else class="badge badge-secondary">Otro</span>
+                        </td>
                         <td>
                             <span v-for="(doc, index) in row.documents" :key="index">
                                 {{ doc.number_full }}<br/>
                             </span>
                         </td>
                         <td class="text-center">{{ row.currency_name }}</td>
-                        <td class="text-right">{{ row.sale }}</td>
-                        <td class="text-right">{{ row.total_discount }}</td>
-                        <td class="text-right">{{ row.total_tax }}</td>
-                        <td class="text-right">{{ row.subtotal }}</td>
-                        <td class="text-right">{{ row.total }}</td>
+                        <td class="text-right">{{ row.sale | numberFormat }}</td>
+                        <td class="text-right">{{ row.total_discount | numberFormat }}</td>
+                        <td class="text-right">{{ row.total_tax | numberFormat }}</td>
+                        <td class="text-right">{{ row.subtotal | numberFormat }}</td>
+                        <td class="text-right">{{ row.total | numberFormat }}</td>
 
                         <td class="text-center">
-                            <button type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-success m-1__2"
-                                    @click.prevent="clickPayment(row.id)">Pagos</button>
+                            <button
+                                v-if="row.state_type_id !== '11'"
+                                type="button"
+                                style="min-width: 41px"
+                                class="btn waves-effect waves-light btn-xs btn-success m-1__2"
+                                @click.prevent="clickPayment(row.id)"
+                            >Pagos</button>
                         </td>
-
                         <td class="text-center" >
                             <button type="button" class="btn waves-effect waves-light btn-xs btn-info"
                                     @click.prevent="clickDownload(row.external_id)">PDF</button>
                         </td>
                         <td class="text-right" >
-                            <el-tooltip class="item" effect="dark" content="Generar comprobante" placement="top-start">
-                                <button v-if="enableToDocument(row)"
-                                    type="button"
-                                    class="btn waves-effect waves-light btn-xs btn-info m-1__2"
-                                    @click.prevent="clickDialogDocument(row)" >
-                                    Comprobante
+                            <template v-if="row.state_type_id !== '11'">
+                                <el-tooltip class="item" effect="dark" content="Generar comprobante" placement="top-start">
+                                    <button v-if="enableToDocument(row)"
+                                        type="button"
+                                        class="btn waves-effect waves-light btn-xs btn-info m-1__2"
+                                        @click.prevent="clickDialogDocument(row)" >
+                                        Comprobante
+                                    </button>
+                                </el-tooltip>
+                                <button type="button" class="btn waves-effect waves-light btn-xs btn-info m-1__2"
+                                        @click.prevent="clickOptions(row.id)">Opciones</button>
+                                <button type="button"
+                                    class="btn waves-effect waves-light btn-xs btn-danger m-1__2"
+                                    @click.prevent="voidRemission(row, index)">
+                                    Anular
                                 </button>
-                            </el-tooltip>
-                            <button type="button" class="btn waves-effect waves-light btn-xs btn-info m-1__2"
-                                    @click.prevent="clickOptions(row.id)">Opciones</button>
+                            </template>
                         </td>
                     </tr>
                 </data-table>
@@ -131,6 +147,23 @@
             clickDialogDocument(document) {
                 this.recordToDocument = document
                 this.showDialogDocument = true
+            },
+            voidRemission(row, index) {
+                this.$confirm('¿Está seguro de anular esta remisión?', 'Confirmar', {
+                    confirmButtonText: 'Sí',
+                    cancelButtonText: 'No',
+                    type: 'warning'
+                }).then(() => {
+                    this.$http.get(`/co-remissions/voided/${row.id}`).then(res => {
+                        if (res.data.success) {
+                            this.$message.success(res.data.message)
+                            // Solución directa y reactiva:
+                            row.state_type_id = '11'
+                        } else {
+                            this.$message.error(res.data.message)
+                        }
+                    })
+                }).catch(() => {});
             },
         }
     }

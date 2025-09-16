@@ -77,7 +77,7 @@
         <!-- start: header -->
         @include('system.layouts.partials.header')
         <!-- end: header -->
-        <div class="inner-wrapper">
+        <div class="inner-wrapper inner-wrapper-system">
             <!-- start: sidebar -->
             @include('system.layouts.partials.sidebar')
             <!-- end: sidebar -->

@@ -114,7 +114,7 @@
                             <div class="col-md-12">
                                 <div class="form-group">
                                     <label class="control-label">Observaciones</label>
-                                    <el-input type="textarea" autosize :rows="1" v-model="form.observation">
+                                    <el-input type="textarea" autosize :rows="1" v-model="form.observation" maxlength="250" show-word-limit>
                                     </el-input>
                                 </div>
                             </div>
@@ -149,11 +149,11 @@
                                                 <td class="text-right">{{ row.quantity }}</td>
                                                 <!--<td class="text-right" v-else ><el-input-number :min="0.01" v-model="row.quantity"></el-input-number> </td> -->
                                                 <td class="text-right">{{ ratePrefix() }}
-                                                    {{ getFormatUnitPriceRow(row.price) }}</td>
+                                                    {{ row.price | numberFormat }}</td>
                                                 <!--<td class="text-right" v-else ><el-input-number :min="0.01" v-model="row.unit_price"></el-input-number> </td> -->
-                                                <td class="text-right">{{ ratePrefix() }} {{ row.subtotal }}</td>
-                                                <td class="text-right">{{ ratePrefix() }} {{ row.discount }}</td>
-                                                <td class="text-right">{{ ratePrefix() }} {{ row.total }}</td>
+                                                <td class="text-right">{{ ratePrefix() }} {{ row.subtotal | numberFormat }}</td>
+                                                <td class="text-right">{{ ratePrefix() }} {{ row.discount | numberFormat }}</td>
+                                                <td class="text-right">{{ ratePrefix() }} {{ row.total | numberFormat }}</td>
                                                 <td class="text-right">
                                                     <button type="button"
                                                         class="btn waves-effect waves-light btn-xs btn-danger"
@@ -189,12 +189,12 @@
                                     <tr>
                                         <td>TOTAL VENTA</td>
                                         <td>:</td>
-                                        <td class="text-right">{{ ratePrefix() }} {{ form.sale }}</td>
+                                        <td class="text-right">{{ ratePrefix() }} {{ form.sale | numberFormat }}</td>
                                     </tr>
                                     <tr>
                                         <td>TOTAL DESCUENTO (-)</td>
                                         <td>:</td>
-                                        <td class="text-right">{{ ratePrefix() }} {{ form.total_discount }}</td>
+                                        <td class="text-right">{{ ratePrefix() }} {{ form.total_discount | numberFormat }}</td>
                                     </tr>
                                     <template v-for="(tax, index) in form.taxes">
                                         <tr v-if="((tax.total > 0) && (!tax.is_retention))" :key="index">
@@ -202,14 +202,14 @@
                                                 {{ tax.name }}(+)
                                             </td>
                                             <td>:</td>
-                                            <td class="text-right">{{ ratePrefix() }} {{ Number(tax.total).toFixed(2) }}
+                                            <td class="text-right">{{ ratePrefix() }} {{ Number(tax.total).toFixed(2) | numberFormat }}
                                             </td>
                                         </tr>
                                     </template>
                                     <tr>
                                         <td>SUBTOTAL</td>
                                         <td>:</td>
-                                        <td class="text-right">{{ ratePrefix() }} {{ form.subtotal }}</td>
+                                        <td class="text-right">{{ ratePrefix() }} {{ form.subtotal | numberFormat }}</td>
                                     </tr>
                                     <template v-for="(tax, index) in form.taxes">
                                         <tr v-if="((tax.is_retention) && (tax.apply))" :key="index">
@@ -230,7 +230,7 @@
                                     </template>
                                 </table>
                                 <template>
-                                    <h3 class="text-right"><b>TOTAL: </b>{{ ratePrefix() }} {{ form.total }}</h3>
+                                    <h3 class="text-right"><b>TOTAL: </b>{{ ratePrefix() }} {{ form.total | numberFormat }}</h3>
                                 </template>
                             </div>
                         </div>
@@ -252,12 +252,17 @@
                 :input_person="input_person" :type_document_id=form.type_document_id></person-form>
             <document-options :showDialog.sync="showDialogOptions" :recordId="documentNewId" :showDownload="true"
                 :showClose="false"></document-options>
-            <document-form-retention :showDialog.sync="showDialogAddRetention"
-                @add="addRowRetention"></document-form-retention>
+            <document-form-retention 
+                :showDialog.sync="showDialogAddRetention"
+                :total-aiu="getTotalBase" 
+                :detail-aiu="detailAiu"
+                @add="addRowRetention">
+            </document-form-retention>
             <detail-aiu @add="addDetailAiu" :showDialog.sync="showDialogDetailAiu" :total="getTotalBase"> </detail-aiu>
             <document-order-reference :showDialog.sync="showDialogOrderReference"
                 :order_reference="form.order_reference"
                 @addOrderReference="addOrderReference"></document-order-reference>
+            <discount-code-dialog :visible.sync="showDiscountCodeDialog" @validated="onDiscountCodeValidated"/>
         </div>
     </div>
 </template>
@@ -287,9 +292,11 @@ import { functions, exchangeRate } from '@mixins/functions'
 import DocumentOptions from './partials/options.vue'
 import DetailAiu from './partials/detailAiu.vue'
 import DocumentOrderReference from './partials/order_reference.vue'
+import DiscountCodeDialog from '../../../components/DiscountCodeDialog.vue'
+
 export default {
     props: ['typeUser', 'configuration'],
-    components: { PersonForm, DocumentFormItem, DocumentFormRetention, DocumentOptions, DetailAiu, DocumentOrderReference },
+    components: { PersonForm, DocumentFormItem, DocumentFormRetention, DocumentOptions, DetailAiu, DocumentOrderReference, DiscountCodeDialog },
     mixins: [functions, exchangeRate],
     data() {
         return {
@@ -328,8 +335,16 @@ export default {
             loading_search: false,
             taxes: [],
             showDialogDetailAiu: false,
-            detailAiu: {},
-            resolutions: []
+            detailAiu: {
+                value_administartion: 0,
+                value_sudden: 0, 
+                value_utility: 0,
+                note: null
+            },
+            resolutions: [],
+            advanced_configuration: {},
+            showDiscountCodeDialog: false,
+            discount_code_validated: false,
         }
     },
     computed: {
@@ -338,6 +353,10 @@ export default {
         }
     },
     async created() {
+        // Cargar configuración avanzada antes de todo
+        await this.$http.get('/co-advanced-configuration/record').then(response => {
+            this.advanced_configuration = response.data.data
+        })
         await this.initForm()
         await this.$http.get(`/${this.resource}/tables`)
             .then(response => {
@@ -394,14 +413,47 @@ export default {
             }
         },
         addDetailAiu(data) {
-            this.detailAiu = data
-            const items_aiu = this.$refs.documentFormItem.getItemsAiu(this.detailAiu)
-            const items_base = this.form.items.filter(row => row.item.internal_id != 'aiu00001' && row.item.internal_id != 'aiu00002' && row.item.internal_id != 'aiu00003')
-            const items_form = items_base.concat(items_aiu)
-            this.form.items = items_form
-            this.setDataTotals()
+            this.detailAiu = data;
+            const items_aiu = this.$refs.documentFormItem.getItemsAiu(this.detailAiu);
+            
+            // Filtrar solo los items AIU que tienen valor mayor a 0
+            const filteredItemsAiu = items_aiu.filter(item => {
+                switch(item.item.internal_id) {
+                    case 'aiu00001':
+                        return this.detailAiu.value_administartion > 0;
+                    case 'aiu00002':
+                        return this.detailAiu.value_sudden > 0;
+                    case 'aiu00003':
+                        return this.detailAiu.value_utility > 0;
+                    default:
+                        return true;
+                }
+            });
+        
+            const items_base = this.form.items.filter(row => 
+                row.item.internal_id != 'aiu00001' && 
+                row.item.internal_id != 'aiu00002' && 
+                row.item.internal_id != 'aiu00003'
+            );
+        
+            this.form.items = items_base.concat(filteredItemsAiu);
+            this.setDataTotals();
         },
         clickOpenDeatailAiu() {
+            // Asegurarse de que los valores estén limpios antes de abrir el diálogo
+            if (!this.showDialogDetailAiu) {
+                this.$nextTick(() => {
+                    this.detailAiu = {
+                        value_administartion: 0,
+                        value_sudden: 0,
+                        value_utility: 0,
+                        percent_administartion: 0,
+                        percent_sudden: 0,
+                        percent_utility: 0,
+                        note: null
+                    }
+                })
+            }
             this.showDialogDetailAiu = true
         },
         ratePrefix(tax = null) {
@@ -465,7 +517,9 @@ export default {
                 service_invoice: {},
                 payment_form_id: null,
                 payment_method_id: null,
-                order_reference: {}
+                order_reference: {},
+                head_note: this.advanced_configuration.head_note || '',
+                foot_note: this.advanced_configuration.foot_note || '',
             }
             this.errors = {}
             this.$eventHub.$emit('eventInitForm')
@@ -480,6 +534,7 @@ export default {
         resetForm() {
             this.activePanel = 0
             this.initForm()
+            this.discount_code_validated = false;
             this.form.currency_id = 170
             this.form.type_invoice_id = (this.type_invoices.length > 0) ? this.type_invoices[0].id : null
             this.form.payment_form_id = (this.payment_forms.length > 0) ? this.payment_forms[0].id : null
@@ -531,6 +586,21 @@ export default {
             // }
         },
         addRow(row) {
+            if (this.advanced_configuration && this.advanced_configuration.validate_min_stock) {
+                if (row.item && row.item.warehouses && row.item.unit_type_id !== 'ZZ') {
+                    const warehouse = row.item.warehouses.find(w => w.checked) || row.item.warehouses[0];
+                    const stock = warehouse ? warehouse.stock : 0;
+                    const stock_min = row.item.stock_min !== undefined ? row.item.stock_min : 0;
+                    if (Number(stock) < Number(stock_min)) {
+                        this.$message.error('El stock actual es menor al stock mínimo para este producto.');
+                        return;
+                    }
+                    if (Number(row.quantity) > Number(stock)) {
+                        this.$message.error('No hay stock suficiente para este producto.');
+                        return;
+                    }
+                }
+            }
             // si no selecciona la casilla de "impuesto incluido en el precio" se debe sumar el impuesto al precio
             if(row.tax_included_in_price) {
                 const tax_caculable = parseFloat(row.tax.rate) / row.tax.conversion;
@@ -538,23 +608,45 @@ export default {
                 row.price = price_without_tax;
             }
             if (this.recordItem) {
-                //this.form.items.$set(this.recordItem.indexi, row)
                 this.form.items[this.recordItem.indexi] = row
                 this.recordItem = null
             }
             else {
                 this.form.items.push(JSON.parse(JSON.stringify(row)));
             }
-            // console.log(this.form)
             this.calculateTotal();
         },
         async addRowRetention(row) {
-            await this.taxes.forEach(tax => {
-                if (tax.id == row.tax_id) {
-                    tax.apply = true
+            const tax = this.taxes.find(t => t.id === row.tax_id);
+            if (tax) {
+                const taxData = {
+                    ...tax,
+                    apply: true,
+                    retention: row.calculatedRetention,
+                    rate: row.rate,
+                    base: row.baseAiu,
+                    total: row.calculatedRetention, 
+                    type_tax_id: row.type_tax_id,
+                    conversion: row.conversion,
+                    name: row.name
+                };
+
+                // Actualizar o agregar el impuesto en form.taxes
+                const formTaxIndex = this.form.taxes.findIndex(t => t.id === tax.id);
+                if (formTaxIndex >= 0) {
+                    this.form.taxes.splice(formTaxIndex, 1, taxData);
+                } else {
+                    this.form.taxes.push(taxData);
                 }
-            });
-            await this.calculateTotal()
+
+                // Actualizar también en el array principal de taxes
+                const taxIndex = this.taxes.findIndex(t => t.id === tax.id);
+                if (taxIndex >= 0) {
+                    this.taxes[taxIndex] = {...taxData};
+                }
+
+                await this.calculateTotal();
+            }
         },
         cleanTaxesRetention(tax_id) {
             this.taxes.forEach(tax => {
@@ -588,8 +680,11 @@ export default {
             this.setDataTotals()
         },
         setDataTotals() {
-            let val = this.form
-            val.taxes = JSON.parse(JSON.stringify(this.taxes));
+            let val = this.form;
+            const retentions = val.taxes.filter(t => t.is_retention && t.apply);
+            val.taxes = JSON.parse(JSON.stringify(this.taxes.filter(t => !t.is_retention)));
+            val.taxes.push(...retentions);
+
             val.items.forEach(item => {
                 item.tax = this.taxes.find(tax => tax.id == item.tax_id);
                 if (
@@ -708,9 +803,22 @@ export default {
             if (!this.form.customer_id) {
                 return this.$message.error('Debe seleccionar un cliente')
             }
+            if (
+                this.advanced_configuration &&
+                this.advanced_configuration.validate_discount_code &&
+                Number(this.form.total_discount) > 0 &&
+                !this.discount_code_validated
+            ) {
+                this.showDiscountCodeDialog = true;
+                return;
+            }
+            ['foot_note', 'head_note'].forEach(key => {
+                if (this.form[key] === null || this.form[key] === undefined || this.form[key] === '') {
+                    delete this.form[key];
+                }
+            });
             this.form.service_invoice = await this.createInvoiceService();
-            // return
-            this.loading_submit = true // Usa loading_submit
+            this.loading_submit = true
             this.$http.post(`/${this.resource}/store_aiu`, this.form).then(response => {
                 if (response.data.success) {
                     this.resetForm();
@@ -906,16 +1014,34 @@ export default {
             return { code, description }
         },
         getWithHolding() {
-            let total = this.form.sale
+            const context = this;
             let list = this.form.taxes.filter(function (x) {
                 return x.is_retention && x.apply;
             });
-            return list.map(x => {
+            
+            return list.map(tax => {
+                // Obtener la base según el tipo definido en el tax
+                let base = 0;
+                
+                // Si el tax tiene base_type definido, usarlo para determinar la base
+                if (tax.base_type === 'administration') {
+                    base = this.detailAiu.value_administartion;
+                } else if (tax.base_type === 'sudden') {
+                    base = this.detailAiu.value_sudden;
+                } else if (tax.base_type === 'utility') {
+                    base = this.detailAiu.value_utility;
+                } else {
+                    // Si no tiene base_type o es 'total', usar la base definida en el tax
+                    base = tax.base || this.form.items.find(item => 
+                        item.item.internal_id === 'aiu00001'
+                    )?.price || 0;
+                }
+
                 return {
-                    tax_id: x.type_tax_id,
-                    tax_amount: this.cadenaDecimales(x.retention),
-                    percent: this.cadenaDecimales(this.roundNumber(x.rate / (x.conversion / 100), 6)),
-                    taxable_amount: this.cadenaDecimales(total),
+                    tax_id: tax.type_tax_id,
+                    tax_amount: this.cadenaDecimales(tax.retention),
+                    percent: this.cadenaDecimales(this.roundNumber(tax.rate / (tax.conversion / 100), 6)),
+                    taxable_amount: this.cadenaDecimales(base)
                 };
             });
         },
@@ -981,6 +1107,20 @@ export default {
                 this.$message.error('Ocurrió un error al generar la vista preliminar')
             } finally {
                 this.loading_preview = false // Reset loading_preview
+            }
+        },
+        onDiscountCodeValidated(success) {
+            if (success) {
+                this.discount_code_validated = true;
+                this.showDiscountCodeDialog = false;
+                this.submit();
+            }
+        },
+        watch: {
+            'form.total_discount'(nuevo, anterior) {
+                if (this.discount_code_validated && Number(nuevo) !== Number(anterior)) {
+                    this.discount_code_validated = false;
+                }
             }
         },
     }

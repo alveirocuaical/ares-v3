@@ -30,6 +30,9 @@ use Exception;
 use Modules\Payroll\Helpers\DocumentPayrollHelper;
 use Modules\Factcolombia1\Http\Controllers\Tenant\DocumentController;
 use Modules\Payroll\Traits\UtilityTrait;
+use Modules\Accounting\Models\ChartOfAccount;
+use Modules\Accounting\Helpers\AccountingEntryHelper;
+use Modules\Accounting\Models\JournalPrefix;
 
 
 class DocumentPayrollController extends Controller
@@ -52,6 +55,9 @@ class DocumentPayrollController extends Controller
         return [
             'consecutive' => 'Número',
             'date_of_issue' => 'Fecha de emisión',
+            'date_of_issue_range' => 'Rango de fechas',
+            'worker_full_name' => 'Empleado',
+            'state_document_id' => 'Estado',
         ];
     }
 
@@ -96,7 +102,48 @@ class DocumentPayrollController extends Controller
 
     public function records(Request $request)
     {
-        $records = DocumentPayroll::whereFilterRecords($request)->latest();
+        if ($request->column == 'date_of_issue') {
+            if (strlen($request->value) == 7) {
+                $year_month = explode('-', $request->value);
+                $year = $year_month[0];
+                $month = $year_month[1];
+                $records = DocumentPayroll::whereYear('date_of_issue', $year)
+                                         ->whereMonth('date_of_issue', $month)
+                                         ->latest();
+            } else {
+                $records = DocumentPayroll::whereDate('date_of_issue', $request->value)
+                                         ->latest();
+            }
+        } elseif ($request->column == 'date_of_issue_range' && !empty($request->value)) {
+            // Espera un string "YYYY-MM-DD,YYYY-MM-DD"
+            $dates = explode(',', $request->value);
+            $start = $dates[0] ?? null;
+            $end = $dates[1] ?? null;
+            $records = DocumentPayroll::query();
+            if ($start && $end) {
+                $records = $records->whereBetween('date_of_issue', [$start, $end]);
+            } elseif ($start) {
+                $records = $records->where('date_of_issue', '>=', $start);
+            } elseif ($end) {
+                $records = $records->where('date_of_issue', '<=', $end);
+            }
+            $records = $records->latest();
+        } elseif ($request->column == 'worker_full_name') {
+            $records = DocumentPayroll::whereHas('model_worker', function($q) use ($request) {
+                $q->where(DB::raw("CONCAT(first_name, ' ', surname, ' ', second_surname)"), 'like', "%{$request->value}%");
+            })->latest();
+        // } elseif ($request->column == 'type_document_id') {
+        //     $records = DocumentPayroll::where('type_document_id', $request->value)->latest();
+        } elseif ($request->column == 'state_document_id') {
+            $records = DocumentPayroll::where('state_document_id', $request->value)->latest();
+        } else {
+            // Si no hay filtro, mostrar solo las nóminas del mes actual
+            $year = date('Y');
+            $month = date('m');
+            $records = DocumentPayroll::whereYear('date_of_issue', $year)
+                                     ->whereMonth('date_of_issue', $month)
+                                     ->latest();
+        }
 
         return new DocumentPayrollCollection($records->paginate(config('tenant.items_per_page')));
     }
@@ -130,15 +177,67 @@ class DocumentPayrollController extends Controller
 
     protected function processAccruedData($accrued)
     {
-        $processedAccrued = $accrued;
-        
-        if (isset($processedAccrued['transportation_allowance']) && 
-            ($processedAccrued['transportation_allowance'] == 0 || 
-             $processedAccrued['transportation_allowance'] === null)) {
-            unset($processedAccrued['transportation_allowance']);
+        $total_accrued = floatval($accrued['total_base_salary'] ?? 0);
+
+        $direct_fields = [
+            'transportation_allowance',
+            'total_extra_hours',
+            'total_license',
+            'endowment',
+            'sustenance_support',
+            'telecommuting',
+            'withdrawal_bonus',
+            'compensation',
+            'salary_viatics',
+            'non_salary_viatics',
+            'refund'
+        ];
+
+        foreach ($direct_fields as $field) {
+            if (isset($accrued[$field]) && $accrued[$field] !== null && $accrued[$field] !== '') {
+                $total_accrued += floatval($accrued[$field]);
+            }
         }
-        
-        return $processedAccrued;
+
+        $array_fields = [
+            'heds' => ['payment'],
+            'hens' => ['payment'],
+            'hrns' => ['payment'],
+            'heddfs' => ['payment'],
+            'hrddfs' => ['payment'],
+            'hendfs' => ['payment'],
+            'hrndfs' => ['payment'],
+            'work_disabilities' => ['payment'],
+            'service_bonus' => ['payment', 'paymentNS'],
+            'severance' => ['payment', 'interest_payment'],
+            'common_vacation' => ['payment'],
+            'paid_vacation' => ['payment'],
+            'bonuses' => ['salary_bonus', 'non_salary_bonus'],
+            'aid' => ['salary_assistance', 'non_salary_assistance'],
+            'other_concepts' => ['salary_concept', 'non_salary_concept'],
+            'commissions' => ['commission'],
+            'epctv_bonuses' => ['paymentS', 'paymentNS', 'salary_food_payment', 'non_salary_food_payment'],
+            'third_party_payments' => ['third_party_payment'],
+            'advances' => ['advance'],
+            'compensations' => ['ordinary_compensation', 'extraordinary_compensation'],
+            'legal_strike' => ['payment'],
+        ];
+
+        foreach ($array_fields as $field => $value_keys) {
+            if (isset($accrued[$field]) && is_array($accrued[$field])) {
+                foreach ($accrued[$field] as $item) {
+                    foreach ($value_keys as $value_key) {
+                        if (isset($item[$value_key]) && $item[$value_key] !== null && $item[$value_key] !== '') {
+                            $total_accrued += floatval($item[$value_key]);
+                        }
+                    }
+                }
+            }
+        }
+
+        $accrued['accrued_total'] = round($total_accrued, 2);
+
+        return $accrued;
     }
 
     public function store(DocumentPayrollRequest $request)
@@ -152,10 +251,10 @@ class DocumentPayrollController extends Controller
 
                 foreach ($workers as $worker_id) {
                     $worker_model = Worker::find($worker_id);
-                    
+
                     // Clonar datos base del request para cada trabajador
                     $worker_request = $base_request;
-                    
+
                     // Actualizar datos específicos del trabajador
                     $worker_request['worker_id'] = $worker_id;
                     $worker_request['payment'] = [
@@ -172,7 +271,7 @@ class DocumentPayrollController extends Controller
 
                     $worker_request['accrued']['total_base_salary'] = $proportional_salary;
                     $worker_request['accrued']['salary'] = $proportional_salary;
-                                        
+
                     // Recalcular total de devengados basado en el salario del trabajador actual
                     $transportation_allowance = $worker_request['accrued']['transportation_allowance'] ?? 0;
                     $worker_request['accrued']['accrued_total'] = $proportional_salary + $transportation_allowance;
@@ -203,6 +302,8 @@ class DocumentPayrollController extends Controller
                         'response_api' => $send_to_api
                     ]);
                     $documents[] = $document->id;
+
+                    $this->registerAccountingEntry($document);
                 }
 
                 return [
@@ -222,6 +323,134 @@ class DocumentPayrollController extends Controller
             return $this->getErrorFromException($e->getMessage(), $e);
         }
 
+    }
+
+    private function makeMovement($account, $debit = 0, $credit = 0, $affects_balance = true)
+    {
+        // Si la cuenta no existe o ambos valores son <= 0, no retorna nada
+        if (!$account || (floatval($debit) <= 0 && floatval($credit) <= 0)) {
+            return null;
+        }
+        return [
+            'account_id' => $account->id,
+            'debit' => $debit,
+            'credit' => $credit,
+            'affects_balance' => $affects_balance,
+        ];
+    }
+
+    private function registerAccountingEntry($document)
+    {
+        try {
+            $movements = [];
+            $journal = JournalPrefix::where('prefix', 'NM')->first();
+            $document_type = TypeDocument::where('id', $document->type_document_id)->first();
+
+            // Sueldos
+            $salary = $document->accrued->salary ?? 0;
+            if ($salary > 0) {
+                $accountSalary = ChartOfAccount::where('code','510506')->first();
+                if ($movement = $this->makeMovement($accountSalary, $salary, 0)) {
+                    $movements[] = $movement;
+                }
+            }
+
+            // EPS salud
+            $eps_deduction = $document->deduction->eps_deduction ?? 0;
+            if ($eps_deduction > 0) {
+                $accountHealth = ChartOfAccount::where('code','237005')->first();
+                if ($movement = $this->makeMovement($accountHealth, 0, $eps_deduction)) {
+                    $movements[] = $movement;
+                }
+            }
+
+            // AFP pension
+            $pension_deduction = $document->deduction->pension_deduction ?? 0;
+            if ($pension_deduction > 0) {
+                $accountPension = ChartOfAccount::where('code','238030')->first();
+                if ($movement = $this->makeMovement($accountPension, 0, $pension_deduction)) {
+                    $movements[] = $movement;
+                }
+            }
+
+            // subdidio de transporte
+            $transportation_allowance = $document->accrued->transportation_allowance ?? 0;
+            if ($transportation_allowance > 0) {
+                $accountPayment = ChartOfAccount::where('code','510527')->first(); // auxilio de transporte
+                if ($movement = $this->makeMovement($accountPayment, $transportation_allowance, 0)) {
+                    $movements[] = $movement;
+                }
+            }
+
+            // vacaciones
+            // field json
+            if ($document->accrued->common_vacation !== null) {
+                $totalPaymentVacaciones = array_sum(array_column($document->accrued->common_vacation, 'payment'));
+                if($totalPaymentVacaciones > 0) {
+                    $accountVacation = ChartOfAccount::where('code', '510539')->first();
+                    if ($movement = $this->makeMovement($accountVacation, $totalPaymentVacaciones, 0)) {
+                        $movements[] = $movement;
+                    }
+                }
+            }
+
+            // prima salarial
+            if ($document->accrued->service_bonus !== null) {
+                $totalPaymentSB = array_sum(array_column($document->accrued->service_bonus, 'payment'));
+                if($totalPaymentSB > 0) {
+                    $accountSB = ChartOfAccount::where('code', '510536')->first(); // prima de servicio
+                    if ($movement = $this->makeMovement($accountSB, $totalPaymentSB, 0)) {
+                        $movements[] = $movement;
+                    }
+                }
+                $totalPaymentSBNS = array_sum(array_column($document->accrued->service_bonus, 'paymentNS'));
+                if($totalPaymentSBNS > 0) {
+                    $accountSB = ChartOfAccount::where('code', '510542')->first(); // prima extralegales
+                    if ($movement = $this->makeMovement($accountSB, $totalPaymentSBNS, 0)) {
+                        $movements[] = $movement;
+                    }
+                }
+            }
+
+            // cesantias
+            if ($document->accrued->severance !== null) {
+                $totalPaymentSeverance = array_sum(array_column($document->accrued->severance, 'payment'));
+                if($totalPaymentSeverance > 0) {
+                    $accountSeverance = ChartOfAccount::where('code', '510530')->first();
+                    if ($movement = $this->makeMovement($accountSeverance, $totalPaymentSeverance, 0)) {
+                        $movements[] = $movement;
+                    }
+                }
+                $totalPaymentSeverancePctg = array_sum(array_column($document->accrued->severance, 'interest_payment'));
+                if($totalPaymentSeverancePctg > 0) {
+                    $accountSP = ChartOfAccount::where('code', '510533')->first(); // intereses de cesantias
+                    if ($movement = $this->makeMovement($accountSP, $totalPaymentSeverancePctg, 0)) {
+                        $movements[] = $movement;
+                    }
+                }
+            }
+
+            // Pago neto | saldo total a pagar al empleado
+            $net_payment = ($document->accrued->accrued_total ?? 0) - ($document->deduction->deductions_total ?? 0);
+            if ($net_payment > 0) {
+                $accountPayment = ChartOfAccount::where('code','110505')->first(); // TO DO: no se estable forma de pago de nomina
+                if ($movement = $this->makeMovement($accountPayment, 0, $net_payment)) {
+                    $movements[] = $movement;
+                }
+            }
+
+            AccountingEntryHelper::registerEntry([
+                'prefix_id' => $journal->id,
+                'description' => $document_type->name . ' #' . $document->prefix . '-' . $document->consecutive,
+                'document_payroll_id' => $document->id,
+                'movements' => $movements,
+                'taxes' => [],
+                'tax_config' => [],
+            ]);
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+            \Log::error('insert Entry '.$e->getMessage());
+        }
     }
 
 
@@ -260,7 +489,7 @@ class DocumentPayrollController extends Controller
 
             $worker_id = is_array($request->worker_id) ? $request->worker_id[0] : $request->worker_id;
             $worker = Worker::findOrFail($worker_id);
-            
+
             // Obtener resolución
             $resolution = TypeDocument::where('id', $request->type_document_id)
                                     ->where('code', 9)
@@ -287,7 +516,7 @@ class DocumentPayrollController extends Controller
         }
     }
 
-    private function preparePreviewData($worker, $resolution, $request) 
+    private function preparePreviewData($worker, $resolution, $request)
     {
         $helper = new DocumentPayrollHelper();
         $next_consecutive = $helper->getConsecutive(9, true, $resolution->prefix);
@@ -322,7 +551,7 @@ class DocumentPayrollController extends Controller
             'payment' => $request->payment ?? [
                 'payment_method_id' => (int)($worker->payment->payment_method_id ?? 1),
                 'bank_name' => $worker->payment->bank_name ?? null,
-                'account_type' => $worker->payment->account_type ?? null, 
+                'account_type' => $worker->payment->account_type ?? null,
                 'account_number' => $worker->payment->account_number ?? null
             ],
             'period' => $request->period ?? [
@@ -366,5 +595,66 @@ class DocumentPayrollController extends Controller
             ]
         ];
     }
+    public function duplicate($id)
+    {
+        $document = DocumentPayroll::findOrFail($id);
 
+        $data = [
+            'type_document_id' => $document->type_document_id,
+            'prefix' => $document->prefix,
+            'period' => $document->period,
+            'payroll_period_id' => $document->payroll_period_id,
+            'worker_id' => [$document->worker_id],
+            'payment' => $document->payment,
+            'payment_dates' => $document->payment_dates,
+            'accrued' => $document->accrued ? $document->accrued->getRowResource() : [],
+            'deduction' => $document->deduction ? $document->deduction->getRowResource() : [],
+        ];
+
+        // LIMPIA LOS CAMPOS OPCIONALES AQUÍ
+        $this->cleanOptionalFields($data);
+
+        $data = array_filter($data, function($value) {
+            return !is_null($value);
+        });
+
+        return response()->json($data);
+    }
+
+    private function cleanOptionalFields(&$inputs)
+    {
+        // Arrays en deduction que deben ser [] si vienen null
+        $arrayFields = [
+            'labor_union', 'sanctions', 'orders', 'third_party_payments', 'advances', 'other_deductions'
+        ];
+        foreach ($arrayFields as $field) {
+            if (isset($inputs['deduction']) && array_key_exists($field, $inputs['deduction']) && is_null($inputs['deduction'][$field])) {
+                $inputs['deduction'][$field] = [];
+            }
+        }
+
+        // Opcionales en accrued
+        $accruedOptionals = [
+            'endowment', 'sustenance_support', 'telecommuting', 'withdrawal_bonus', 'compensation',
+            'salary_viatics', 'non_salary_viatics', 'refund'
+        ];
+        foreach ($accruedOptionals as $key) {
+            if (!isset($inputs['accrued'][$key]) || empty($inputs['accrued'][$key]) || $inputs['accrued'][$key] <= 0) {
+                unset($inputs['accrued'][$key]);
+            }
+        }
+
+        // Opcionales en deduction
+        $deductionOptionals = [
+            'voluntary_pension', 'withholding_at_source', 'afc', 'cooperative', 'tax_liens',
+            'supplementary_plan', 'education', 'refund', 'debt',
+            'fondossp_type_law_deductions_id', 'fondosp_deduction_SP',
+            'fondossp_sub_type_law_deductions_id', 'fondosp_deduction_sub'
+        ];
+        foreach ($deductionOptionals as $key) {
+            if (!isset($inputs['deduction'][$key]) || empty($inputs['deduction'][$key]) || $inputs['deduction'][$key] <= 0) {
+                unset($inputs['deduction'][$key]);
+            }
+        }
+    }
 }

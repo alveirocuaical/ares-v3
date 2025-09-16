@@ -34,6 +34,9 @@ use App\Http\Controllers\Tenant\{
     ItemController,
 };
 use Modules\Factcolombia1\Helpers\DocumentHelper;
+use App\Models\Tenant\ItemWarehouse;
+use App\Models\Tenant\InventoryKardex;
+use Carbon\Carbon;
 
 
 class RemissionController extends Controller
@@ -168,6 +171,7 @@ class RemissionController extends Controller
             'state_type_id' => '01',
             'number' => $this->getNumber($inputs->prefix),
             'items' => $items,
+            'seller_id' => $inputs['seller_id'] ?? null,
         ];
 
         $inputs->merge($values);
@@ -221,6 +225,10 @@ class RemissionController extends Controller
         $filename = ($filename != null) ? $filename : $this->remission->filename;
         $format_pdf = ($format_pdf != null) ? $format_pdf : 'a4';
         $base_template = config('tenant.pdf_template');
+
+        // Agregar cuentas bancarias al documento
+        $bank_accounts = \App\Models\Tenant\BankAccount::where('status', 1)->get();
+        $document->bank_accounts = $bank_accounts;
 
         // Configuración inicial del PDF según formato
         $pdf_config = [];
@@ -298,6 +306,63 @@ class RemissionController extends Controller
         if (!$remission) throw new Exception("El código {$external_id} es inválido, no se encontro el documento relacionado");
 
         return $this->downloadStorage($remission->filename, 'remission');
+    }
+
+    public function voided($id)
+    {
+        $remission = Remission::with('items')->findOrFail($id);
+
+        if ($remission->state_type_id == '11') {
+            return [
+                'success' => false,
+                'message' => 'La remisión ya está anulada.'
+            ];
+        }
+
+        DB::connection('tenant')->transaction(function () use ($remission) {
+            // Cambiar estado a anulado
+            $remission->state_type_id = '11'; // 11 = Anulado
+            $remission->save();
+
+            foreach ($remission->items as $item) {
+                $warehouse_id = $item->warehouse_id;
+                if (empty($warehouse_id)) {
+                    $mainWarehouse = ItemWarehouse::where('item_id', $item->item_id)->orderBy('id')->first();
+                    if ($mainWarehouse) {
+                        $warehouse_id = $mainWarehouse->warehouse_id;
+                    }
+                }
+                if ($warehouse_id) {
+                    // Actualizar stock en el almacén correspondiente
+                    $itemWarehouse = ItemWarehouse::where('item_id', $item->item_id)
+                        ->where('warehouse_id', $warehouse_id)
+                        ->first();
+
+                    if ($itemWarehouse) {
+                        $itemWarehouse->stock += $item->quantity;
+                        $itemWarehouse->save();
+                    }
+
+                    // Registrar entrada en inventory_kardex
+                    InventoryKardex::create([
+                        'date_of_issue' => now(),
+                        'item_id' => $item->item_id,
+                        'inventory_kardexable_id' => $remission->id,
+                        'inventory_kardexable_type' => Remission::class,
+                        'warehouse_id' => $warehouse_id,
+                        'quantity' => $item->quantity,
+                    ]);
+                } else {
+                    // Si no se encuentra ningún almacén, registrar en el log
+                    \Log::warning("No se encontró almacén para el item {$item->item_id} en la remisión {$remission->id}. No se actualizó el stock ni el kardex.");
+                }
+            }
+        });
+
+        return [
+            'success' => true,
+            'message' => 'Remisión anulada correctamente.'
+        ];
     }
 
 }

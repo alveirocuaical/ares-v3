@@ -15,7 +15,54 @@
                         </div>
                     </div>
                     <div class="col-lg-3 col-md-4 col-sm-12 pb-2">
-                        <template v-if="search.column=='date_of_issue' || search.column=='date_of_due' || search.column=='date_of_payment' || search.column=='delivery_date'">
+                        <template v-if="search.column=='date_of_issue'">
+                            <div class="d-flex">
+                                <el-select 
+                                    v-model="filterType" 
+                                    placeholder="Tipo de filtro" 
+                                    style="width: 120px; margin-right: 8px;">
+                                    <el-option label="Por mes" value="month"></el-option>
+                                    <el-option label="Por fecha" value="date"></el-option>
+                                </el-select>
+                                
+                                <template v-if="filterType === 'month'">
+                                    <el-date-picker
+                                        v-model="search.value"
+                                        type="month"
+                                        style="width: calc(100% - 130px)"
+                                        placeholder="Seleccione mes"
+                                        value-format="yyyy-MM"
+                                        @change="getRecords">
+                                    </el-date-picker>
+                                </template>
+                                <template v-else>
+                                    <el-date-picker
+                                        v-model="search.value"
+                                        type="date"
+                                        style="width: calc(100% - 130px)"
+                                        placeholder="Seleccione fecha"
+                                        value-format="yyyy-MM-dd"
+                                        :clearable="true"
+                                        :editable="false"
+                                        @change="onDateChange">
+                                    </el-date-picker>
+                                </template>
+                            </div>
+                        </template>
+                        <template v-else-if="search.column=='date_of_issue_range'">
+                            <el-date-picker
+                                v-model="dateRange"
+                                type="daterange"
+                                unlink-panels
+                                range-separator="a"
+                                start-placeholder="Fecha inicio"
+                                end-placeholder="Fecha fin"
+                                value-format="yyyy-MM-dd"
+                                style="width: 100%;"
+                                @change="onDateRangeChange">
+                            </el-date-picker>
+                        </template>
+                        <template v-else-if="search.column=='date_of_due' || search.column=='date_of_payment' || search.column=='delivery_date'">
                             <el-date-picker
                                 v-model="search.value"
                                 type="date"
@@ -24,6 +71,15 @@
                                 value-format="yyyy-MM-dd"
                                 @change="getRecords">
                             </el-date-picker>
+                        </template>
+                        <template v-else-if="search.column=='state_document_id'">
+                            <el-select
+                                v-model="search.value"
+                                placeholder="Estado"
+                                style="width: 100%;"
+                                @change="getRecords">
+                                <el-option v-for="item in stateDocuments" :key="item.id" :label="item.name" :value="item.id"></el-option>
+                            </el-select>
                         </template>
                         <template v-else>
                             <el-input placeholder="Buscar"
@@ -78,17 +134,24 @@
                 type: Boolean,
                 default: true,
                 required: false
+            },
+            initSearch: {
+                type: Object,
+                default: null
             }
         },
         data () {
             return {
+                filterType: 'month',
                 search: {
-                    column: null,
+                    column: 'date_of_issue',
                     value: null
                 },
                 columns: [],
                 records: [],
-                pagination: {}
+                pagination: {},
+                stateDocuments: [],
+                dateRange: null, // Para el rango de fechas
             }
         },
         computed: {
@@ -99,12 +162,27 @@
             })
         },
         async mounted () {
-            // let column_resource = _.split(this.resource, '/')
-           // console.log(column_resource)
             await this.$http.get(`/${this.resource}/columns`).then((response) => {
                 this.columns = response.data
-                this.search.column = _.head(Object.keys(this.columns))
+                // Inicializar filtro solo para payroll/document-payrolls
+                if (this.resource === 'payroll/document-payrolls') {
+                    this.search.column = 'date_of_issue'
+                    this.search.value = this.getCurrentMonth()
+                } else {
+                    // Para otros recursos, no filtrar por fecha
+                    this.search.column = Object.keys(this.columns)[0] || ''
+                    this.search.value = ''
+                }
             });
+            // No cargar typeDocuments
+            if (this.resource === 'payroll/document-payrolls') {
+                // this.typeDocuments = []
+                this.stateDocuments = [
+                    { id: 1, name: 'Registrado' },
+                    { id: 5, name: 'Aceptado' },
+                    { id: 6, name: 'Rechazado' }
+                ]
+            }
             await this.getRecords()
 
         },
@@ -126,10 +204,54 @@
                     ...this.search
                 })
             },
+            onDateRangeChange(val) {
+                if (val && val.length === 2) {
+                    this.search.value = `${val[0]},${val[1]}`
+                } else {
+                    this.search.value = ''
+                }
+                this.getRecords()
+            },
             changeClearInput(){
                 this.search.value = ''
+                if(this.search.column === 'date_of_issue_range') {
+                    this.dateRange = null
+                }
                 this.getRecords()
+            },
+            onDateChange(date) {
+                this.search.value = date;
+                this.getRecords();
+            },
+            getCurrentMonth() {
+                const date = new Date();
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                return `${year}-${month}`;
+            }
+        },
+        watch: {
+            filterType(newValue) {
+                this.search.value = '';
+                if (newValue === 'month') {
+                    this.search.value = this.getCurrentMonth();
+                }
+                this.getRecords();
+            },
+            'search.column'(val) {
+                // Limpiar el rango si se cambia de columna
+                if(val !== 'date_of_issue_range') {
+                    this.dateRange = null
+                }
             }
         }
     }
 </script>
+
+<style scoped>
+.d-flex {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+</style>

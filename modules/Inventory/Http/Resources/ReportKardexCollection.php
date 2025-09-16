@@ -40,23 +40,71 @@ class ReportKardexCollection extends ResourceCollection
         switch ($row->inventory_kardexable_type) {
 
             case $models[0]: //venta
+                $isCreditNote = isset($row->inventory_kardexable->document_type_id) && $row->inventory_kardexable->document_type_id == 3;
+                $isCreditNoteConcept = isset($row->inventory_kardexable->note_concept_id) && $row->inventory_kardexable->note_concept_id == 5;
+                $isVoided = $isCreditNote && !$isCreditNoteConcept && $row->quantity > 0;
+                $item_name = optional($row->item)->description ?? optional($row->item)->name;
+
+                if (!$item_name && $row->inventory_kardexable) {
+                    // Si el modelo relacionado tiene relación item
+                    if (method_exists($row->inventory_kardexable, 'item')) {
+                        $item_name = optional($row->inventory_kardexable->item)->description
+                            ?? optional($row->inventory_kardexable->item)->name;
+                    }
+                    // Si el modelo relacionado tiene directamente el campo name o description
+                    if (!$item_name) {
+                        $item_name = $row->inventory_kardexable->description
+                            ?? $row->inventory_kardexable->name
+                            ?? null;
+                    }
+                }
+
+                $item_name = $item_name ?? '-';
+                $type_transaction = "Venta";
+                if ($isCreditNote) {
+                    if ($isCreditNoteConcept) {
+                        $type_transaction = "Anulación Venta";
+                    } else {
+                        $type_transaction = "Devolución Venta";
+                    }
+                } elseif ($row->quantity > 0) {
+                    $type_transaction = "Anulación Venta";
+                }
                 return [
                     'id' => $row->id,
-                    'item_name' => $row->item->description,
+                    'item_name' => $item_name,
                     'date_time' => $row->created_at->format('Y-m-d H:i:s'),
                     'date_of_issue' => isset($row->inventory_kardexable->date_of_issue) ? $row->inventory_kardexable->date_of_issue->format('Y-m-d') : '',
-                    'type_transaction' => ($row->quantity < 0) ? "Venta":"Anulación Venta",
+                    'type_transaction' => $type_transaction,
                     'number' => optional($row->inventory_kardexable)->series.'-'.optional($row->inventory_kardexable)->number,
                     'input' => ($row->quantity > 0) ?  $row->quantity:"-",
                     'output' => ($row->quantity < 0) ?  $row->quantity:"-",
                     'balance' => self::$balance+= $row->quantity,
                     'sale_note_asoc' => isset($row->inventory_kardexable->sale_note_id)  ? optional($row->inventory_kardexable)->sale_note->prefix.'-'.optional($row->inventory_kardexable)->sale_note->id:"-",
+                    'warehouse_name' => $row->warehouse->description,
                 ];
 
             case $models[1]:
+                $item_name = optional($row->item)->description ?? optional($row->item)->name;
+
+                if (!$item_name && $row->inventory_kardexable) {
+                    // Si el modelo relacionado tiene relación item
+                    if (method_exists($row->inventory_kardexable, 'item')) {
+                        $item_name = optional($row->inventory_kardexable->item)->description
+                            ?? optional($row->inventory_kardexable->item)->name;
+                    }
+                    // Si el modelo relacionado tiene directamente el campo name o description
+                    if (!$item_name) {
+                        $item_name = $row->inventory_kardexable->description
+                            ?? $row->inventory_kardexable->name
+                            ?? null;
+                    }
+                }
+
+                $item_name = $item_name ?? '-';
                 return [
                     'id' => $row->id,
-                    'item_name' => $row->item->description,
+                    'item_name' => $item_name,
                     'date_time' => $row->created_at->format('Y-m-d H:i:s'),
                     'date_of_issue' => isset($row->inventory_kardexable->date_of_issue) ? $row->inventory_kardexable->date_of_issue->format('Y-m-d') : '',
                     'type_transaction' => ($row->quantity < 0) ? "Anulación Compra":"Compra",
@@ -65,12 +113,30 @@ class ReportKardexCollection extends ResourceCollection
                     'output' => ($row->quantity < 0) ?  $row->quantity:"-",
                     'balance' => self::$balance+= $row->quantity,
                     'sale_note_asoc' => '-',
+                    'warehouse_name' => $row->warehouse->description,
                 ];
 
             case $models[2]: // Nota de venta
+                $item_name = optional($row->item)->description ?? optional($row->item)->name;
+
+                if (!$item_name && $row->inventory_kardexable) {
+                    // Si el modelo relacionado tiene relación item
+                    if (method_exists($row->inventory_kardexable, 'item')) {
+                        $item_name = optional($row->inventory_kardexable->item)->description
+                            ?? optional($row->inventory_kardexable->item)->name;
+                    }
+                    // Si el modelo relacionado tiene directamente el campo name o description
+                    if (!$item_name) {
+                        $item_name = $row->inventory_kardexable->description
+                            ?? $row->inventory_kardexable->name
+                            ?? null;
+                    }
+                }
+
+                $item_name = $item_name ?? '-';
                 return [
                     'id' => $row->id,
-                    'item_name' => $row->item->description,
+                    'item_name' => $item_name,
                     'date_time' => $row->created_at->format('Y-m-d H:i:s'),
                     'type_transaction' => "Nota de venta",
                     'date_of_issue' => isset($row->inventory_kardexable->date_of_issue) ? $row->inventory_kardexable->date_of_issue->format('Y-m-d') : '',
@@ -79,9 +145,27 @@ class ReportKardexCollection extends ResourceCollection
                     'output' => ($row->quantity < 0) ?  $row->quantity:"-",
                     'balance' => self::$balance+= $row->quantity,
                     'sale_note_asoc' => '-',
+                    'warehouse_name' => $row->warehouse->description,
                 ];
 
             case $models[3]:{
+                $item_name = optional($row->item)->description ?? optional($row->item)->name;
+
+                if (!$item_name && $row->inventory_kardexable) {
+                    // Si el modelo relacionado tiene relación item
+                    if (method_exists($row->inventory_kardexable, 'item')) {
+                        $item_name = optional($row->inventory_kardexable->item)->description
+                            ?? optional($row->inventory_kardexable->item)->name;
+                    }
+                    // Si el modelo relacionado tiene directamente el campo name o description
+                    if (!$item_name) {
+                        $item_name = $row->inventory_kardexable->description
+                            ?? $row->inventory_kardexable->name
+                            ?? null;
+                    }
+                }
+
+                $item_name = $item_name ?? '-';
 
                 $transaction = '';
                 $input = '';
@@ -107,7 +191,7 @@ class ReportKardexCollection extends ResourceCollection
 
                 return [
                     'id' => $row->id,
-                    'item_name' => $row->item->description,
+                    'item_name' => $item_name,
                     'date_time' => $row->created_at->format('Y-m-d H:i:s'),
                     'date_of_issue' => '-',
                     'type_transaction' => $row->inventory_kardexable->description,
@@ -116,13 +200,31 @@ class ReportKardexCollection extends ResourceCollection
                     'output' => $output,
                     'balance' => self::$balance+= $row->quantity,
                     'sale_note_asoc' => '-',
+                    'warehouse_name' => $row->warehouse->description,
                 ];
             }
 
             case $models[4]:
+                $item_name = optional($row->item)->description ?? optional($row->item)->name;
+
+                if (!$item_name && $row->inventory_kardexable) {
+                    // Si el modelo relacionado tiene relación item
+                    if (method_exists($row->inventory_kardexable, 'item')) {
+                        $item_name = optional($row->inventory_kardexable->item)->description
+                            ?? optional($row->inventory_kardexable->item)->name;
+                    }
+                    // Si el modelo relacionado tiene directamente el campo name o description
+                    if (!$item_name) {
+                        $item_name = $row->inventory_kardexable->description
+                            ?? $row->inventory_kardexable->name
+                            ?? null;
+                    }
+                }
+
+                $item_name = $item_name ?? '-';
                 return [
                     'id' => $row->id,
-                    'item_name' => $row->item->description,
+                    'item_name' => $item_name,
                     'date_time' => $row->created_at->format('Y-m-d H:i:s'),
                     'date_of_issue' => isset($row->inventory_kardexable->date_of_issue) ? $row->inventory_kardexable->date_of_issue->format('Y-m-d') : '',
                     'type_transaction' => ($row->quantity < 0) ? "Pedido":"Anulación Pedido",
@@ -131,34 +233,87 @@ class ReportKardexCollection extends ResourceCollection
                     'output' => ($row->quantity < 0) ?  $row->quantity:"-",
                     'balance' => self::$balance+= $row->quantity,
                     'sale_note_asoc' => '-',
+                    'warehouse_name' => $row->warehouse->description,
                 ];
 
             case $models[5]:
+                $item_name = optional($row->item)->description ?? optional($row->item)->name;
+
+                if (!$item_name && $row->inventory_kardexable) {
+                    // Si el modelo relacionado tiene relación item
+                    if (method_exists($row->inventory_kardexable, 'item')) {
+                        $item_name = optional($row->inventory_kardexable->item)->description
+                            ?? optional($row->inventory_kardexable->item)->name;
+                    }
+                    // Si el modelo relacionado tiene directamente el campo name o description
+                    if (!$item_name) {
+                        $item_name = $row->inventory_kardexable->description
+                            ?? $row->inventory_kardexable->name
+                            ?? null;
+                    }
+                }
+
+                $item_name = $item_name ?? '-';
+                $isVoided = false;
+                if (
+                    isset($row->inventory_kardexable->state_type_id) &&
+                    $row->inventory_kardexable->state_type_id == '11' &&
+                    $row->quantity > 0
+                ) {
+                    $isVoided = true;
+                }
                 return [
                     'id' => $row->id,
-                    'item_name' => $row->item->description,
+                    'item_name' => $item_name,
                     'date_time' => $row->created_at->format('Y-m-d H:i:s'),
                     'date_of_issue' => isset($row->inventory_kardexable->date_of_issue) ? $row->inventory_kardexable->date_of_issue->format('Y-m-d') : '',
-                    'type_transaction' => "Venta POS",
+                    'type_transaction' => $isVoided ? "Anulación Venta POS" : "Venta POS",
                     'number' => optional($row->inventory_kardexable)->prefix.'-'.optional($row->inventory_kardexable)->number,
                     'input' => ($row->quantity > 0) ?  $row->quantity:"-",
                     'output' => ($row->quantity < 0) ?  $row->quantity:"-",
                     'balance' => self::$balance+= $row->quantity,
                     'sale_note_asoc' => '-',
+                    'warehouse_name' => $row->warehouse->description,
                 ];
 
-            case $models[6]: // Remisiones
+            case $models[6]:
+                $item_name = optional($row->item)->description ?? optional($row->item)->name;
+
+                if (!$item_name && $row->inventory_kardexable) {
+                    // Si el modelo relacionado tiene relación item
+                    if (method_exists($row->inventory_kardexable, 'item')) {
+                        $item_name = optional($row->inventory_kardexable->item)->description
+                            ?? optional($row->inventory_kardexable->item)->name;
+                    }
+                    // Si el modelo relacionado tiene directamente el campo name o description
+                    if (!$item_name) {
+                        $item_name = $row->inventory_kardexable->description
+                            ?? $row->inventory_kardexable->name
+                            ?? null;
+                    }
+                }
+
+                $item_name = $item_name ?? '-';
+                $isVoided = false;
+                if (
+                    isset($row->inventory_kardexable->state_type_id) &&
+                    $row->inventory_kardexable->state_type_id == '11' &&
+                    $row->quantity > 0
+                ) {
+                    $isVoided = true;
+                }
                 return [
                     'id' => $row->id,
-                    'item_name' => $row->item->description,
+                    'item_name' => $item_name,
                     'date_time' => $row->created_at->format('Y-m-d H:i:s'),
-                    'type_transaction' => "Remisión",
+                    'type_transaction' => $isVoided ? "Anulación de remisión" : "Remisión",
                     'date_of_issue' => isset($row->inventory_kardexable->date_of_issue) ? $row->inventory_kardexable->date_of_issue->format('Y-m-d') : '',
                     'number' => optional($row->inventory_kardexable)->number_full,
                     'input' => ($row->quantity > 0) ?  $row->quantity:"-",
                     'output' => ($row->quantity < 0) ?  $row->quantity:"-",
                     'balance' => self::$balance+= $row->quantity,
                     'sale_note_asoc' => '-',
+                    'warehouse_name' => $row->warehouse->description,
                 ];
 
         }

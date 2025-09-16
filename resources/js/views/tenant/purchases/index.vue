@@ -1,7 +1,13 @@
 <template>
     <div>
         <div class="page-header pr-0">
-            <h2><a href="/dashboard"><i class="fas fa-tachometer-alt"></i></a></h2>
+            <h2><a href="/purchases">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-shopping-bag" style="margin-top: -5px;">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M6.331 8h11.339a2 2 0 0 1 1.977 2.304l-1.255 8.152a3 3 0 0 1 -2.966 2.544h-6.852a3 3 0 0 1 -2.965 -2.544l-1.255 -8.152a2 2 0 0 1 1.977 -2.304z"></path>
+                    <path d="M9 11v-5a3 3 0 0 1 6 0v5"></path>
+                </svg>
+            </a></h2>
             <ol class="breadcrumbs">
                 <li class="active"><span>Compras</span></li>
             </ol>
@@ -25,10 +31,10 @@
                 </el-dropdown>
             </div>
             <div class="card-body">
-                <data-table :resource="resource">
+                <data-table :resource="resource" :init-search="initSearch">
                     <tr slot="heading">
-                        <th>#</th>
-                        <th class="text-center">F. Emisión</th>
+                        <!-- <th>#</th> -->
+                        <th class="text-left">F. Emisión</th>
                         <th class="text-center" v-if="columns.date_of_due.visible" >F. Vencimiento</th>
                         <th>Proveedor</th>
                         <th>Estado</th>
@@ -47,8 +53,8 @@
                         <th class="text-right">Acciones</th>
                     </tr>
                     <tr slot-scope="{ index, row }">
-                        <td>{{ index }}</td>
-                        <td class="text-center">{{ row.date_of_issue }}</td>
+                        <!-- <td>{{ index }}</td> -->
+                        <td class="text-left">{{ row.date_of_issue }}</td>
                         <td v-if="columns.date_of_due.visible" class="text-center">{{ row.date_of_due }}</td>
                         <td>{{ row.supplier_name }}<br/><small v-text="row.supplier_number"></small></td>
                         <td>{{row.state_type_description}}</td>
@@ -91,15 +97,51 @@
 
                         <td class="text-center">{{ row.currency_type_id }}</td>
                         <!-- <td class="text-right">{{ row.total_exportation }}</td> -->
-                        <td v-if="columns.total_perception.visible" class="text-right">{{ formatNumber(row.total_perception ? row.total_perception : 0) }}</td>
-                        <td class="text-right">{{ formatNumber(row.total) }}</td>
-                        <td>
-                            <a v-if="row.state_type_id != '11'" :href="`/${resource}/edit/${row.id}`" type="button" class="btn waves-effect waves-light btn-xs btn-info">Editar</a>
-                            <a v-if="row.state_type_id != '11' && !['07', '08'].includes(String(row.document_type_id))" :href="`/${resource}/note/${row.id}`" type="button" class="btn waves-effect waves-light btn-xs btn-warning">Nota</a>
-                            <button v-if="row.state_type_id != '11'" type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickAnulate(row.id)">Anular</button>
-                            <button v-if="row.state_type_id == '11'" type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickDelete(row.id)">Eliminar</button>
-                            <a :href="`/${resource}/pdf/${row.id}`" type="button" class="btn waves-effect waves-light btn-xs btn-info" target="_blank">PDF</a>
-
+                        <td v-if="columns.total_perception.visible" class="text-right">{{ row.total_perception ? row.total_perception : 0 | numberFormat }}</td>
+                        <td class="text-right">{{ row.total | numberFormat }}</td>
+                        <td class="text-center">
+                            <el-dropdown trigger="click">
+                                <el-button size="mini" type="secondary" class="btn btn-default btn-sm btn-dropdown-toggle">
+                                    <i class="fas fa-ellipsis-h"></i>
+                                </el-button>
+                            
+                                <el-dropdown-menu slot="dropdown">
+                                
+                                    <el-dropdown-item 
+                                        v-if="row.state_type_id != '11'" 
+                                        :href="`/${resource}/edit/${row.id}`"
+                                        tag="a">
+                                        Editar
+                                    </el-dropdown-item>
+                                
+                                    <el-dropdown-item 
+                                        v-if="row.state_type_id != '11' && !['07', '08'].includes(String(row.document_type_id))" 
+                                        :href="`/${resource}/note/${row.id}`"
+                                        tag="a">
+                                        Nota
+                                    </el-dropdown-item>
+                                
+                                    <el-dropdown-item 
+                                        :href="`/${resource}/pdf/${row.id}`" 
+                                        target="_blank"
+                                        tag="a">
+                                        PDF
+                                    </el-dropdown-item>                            
+                                
+                                    <el-dropdown-item 
+                                        v-if="row.state_type_id != '11'" 
+                                        @click.native="clickAnulate(row.id)">
+                                        Anular
+                                    </el-dropdown-item>
+                                
+                                    <el-dropdown-item 
+                                        v-if="row.state_type_id == '11'" 
+                                        @click.native="clickDelete(row.id)">
+                                        Eliminar
+                                    </el-dropdown-item>
+                                
+                                </el-dropdown-menu>
+                            </el-dropdown>
                         </td>
                     </tr>
                 </data-table>
@@ -123,7 +165,6 @@
             ></purchase-payments>
     </div>
 </template>
-
 <script>
 
     // import DocumentsVoided from './partials/voided.vue'
@@ -146,6 +187,10 @@
                 showDialogOptions: false,
                 showDialogPurchasePayments: false,
                 showImportDialog: false,
+                initSearch: {
+                    column: 'date_of_issue',
+                    value: this.getCurrentMonth()
+                },
                 columns: {
                     date_of_due: {
                         title: 'F. Vencimiento',
@@ -216,12 +261,12 @@
              clickImport() {
                 this.showImportDialog = true
             },
-            formatNumber(number) {
-                return number ? new Intl.NumberFormat('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                }).format(number) : '0.00'
-            },
+            getCurrentMonth() {
+                const date = new Date();
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                return `${year}-${month}`;
+            }
         }
     }
 </script>

@@ -5,6 +5,7 @@ namespace Modules\Accounting\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
+use Barryvdh\DomPDF\Facade as PDF;
 use Modules\Accounting\Models\JournalEntry;
 use Modules\Accounting\Models\JournalPrefix;
 
@@ -19,6 +20,7 @@ class JournalEntryController extends Controller
     {
         return [
             'date' => 'Fecha generado',
+            'daterange' => 'Rango de fechas'
         ];
     }
 
@@ -28,17 +30,34 @@ class JournalEntryController extends Controller
         $page = $request->input('page', 1); // Página actual
         $column = $request->input('column', 'date'); // Columna para buscar (por defecto 'date')
         $value = $request->input('value', ''); // Valor de búsqueda
+        $journal_prefix_id = $request->input('journal_prefix_id', null); // Filtro por journal_prefix_id
+        $status = $request->input('status', null); // Filtro por estado
 
         // Construir la consulta base
         $query = JournalEntry::with('journal_prefix');
 
         // Aplicar filtro si el valor no está vacío
         if (!empty($value)) {
-            $query->where($column, 'like', "%$value%");
+            if($column == 'daterange') {
+                $dates = explode('_', $value);
+                if(count($dates) == 2) {
+                    $query->whereBetween('date', [trim($dates[0]), trim($dates[1])]);
+                }
+            } else {
+                $query->where($column, 'like', "%$value%");
+            }
+        }
+
+        if(!empty($journal_prefix_id)) {
+            $query->where('journal_prefix_id', $journal_prefix_id);
+        }
+
+        if(!empty($status)) {
+            $query->where('status', $status);
         }
 
         // Obtener datos paginados
-        $entries = $query->with('journal_prefix')->orderBy('date', 'desc')->paginate($perPage, ['*'], 'page', $page);
+        $entries = $query->with('journal_prefix')->orderBy('created_at', 'desc')->paginate($perPage, ['*'], 'page', $page);
 
         // Construir respuesta con estructura específica
         return response()->json([
@@ -71,7 +90,8 @@ class JournalEntryController extends Controller
 
         $request->merge(['status' => 'draft']);
 
-        $entry = JournalEntry::create($request->only(['date', 'journal_prefix_id', 'description', 'status']));
+        $entry = JournalEntry::createWithNumber($request->only(['date', 'journal_prefix_id', 'description', 'status']));
+
         foreach ($request->details as $detail) {
             $entry->details()->create([
                 'chart_of_account_id' => $detail['chart_of_account_id'],
@@ -164,5 +184,12 @@ class JournalEntryController extends Controller
     public function index()
     {
         return view('accounting::journal_entries.index');
+    }
+
+    public function getPdf($id)
+    {
+        $journalEntry = JournalEntry::with('journal_prefix', 'details')->findOrFail($id);
+        $pdf = PDF::loadView('accounting::pdf.journal_entry', compact('journalEntry'));
+        return $pdf->stream("asiento_contable.pdf");
     }
 }

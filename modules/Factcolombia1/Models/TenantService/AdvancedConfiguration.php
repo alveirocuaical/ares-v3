@@ -30,15 +30,32 @@ class AdvancedConfiguration extends Model
         'radian_imap_user',
         'uvt',
         'item_tax_included',
+        'validate_min_stock',
         'digital_certificate_qztray',
         'private_certificate_qztray',
         'enable_qz_tray',
+        'validate_discount_code',
+        'discount_code',
+        'custom_remission_footer_enabled',
+        'custom_remission_footer_message',
+        'enable_seller_views',
+        'radian_show_credit_only',
+        'default_format_print',
+        'foot_note',
+        'head_note',
+        'notes',
     ];
 
     protected $casts = [
         'uvt' => 'float',
         'item_tax_included' => 'bool',
         'enable_qz_tray' => 'bool',
+        'validate_min_stock' => 'bool',
+        'validate_discount_code' => 'bool',
+        'custom_remission_footer_enabled' => 'bool',
+        'enable_seller_views' => 'bool',
+        'radian_show_credit_only' => 'bool',
+        'default_format_print' => 'integer',
     ];
 
 
@@ -61,6 +78,17 @@ class AdvancedConfiguration extends Model
             'radian_imap_user' => $this->radian_imap_user,
             'uvt' => $this->uvt,
             'item_tax_included' => $this->item_tax_included,
+            'validate_min_stock' => $this->validate_min_stock,
+            'validate_discount_code' => $this->validate_discount_code,
+            'discount_code' => $this->discount_code,
+            'custom_remission_footer_enabled' => $this->custom_remission_footer_enabled,
+            'custom_remission_footer_message' => $this->custom_remission_footer_message,
+            'enable_seller_views' => $this->enable_seller_views,
+            'radian_show_credit_only' => $this->radian_show_credit_only,
+            'default_format_print' => $this->default_format_print,
+            'foot_note' => $this->foot_note,
+            'head_note' => $this->head_note,
+            'notes' => $this->notes,
         ];
 
     }

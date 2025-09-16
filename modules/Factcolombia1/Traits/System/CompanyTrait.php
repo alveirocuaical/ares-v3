@@ -29,6 +29,7 @@ trait CompanyTrait
             'hostname_id' => $hostname->id,
             'economic_activity_code' => $request->economic_activity_code,
             'ica_rate' => $request->ica_rate,
+            'plan_id' => $request->plan_id,
             'type_identity_document_id' => $request->type_document_identification_id,
         ]);
 
@@ -315,7 +316,7 @@ trait CompanyTrait
             ->table('co_taxes')
             ->where('id', 2)
             ->update([
-                'type_tax_id' => 2
+                'type_tax_id' => 1
             ]);
 
         DB::connection('tenant')
@@ -349,6 +350,32 @@ trait CompanyTrait
         DB::table('co_taxes')->insert([
             [ 'name' => 'IVA5', 'code' => '71', 'rate' => '5.0', 'conversion' => '100.0', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s'), 'type_tax_id' => 1 ],
         ]);
+
+        // $iva5 = DB::connection('tenant')->table('co_taxes')->where('name', 'IVA5')->first();
+
+        // if ($iva5) {
+        //     // Si existe, actualiza los campos que necesites
+        //     DB::connection('tenant')->table('co_taxes')->where('id', $iva5->id)->update([
+        //         'code' => '71',
+        //         'rate' => '5.0',
+        //         'conversion' => '100.0',
+        //         'type_tax_id' => 1,
+        //         'updated_at' => date('Y-m-d H:i:s'),
+        //     ]);
+        // } else {
+        //     // Si no existe, inserta el registro
+        //     DB::connection('tenant')->table('co_taxes')->insert([
+        //         [
+        //             'name' => 'IVA5',
+        //             'code' => '71',
+        //             'rate' => '5.0',
+        //             'conversion' => '100.0',
+        //             'type_tax_id' => 1,
+        //             'created_at' => date('Y-m-d H:i:s'),
+        //             'updated_at' => date('Y-m-d H:i:s'),
+        //         ],
+        //     ]);
+        // }
 
     }
 

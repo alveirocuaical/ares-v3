@@ -1,17 +1,24 @@
 <template>
     <div v-loading="loading">
         <div class="page-header pr-0">
-            <h2><a href="/dashboard"><i class="fas fa-tachometer-alt"></i></a></h2>
+            <h2><a href="/co-documents">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text" style="margin-top: -5px;">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+            </a></h2>
             <ol class="breadcrumbs">
-                <li class="active"><span></span> </li>
-                <!-- <li><span class="text-muted">Facturas - Notas <small>(crédito y débito)</small> - Boletas - Anulaciones</span></li> -->
+                <li class="active"><span>Listado de comprobantes</span> </li>
             </ol>
             <div class="right-wrapper pull-right" >
                 <a :href="`/${resource}/create`" class="btn btn-custom btn-sm  mt-2 mr-2"><i class="fa fa-plus-circle"></i> Nuevo</a>
                 <el-tooltip class="item" effect="dark" content="Importa las facturas con estado Aceptada en el API que no se encuentran registradas" placement="bottom">
-                    <el-button class="btn btn-custom btn-sm  mt-2 mr-2" :loading="Sincronizing" @click.prevent="clickSincronize()"><i class="fas fa-sync-alt" ></i> Sincronizar Envios API</el-button>
+                    <button class="btn btn-custom btn-sm  mt-2 mr-2" :loading="Sincronizing" @click.prevent="openSyncDialog"><i class="fas fa-sync-alt" ></i> Sincronizar Envios API</button>
                 </el-tooltip>
-                <el-button class="btn btn-custom btn-sm  mt-2 mr-2" @click.prevent="clickImport()"><i class="fa fa-arrows-alt" ></i> Carga Masiva</el-button>
+                <button class="btn btn-custom btn-sm  mt-2 mr-2" @click.prevent="clickImport()"><i class="fa fa-arrows-alt" ></i> Carga Masiva</button>
             </div>
         </div>
         <div class="card mb-0">
@@ -29,9 +36,9 @@
                 </el-dropdown> -->
             </div>
             <div class="card-body ">
-                <data-table :resource="resource">
+                <data-table :resource="resource" :init-search="initSearch" :extra-filters="true">
                     <tr slot="heading">
-                        <th>#</th>
+                        <!-- <th>#</th> -->
                         <th class="text-center">Fecha Emisión</th>
                         <th>Cliente</th>
                         <th>Documento</th>
@@ -48,7 +55,7 @@
                         <th class="text-right">Acciones</th>
                     </tr>
                     <tr slot-scope="{ index, row }" >
-                        <td>{{ index }}</td>
+                        <!-- <td>{{ index }}</td> -->
                         <td class="text-center">{{ row.date_of_issue }}</td>
                         <td>{{ row.customer_name }}<br/><small v-text="row.customer_number"></small></td>
                         <td>{{ row.number_full }}<br/>
@@ -62,11 +69,11 @@
                         <!-- <td class="text-center">{{ row.acknowledgment_received }}</td> -->
                         <td class="text-center">{{ row.currency_name }}</td>
 
-                        <td class="text-right">{{ getFormatDecimal(row.sale) }}</td>
-                        <td class="text-right">{{ getFormatDecimal(row.total_discount) }}</td>
-                        <td class="text-right">{{ getFormatDecimal(row.total_tax) }}</td>
-                        <td class="text-right">{{ getFormatDecimal(row.subtotal) }}</td>
-                        <td class="text-right">{{ getFormatDecimal(row.total) }}</td>
+                        <td class="text-right">{{ row.sale | numberFormat }}</td>
+                        <td class="text-right">{{ row.total_discount | numberFormat }}</td>
+                        <td class="text-right">{{ row.total_tax | numberFormat }}</td>
+                        <td class="text-right">{{ row.subtotal | numberFormat }}</td>
+                        <td class="text-right">{{ row.total | numberFormat }}</td>
 
                         <td class="text-center">
                             <button type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2"
@@ -119,6 +126,78 @@
                               :showDownload="false"
                               :recordId="recordId"
                               :showClose="true"></document-options>
+
+            <!-- Modal para escoger tipo de sincronización -->
+            <el-dialog
+                :visible.sync="showSyncDialog"
+                width="400px"
+                :close-on-click-modal="false"
+            >
+                <div slot="title">
+                    <span>
+                        <i class="fas fa-sync-alt" style="color:#409EFF;margin-right:10px;"></i>
+                        <b>Sincronizar documentos</b>
+                    </span>
+                </div>
+                <el-alert
+                    title="Importa facturas aceptadas en el API que no se encuentran registradas en el sistema."
+                    type="info"
+                    show-icon
+                    :closable="false"
+                    style="margin-bottom: 15px;"
+                ></el-alert>
+                <el-form :model="syncForm" label-width="140px" label-position="top">
+                    <el-form-item label="Tipo de sincronización">
+                        <el-radio-group v-model="syncForm.type">
+                            <el-radio label="fecha">
+                                <i class="el-icon-date"></i> Por Fechas
+                            </el-radio>
+                            <el-radio label="pagina">
+                                <i class="el-icon-document"></i> Por Página
+                            </el-radio>
+                        </el-radio-group>
+                    </el-form-item>
+                    <template v-if="syncForm.type === 'fecha'">
+                        <el-form-item label="Desde">
+                            <el-date-picker
+                                v-model="syncForm.desde"
+                                type="date"
+                                placeholder="Fecha inicio"
+                                style="width: 100%;"
+                            ></el-date-picker>
+                        </el-form-item>
+                        <el-form-item label="Hasta">
+                            <el-date-picker
+                                v-model="syncForm.hasta"
+                                type="date"
+                                placeholder="Fecha fin"
+                                style="width: 100%;"
+                            ></el-date-picker>
+                        </el-form-item>
+                    </template>
+                    <template v-else>
+                        <el-form-item label="Página">
+                            <el-input-number
+                                v-model="syncForm.page"
+                                :min="1"
+                                style="width: 100%;"
+                            ></el-input-number>
+                            <div style="color: #909399; font-size: 0.9em; margin-top: 3px;">
+                                Ejemplo: 1 = 10 documentos por pagina.
+                            </div>
+                        </el-form-item>
+                    </template>
+                </el-form>
+                <span slot="footer" class="dialog-footer">
+                    <el-button @click="showSyncDialog = false" icon="el-icon-close">Cancelar</el-button>
+                    <el-button
+                        type="primary"
+                        :loading="Sincronizing"
+                        @click="clickSincronize"
+                        icon="el-icon-refresh"
+                    >Sincronizar</el-button>
+                </span>
+            </el-dialog>
         </div>
     </div>
 </template>
@@ -146,11 +225,28 @@
                 showDialogPayments: false,
                 loading: false,
                 Sincronizing: false,
+                initSearch: {
+                    column: 'date_of_issue',
+                    value: this.getCurrentMonth()
+                },
+                showSyncDialog: false,
+                syncForm: {
+                    type: 'fecha',
+                    desde: '',
+                    hasta: '',
+                    page: 1,
+                },
             }
         },
         created() {
         },
         methods: {
+            getCurrentMonth() {
+                const date = new Date();
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                return `${year}-${month}`;
+            },
             async clickQueryZipKey(recordId) {
 
                 this.loading = true
@@ -188,28 +284,38 @@
                 this.showImportDialog = true;
             },
 
+            openSyncDialog() {
+                this.showSyncDialog = true;
+            },
             async clickSincronize() {
-                this.Sincronizing = true
-
-                await this.$http.post(`/${this.resource}/sincronize`).then(response => {
-                    // console.log(response)
-                    if (response.data.success) {
-                        this.$message.success(response.data.message)
-                    }
-                    else {
-                        this.$message.error(response.data.message)
-                    }
-                    this.$eventHub.$emit('reloadData')
-                }).catch(error => {
-                    if (error.response.status === 422) {
-                        this.errors = error.response.data
-                    }
-                    else {
-                        this.$message.error(error.response.data.message)
-                    }
-                }).then(() => {
-                    this.Sincronizing = false
-                })
+                this.Sincronizing = true;
+                let payload = {
+                    type: this.syncForm.type,
+                };
+                if (this.syncForm.type === 'fecha') {
+                    payload.desde = this.syncForm.desde;
+                    payload.hasta = this.syncForm.hasta;
+                } else {
+                    payload.page = this.syncForm.page;
+                }
+                await this.$http.post(`/${this.resource}/sincronize`, payload)
+                    .then(response => {
+                        if (response.data.success) {
+                            this.$message.success(response.data.message)
+                        } else {
+                            this.$message.error(response.data.message)
+                        }
+                        this.$eventHub.$emit('reloadData')
+                    }).catch(error => {
+                        if (error.response && error.response.status === 422) {
+                            this.errors = error.response.data
+                        } else {
+                            this.$message.error(error.response?.data?.message || 'Error en la sincronización')
+                        }
+                    }).finally(() => {
+                        this.Sincronizing = false
+                        this.showSyncDialog = false
+                    })
             },
 
             clickPayment(recordId) {

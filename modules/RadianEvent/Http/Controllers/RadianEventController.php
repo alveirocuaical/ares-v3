@@ -7,6 +7,7 @@ use Illuminate\Http\Response;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
 use Modules\Factcolombia1\Helpers\HttpConnectionApi;
+use Modules\Factcolombia1\Models\TenantService\AdvancedConfiguration;
 use Modules\Factcolombia1\Models\TenantService\{
     Company as ServiceCompany
 };
@@ -17,7 +18,7 @@ use Modules\RadianEvent\Models\{
 use Modules\RadianEvent\Http\Resources\{
     ReceivedDocumentCollection
 };
-
+use SimpleXMLElement;
 
 class RadianEventController extends Controller
 {
@@ -226,6 +227,18 @@ class RadianEventController extends Controller
 
                 if(Storage::disk('tenant')->exists($folder.DIRECTORY_SEPARATOR.$filename)) throw new Exception('El archivo ya fue cargado');
 
+                $advancedConfig = AdvancedConfiguration::first();
+                $showCreditAndContado = $advancedConfig ? $advancedConfig->radian_show_credit_only : true; // true por defecto
+                $isCredit = $this->isCreditFromXml($file_content);
+
+                // Si el switch está inactivo (solo crédito) y el documento NO es crédito, omitir
+                if (!$showCreditAndContado && !$isCredit) {
+                    return [
+                        'success' => false,
+                        'message' => 'Solo se permiten comprobantes a crédito.'
+                    ];
+                }
+
                 // enviar api para parsear xml y obtener data
                 $company = ServiceCompany::select('identification_number', 'api_token')->firstOrFail();
                 $connection_api = new HttpConnectionApi($company->api_token);
@@ -241,6 +254,13 @@ class RadianEventController extends Controller
                 if(!$send_request_to_api['success']) throw new Exception($send_request_to_api['message']);
                 // enviar api
 
+                // Validar si es documento de crédito
+                // if(!$this->isCreditFromXml($file_content)) {
+                //     return [
+                //         'success' => false,
+                //         'message' => 'Solo se permiten comprobantes a crédito.'
+                //     ];
+                // }
 
                 //subir archivo 
                 Storage::disk('tenant')->put($folder.DIRECTORY_SEPARATOR.$filename, $file_content);
@@ -274,4 +294,25 @@ class RadianEventController extends Controller
         ];
     }
 
+    private function isCreditFromXml($xmlContent)
+    {
+        // Extraer el XML de la factura desde el CDATA
+        $matches = [];
+        preg_match('/<Invoice[\s\S]*<\/Invoice>/', $xmlContent, $matches);
+        if (!$matches) return false;
+
+        $invoiceXml = $matches[0];
+        $invoice = new \SimpleXMLElement($invoiceXml);
+        $namespaces = $invoice->getNamespaces(true);
+
+        // Buscar PaymentMeans
+        foreach ($invoice->children($namespaces['cac'])->PaymentMeans as $paymentMeans) {
+            $id = (string)$paymentMeans->children($namespaces['cbc'])->ID;
+            // Solo verifica el ID: 1 = contado, 2 = crédito
+            if ($id === '2') {
+                return true;
+            }
+        }
+        return false;
+    }
 }

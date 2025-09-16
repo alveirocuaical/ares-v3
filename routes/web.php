@@ -108,7 +108,7 @@ if ($hostname) {
             Route::get('users/create', 'Tenant\UserController@create')->name('tenant.users.create');
             Route::get('users/tables', 'Tenant\UserController@tables');
             Route::get('users/record/{user}', 'Tenant\UserController@record');
-            Route::post('users', 'Tenant\UserController@store');
+            Route::post('users', 'Tenant\UserController@store')->middleware('check.tenant.limits');
             Route::get('users/records', 'Tenant\UserController@records');
             Route::delete('users/{user}', 'Tenant\UserController@destroy');
             Route::get('users/search', 'Tenant\UserController@searchData');
@@ -411,7 +411,7 @@ if ($hostname) {
             Route::get('sale-notes/dispatches', 'Tenant\SaleNoteController@dispatches');
             Route::delete('sale-notes/destroy_sale_note_item/{sale_note_item}', 'Tenant\SaleNoteController@destroy_sale_note_item');
 
-            Route::post('document-pos', 'Tenant\DocumentPosController@store');
+            Route::post('document-pos', 'Tenant\DocumentPosController@store')->middleware('check.tenant.limits');
             Route::get('document-pos/record/{salenote}', 'Tenant\DocumentPosController@record');
             Route::get('document-pos/print/{external_id}/{format?}', 'Tenant\DocumentPosController@toPrint');
             Route::get('document-pos/records', 'Tenant\DocumentPosController@records');
@@ -425,6 +425,7 @@ if ($hostname) {
             Route::post('document-pos/email', 'Tenant\DocumentPosController@email');
             Route::get('document-pos/sincronize', 'Tenant\DocumentPosController@sincronize');
             Route::get('document-pos/downloadFileCoupon/{id}', 'Tenant\DocumentPosController@downloadFileCoupon');
+            Route::get('document-pos/validate-cash/{resolution_id}', 'Tenant\DocumentPosController@validateCash');
 
 
            Route::get('sale_note_payments/records/{sale_note}', 'Tenant\SaleNotePaymentController@records');
@@ -463,6 +464,7 @@ if ($hostname) {
            //WhatsApp
            Route::post('pos/whatsapp/config', 'Tenant\PosController@saveWhatsappConfig');
            Route::get('pos/whatsapp/config', 'Tenant\PosController@getWhatsappConfig');
+           Route::post('pos/toggle-favorite/{item_id}', 'Tenant\PosController@toggle_favorite');
            Route::post('pos/whatsapp/send', 'Tenant\PosController@sendWhatsappPdf');
            Route::prefix('quotations')->group(function() {
             Route::post('whatsapp/send', 'Tenant\PosController@sendWhatsappPdf');
@@ -556,6 +558,8 @@ if ($hostname) {
            Route::post('certificates-qztray/uploads', 'Tenant\CertificateQzTrayController@uploadFileQzTray');
            Route::delete('certificates-qztray', 'Tenant\CertificateQzTrayController@destroy');
            Route::post('certificates-qztray/change-status', 'Tenant\CertificateQzTrayController@changeStatus');
+           Route::get('certificates-qztray/digital', 'Tenant\CertificateQzTrayController@digital');
+            Route::get('certificates-qztray/private', 'Tenant\CertificateQzTrayController@private');
         //    Route::get('certificates-qztray/html/document/{id}', 'Tenant\CertificateQzTrayController@getHtmlDocument');
 
         });

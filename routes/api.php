@@ -53,6 +53,11 @@ if ($hostname) {
         Route::post('reseller/detail', 'System\Api\ResellerController@resellerDetail');
         Route::post('reseller/lockedAdmin', 'System\Api\ResellerController@lockedAdmin');
 
+        //configuration
+        Route::get('config-login/record', 'System\Api\ConfigurationController@record');
+        Route::post('config-login', 'System\Api\ConfigurationController@store');
+        Route::post('config-login/upload', 'System\Api\ConfigurationController@uploadImage');
+
 
 
 
