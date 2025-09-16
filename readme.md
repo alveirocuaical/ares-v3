@@ -18,6 +18,11 @@
 [ver pasos](https://git.buho.la/facturalatam/co-facturadorpro3/-/snippets/42#instalacion-de-entorno "ver")
 [Video Aquí](* "ver")(proximante)
 
+### Instalación multiple de PRO3 (con api incluida)
+
+* Linux - Ubuntu 20 - Docker - SSL opcional<br>
+[ver pasos](https://git.buho.la/facturalatam/co-facturadorpro3/-/snippets/43 "ver")
+
 ### Configuración, Habilitación y producción
 
 [Video Aquí](* "ver")(proximante)
