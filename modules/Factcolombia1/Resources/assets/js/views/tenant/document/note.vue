@@ -1,8 +1,8 @@
 <template>
     <div class="card mb-0 pt-2 pt-md-0">
-        <div class="card-header bg-info">
+        <!-- <div class="card-header bg-info">
             {{ note ? `Nueva Nota (${note.prefix}-${note.number})` : 'Nota Contable Sin Referencia a Factura' }}
-        </div>
+        </div> -->
         <div class="card-body" v-if="loading_form">
             <div class="invoice">
                 <form autocomplete="off" @submit.prevent="submit">
@@ -261,7 +261,11 @@
     height: 65px !important;
     min-height: 65px !important;
 }
-
+@media only screen and (min-width: 768px) {
+    html.fixed .inner-wrapper {
+        padding-top: 60px !important;
+    }
+}
 </style>
 <script>
     import DocumentFormItem from './partials/item.vue'

@@ -1,15 +1,24 @@
 @extends('tenant.layouts.app')
 
 @section('content')
-    <div class="row">
+<div>
+    <div class="page-header pr-0">
+        <h2><a href="/reports/inventory">
+            <svg  xmlns="http://www.w3.org/2000/svg" style="margin-top: -5px;" width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-building-warehouse"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21v-13l9 -4l9 4v13" /><path d="M13 13h4v8h-10v-6h6" /><path d="M13 21v-9a1 1 0 0 0 -1 -1h-2a1 1 0 0 0 -1 1v3" /></svg>
+        </a></h2>
+        <ol class="breadcrumbs">
+            <li class="active"><span> Consulta de inventarios </span></li>
+        </ol>
+    </div>
+    <div class="row card-table-report">
         <div class="col-md-12">
             <div class="card card-primary">
-                <div class="card-header">
+                {{-- <div class="card-header">
                     <div>
                         <h4 class="card-title">Consulta de inventarios</h4>
                     </div>
-                </div>
-                <div class="card-body">
+                </div> --}}
+                <div class="card-body mt-5">
                     <div>
                         <form action="{{route('reports.inventory.search')}}" class="el-form demo-form-inline el-form--inline" method="POST">
                             {{csrf_field()}}
@@ -20,7 +29,7 @@
                             </div> --}}
                         </form>
                     </div>
-                    <div class="box">
+                    <div class="">
                         <div class="box-body no-padding">
                             <div style="margin-bottom: 10px" class="row">
                                 <div style="padding-top: 0.5%" class="col-md-6">
@@ -88,10 +97,11 @@
                                     @endif
                                 @endif
                             </div>
-                            <table width="100%" class="table table-striped table-responsive-xl table-bordered table-hover">
+                            <div class="table-responsive">
+                            <table width="100%" class="table">
                                 <thead class="">
                                     <tr>
-                                        <th>#</th>
+                                        {{-- <th>#</th> --}}
                                         <th>Descripción</th>
                                         <th>Inventario actual</th>
                                         <th>Precio de venta</th>
@@ -129,7 +139,7 @@
                                             @endphp
 
                                             <tr>
-                                                <td class="celda">{{$loop->iteration}}</td>
+                                                {{-- <td class="celda">{{$loop->iteration}}</td> --}}
                                                 <td class="celda">{{$value->item->internal_id ?? ''}} {{$value->item->internal_id ? '-':''}} {{$value->item->name ?? ''}}</td>
                                                 <td class="celda">{{number_format($value->stock, 0, ',', '.')}}</td>
                                                 <td class="celda">
@@ -163,6 +173,7 @@
 
                                 </tbody>
                             </table>
+                            </div>                            
                             Total {{$reports->total()}}
                             <label class="pagination-wrapper ml-2">
                                 {{$reports->appends($_GET)->render()}}
@@ -173,6 +184,7 @@
             </div>
         </div>
     </div>
+</div>    
 @endsection
 
 @push('scripts')

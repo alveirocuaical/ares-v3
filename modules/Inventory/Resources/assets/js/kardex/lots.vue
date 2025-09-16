@@ -4,7 +4,7 @@
             <div class="card-body">
                 <data-table :resource="resource" :hideMovementFilters="true" :requireProduct="true">
                     <tr slot="heading">
-                        <th width="5%">#</th>
+                        <!-- <th width="5%">#</th> -->
                         <th>Codigo</th>
                         <th>Nombre</th>
                         <th>Und</th>
@@ -15,7 +15,7 @@
                     </tr>
 
                     <tr slot-scope="{ index, row }">
-                        <td>{{ index + 1 }}</td>
+                        <!-- <td>{{ index + 1 }}</td> -->
                         <td>{{ row.code_item }}</td>
                         <td>{{ row.name_item }}</td>
                         <td>{{ row.und_item }}</td>

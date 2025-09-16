@@ -235,7 +235,13 @@
         </div>
     </div>
 </template>
-
+<style>
+@media only screen and (min-width: 768px) {
+    html.fixed .inner-wrapper {
+        padding-top: 60px !important;
+    }
+}
+</style>
 <script>
     import SupportDocumentFormItem from './partials/item.vue'
     import SupportDocumentFormRetention from './partials/retention.vue'

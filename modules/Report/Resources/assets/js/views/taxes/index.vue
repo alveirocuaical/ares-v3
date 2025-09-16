@@ -1,8 +1,41 @@
 <template>
+<div>
+  <div class="page-header pr-0">
+      <h2>
+          <a href="/reports/report-taxes">
+              <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  style="margin-top: -5px;"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="icon icon-tabler icons-tabler-outline icon-tabler-file-analytics"
+              >
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                  <path
+                      d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"
+                  />
+                  <path d="M9 17l0 -5" />
+                  <path d="M12 17l0 -1" />
+                  <path d="M15 17l0 -3" />
+              </svg>
+          </a>
+      </h2>
+      <ol class="breadcrumbs">
+          <li class="active"><span> Reporte impuestos
+          </span></li>
+      </ol>
+  </div>
   <div class="card mb-0 pt-2 pt-md-0">
-    <div class="card-header bg-info">
+    <!-- <div class="card-header bg-info">
       <h3 class="my-0">Reporte impuestos</h3>
-    </div>
+    </div> -->
     <div class="card mb-0">
       <div class="card-body">
         <div class="row">
@@ -44,7 +77,7 @@
                   <table class="table">
                     <thead>
                       <tr>
-                        <th class>#</th>
+                        <!-- <th class>#</th> -->
                         <th class="text-left">Fecha emisión</th>
                         <th class="text-center">Cliente</th>
                         <th class>Documento</th>
@@ -57,7 +90,7 @@
                     </thead>
                     <tbody>
                       <tr v-for="(row, index) in records" :key="index + 'R'">
-                        <td>{{ index }}</td>
+                        <!-- <td>{{ index }}</td> -->
                         <td class="text-left">{{ row.created_at }}</td>
                         <td class="text-center">{{ row.customer.name }}</td>
 
@@ -95,7 +128,7 @@
                   <table class="table">
                     <thead>
                       <tr>
-                        <th class>#</th>
+                        <!-- <th class>#</th> -->
                         <th class="text-left">Fecha emisión</th>
                         <th class="text-center">Cliente</th>
                         <th class>Documento</th>
@@ -108,7 +141,7 @@
                     </thead>
                     <tbody>
                       <tr v-for="(row, index) in dataPurchases" :key="index + 'B'">
-                        <td>{{ index }}</td>
+                        <!-- <td>{{ index }}</td> -->
                         <td class="text-left">{{ row.created_at }}</td>
                         <td class="text-center">{{ row.customer.name }}</td>
 
@@ -148,6 +181,7 @@
       </div>
     </div>
   </div>
+</div>
 </template>
 
 <script>

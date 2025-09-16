@@ -1,10 +1,9 @@
 <template>
-    <div class="card">
+    <div class="card card-config">
         <div class="card-header bg-info">
             <h3 class="my-0">Listado de bancos</h3>
             <div class="card-actions white-text">
                 <a href="#" class="card-action card-action-toggle text-white" data-card-toggle=""></a>
-                <a href="#" class="card-action card-action-dismiss text-white" data-card-dismiss=""></a>
             </div>
         </div>
         <div class="card-body">
@@ -12,14 +11,17 @@
                 <table class="table">
                     <thead>
                     <tr>
-                        <th>#</th>
+                        <!-- <th>#</th> -->
                         <th>Descripción</th>
                         <th class="text-right">Acciones</th>
                     </tr>
                     </thead>
                     <tbody>
+                    <tr v-if="records.length === 0">
+                        <td colspan="4" class="text-center text-muted">No hay registro</td>
+                    </tr>
                     <tr v-for="(row, index) in records">
-                        <td>{{ index + 1 }}</td>
+                        <!-- <td>{{ index + 1 }}</td> -->
                         <td>{{ row.description }}</td>
                         <td class="text-right">
                             <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickCreate(row.id)">Editar</button>

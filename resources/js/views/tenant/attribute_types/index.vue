@@ -1,23 +1,17 @@
 <template>
-    <div class="card card-collapsed">
+    <div class="card card-collapsed card-config">
         <div class="card-header bg-info">
             <h3 class="my-0">Listado de Atributos</h3>
             <div class="card-actions">
                 <a href="#" class="card-action card-action-toggle text-white" data-card-toggle=""></a>
-                <a href="#" class="card-action card-action-dismiss text-white" data-card-dismiss=""></a>
             </div>
         </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col">
-                    <button type="button" class="btn btn-custom btn-sm  mt-2 mr-2" @click.prevent="clickCreate()"><i class="fa fa-plus-circle"></i> Nuevo</button>
-                </div>
-            </div>
+        <div class="card-body">            
             <div class="table-responsive">
                 <table class="table">
                     <thead>
                     <tr width="100%">
-                        <th width="5%">#</th>
+                        <!-- <th width="5%">#</th> -->
                         <th width="10%">Código</th>
                         <th width="50%">Descripción</th>
                         <th width="5%">Activo</th>
@@ -25,8 +19,11 @@
                     </tr>
                     </thead>
                     <tbody>
+                    <tr v-if="records.length === 0">
+                        <td colspan="4" class="text-center text-muted">No hay registro</td>
+                    </tr>
                     <tr v-for="(row, index) in records">
-                        <td>{{ index + 1 }}</td>
+                        <!-- <td>{{ index + 1 }}</td> -->
                         <td>{{ row.id }}</td>
                         <td>{{ row.description }}</td>
                         <td class="text-center">{{ row.active }}</td>
@@ -39,6 +36,11 @@
                     </tr>
                     </tbody>
                 </table>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <button type="button" class="btn btn-custom btn-sm  mt-2 mr-2" @click.prevent="clickCreate()"><i class="fa fa-plus-circle"></i> Nuevo</button>
+                </div>
             </div>
             <!-- <div class="row">
                 <div class="col">

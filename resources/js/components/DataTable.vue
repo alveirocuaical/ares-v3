@@ -117,8 +117,8 @@
                                         <el-option
                                             v-for="res in resolutions"
                                             :key="res.id"
-                                            :label="res.description"
-                                            :value="res.id">
+                                            :label="res.prefix"
+                                            :value="res.prefix">
                                         </el-option>
                                         <template v-if="resolutions.length === 0">
                                             <el-option disabled label="No hay resoluciones activas" value=""></el-option>
@@ -382,7 +382,12 @@
                     params.fecha_fin = null;
                 }
                 if (this.selectedResolution) {
-                    params.resolution_id = this.selectedResolution;
+                    const selectedRes = this.resolutions.find(res => 
+                        res.prefix === this.selectedResolution
+                    );
+                    if (selectedRes) {
+                        params.resolution_id = selectedRes.id;
+                    }
                 }
                 if (this.comprobanteSearch) {
                     params.comprobante = this.comprobanteSearch;

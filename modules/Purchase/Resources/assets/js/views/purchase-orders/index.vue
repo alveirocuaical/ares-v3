@@ -2,8 +2,12 @@
   <div>
     <div class="page-header pr-0">
       <h2>
-        <a href="/dashboard">
-          <i class="fas fa-tachometer-alt"></i>
+        <a href="/purchase-orders">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-shopping-bag" style="margin-top: -5px;">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+              <path d="M6.331 8h11.339a2 2 0 0 1 1.977 2.304l-1.255 8.152a3 3 0 0 1 -2.966 2.544h-6.852a3 3 0 0 1 -2.965 -2.544l-1.255 -8.152a2 2 0 0 1 1.977 -2.304z"></path>
+              <path d="M9 11v-5a3 3 0 0 1 6 0v5"></path>
+          </svg>
         </a>
       </h2>
       <ol class="breadcrumbs">
@@ -21,8 +25,8 @@
       <div class="card-body">
         <data-table :resource="resource">
           <tr slot="heading">
-            <th>#</th>
-            <th class="text-center">F. Emisión</th>
+            <!-- <th>#</th> -->
+            <th class="text-left">F. Emisión</th>
             <th class="text-center">F. Vencimiento</th>
             <th>Proveedor</th>
             <!-- <th>Estado</th> -->
@@ -42,8 +46,8 @@
           </tr>
           <tr></tr>
           <tr slot-scope="{ index, row }">
-            <td>{{ index }}</td>
-            <td class="text-center">{{ row.date_of_issue }}</td>
+            <!-- <td>{{ index }}</td> -->
+            <td class="text-left">{{ row.date_of_issue }}</td>
             <td class="text-center">{{ row.date_of_due }}</td>
             <td>
               {{ row.supplier_name }}
@@ -71,42 +75,43 @@
             <!-- <td class="text-right">{{ row.total_perception ? row.total_perception : 0 }}</td> -->
             <td class="text-right">{{ row.total | numberFormat }}</td>
             
-                        <td class="text-center"> 
-
-                            <button type="button" class="btn waves-effect waves-light btn-xs btn-info"
-                                    @click.prevent="clickDownload(row.external_id)">PDF</button>
-                        </td>
+            <td class="text-center"> 
+                <button type="button" class="btn waves-effect waves-light btn-xs btn-info"
+                        @click.prevent="clickDownload(row.external_id)">PDF</button>
+            </td>
                         
             <td class="text-right">
-              <!-- <el-button
-                @click.prevent="clickOptions(row.id)"
-                size="mini"
-                type="primary"
-                :disabled="row.state_type_id == '03' || row.state_type_id == '11'"
-              >Generar comprobante</el-button>
-              <el-button
-                :disabled="row.state_type_id == '11'  || row.state_type_id == '03' "
-                type="danger"
-                  size="mini"
-                @click.prevent="clickAnulate(row.id)"
-              >Anular</el-button> -->
-
-
-              <button type="button" v-if="!row.has_purchases && row.state_type_id!='11'" class="btn waves-effect waves-light btn-xs btn-custom m-1__2"
-                      @click.prevent="clickCreate(row.id)">Editar</button>
-
-              <!-- <button type="button" v-if="!row.has_purchases && row.state_type_id!='11'" class="btn waves-effect waves-light btn-xs btn-success m-1__2"
-                      @click.prevent="clickGenerateDocument(row.id)">Generar compra</button> -->
-
+                <el-dropdown trigger="click">
+                    <el-button type="secondary" size="mini" class="btn btn-default btn-sm btn-dropdown-toggle">
+                        <i class="fas fa-ellipsis-h"></i>
+                    </el-button>
+                    <el-dropdown-menu slot="dropdown">
+                    
+                        <el-dropdown-item 
+                            v-if="!row.has_purchases && row.state_type_id!='11'" 
+                            @click.native="clickCreate(row.id)">
+                            <span>Editar</span>
+                        </el-dropdown-item>
                       
-              <a :href="`/purchases/create/${row.id}`" class="btn waves-effect waves-light btn-xs btn-success m-1__2"  
-                      v-if="!row.has_purchases && row.state_type_id!='11'">Generar compra</a>
-
-              <button type="button" v-if="!row.has_purchases && row.state_type_id!='11'" class="btn waves-effect waves-light btn-xs btn-danger m-1__2"
-                      @click.prevent="clickAnulate(row.id)">Anular</button>
-
-              <button type="button" class="btn waves-effect waves-light btn-xs btn-info m-1__2"
-                      @click.prevent="clickOptions(row.id)">Opciones</button>  
+                        <el-dropdown-item 
+                            v-if="!row.has_purchases && row.state_type_id!='11'">
+                            <a :href="`/purchases/create/${row.id}`" class="text-dark" style="text-decoration:none;">
+                                <span>Generar compra</span>
+                            </a>
+                        </el-dropdown-item>
+                      
+                        <el-dropdown-item @click.native="clickOptions(row.id)">
+                            <span>Opciones</span>
+                        </el-dropdown-item>
+                      
+                        <el-dropdown-item 
+                            v-if="!row.has_purchases && row.state_type_id!='11'" 
+                            @click.native="clickAnulate(row.id)">
+                            <span>Anular</span>
+                        </el-dropdown-item>
+                      
+                    </el-dropdown-menu>
+                </el-dropdown>
             </td>
           </tr>
         </data-table>

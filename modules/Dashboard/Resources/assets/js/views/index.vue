@@ -7,6 +7,34 @@
       <div>
         <h2>Dashboard</h2>
       </div>
+      <div class="d-flex align-items-center h-100">
+        {{ filterLabel }}
+        <el-button 
+          type="primary"
+          @click="toggleFilters"
+          size="small"
+          class="mx-2 p-2"
+          :title="showFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
+        >
+          <svg v-if="showFilters" xmlns="http://www.w3.org/2000/svg"  width="20"  height="20"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"
+            stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-adjustments-alt">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 8h4v4h-4z" />
+            <path d="M6 4l0 4" /><path d="M6 12l0 8" />
+            <path d="M10 14h4v4h-4z" /><path d="M12 4l0 10" />
+            <path d="M12 18l0 2" /><path d="M16 5h4v4h-4z" />
+            <path d="M18 4l0 1" /><path d="M18 9l0 11" />
+          </svg>
+
+          <svg v-else xmlns="http://www.w3.org/2000/svg"  width="20"  height="20"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"
+            stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-adjustments-off">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 10a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+            <path d="M6 6v2" /><path d="M6 12v8" /><path d="M10 16a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+            <path d="M12 4v4m0 4v2" /><path d="M12 18v2" />
+            <path d="M16 7a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M18 4v1" />
+            <path d="M18 9v5m0 4v2" /><path d="M3 3l18 18" />
+          </svg>
+        </el-button>
+      </div>
     </header>
     <div class="row">
       <div class="col-12" v-if="resolutions.length > 0">
@@ -23,7 +51,7 @@
           <div class="card-body py-2">
             <div class="d-flex justify-content-between align-items-center">
               <div>
-                <h4 class="card-title">Mi Consumo Electrónico</h4>
+                <h4 class="card-title">Mi Plan</h4>
                 <div v-if="!electronicConsumption || !electronicConsumption.plan_name || electronicConsumption.plan_name === 'Sin plan'" class="alert alert-danger mb-0 py-2">
                   No tiene un plan asignado, comuníquese con su administrador.
                 </div>
@@ -60,26 +88,25 @@
           </div>
         </section>
       </div>
-      <div class="col-xl-6">
-        <section class="card card-featured-left card-featured-secondary">
+      <div class="col-xl-12 px-0" v-show="showFilters">
+        <section class="card card-featured-secondary">
           <div class="card-body">
-            <div class="row">
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label class="control-label">Establecimiento</label>
-                  <el-select v-model="form.establishment_id" @change="loadAll">
-                    <el-option
-                      v-for="option in establishments"
-                      :key="option.id"
-                      :value="option.id"
-                      :label="option.name"
-                    ></el-option>
-                  </el-select>
-                </div>
+            <div class="filters-container">
+              <div class="filter-item">
+                <label class="control-label">Establecimiento</label>
+                <el-select v-model="form.establishment_id" @change="loadAll" style="width: 100%">
+                  <el-option
+                    v-for="option in establishments"
+                    :key="option.id"
+                    :value="option.id"
+                    :label="option.name"
+                  ></el-option>
+                </el-select>
               </div>
-              <div class="col-md-6">
+            
+              <div class="filter-item">
                 <label class="control-label">Periodo</label>
-                <el-select v-model="form.period" @change="changePeriod">
+                <el-select v-model="form.period" @change="changePeriod" style="width: 100%">
                   <el-option key="all" value="all" label="Todos"></el-option>
                   <el-option key="month" value="month" label="Por mes"></el-option>
                   <el-option key="between_months" value="between_months" label="Entre meses"></el-option>
@@ -87,8 +114,9 @@
                   <el-option key="between_dates" value="between_dates" label="Entre fechas"></el-option>
                 </el-select>
               </div>
+            
               <template v-if="form.period === 'month' || form.period === 'between_months'">
-                <div class="col-md-6">
+                <div class="filter-item">
                   <label class="control-label">Mes de</label>
                   <el-date-picker
                     v-model="form.month_start"
@@ -97,11 +125,13 @@
                     value-format="yyyy-MM"
                     format="MM/yyyy"
                     :clearable="false"
+                    style="width: 100%"
                   ></el-date-picker>
                 </div>
               </template>
+            
               <template v-if="form.period === 'between_months'">
-                <div class="col-md-6">
+                <div class="filter-item">
                   <label class="control-label">Mes al</label>
                   <el-date-picker
                     v-model="form.month_end"
@@ -111,11 +141,13 @@
                     value-format="yyyy-MM"
                     format="MM/yyyy"
                     :clearable="false"
+                    style="width: 100%"
                   ></el-date-picker>
                 </div>
               </template>
+            
               <template v-if="form.period === 'date' || form.period === 'between_dates'">
-                <div class="col-md-6">
+                <div class="filter-item">
                   <label class="control-label">Fecha del</label>
                   <el-date-picker
                     v-model="form.date_start"
@@ -124,11 +156,13 @@
                     value-format="yyyy-MM-dd"
                     format="dd/MM/yyyy"
                     :clearable="false"
+                    style="width: 100%"
                   ></el-date-picker>
                 </div>
               </template>
+            
               <template v-if="form.period === 'between_dates'">
-                <div class="col-md-6">
+                <div class="filter-item">
                   <label class="control-label">Fecha al</label>
                   <el-date-picker
                     v-model="form.date_end"
@@ -138,60 +172,101 @@
                     value-format="yyyy-MM-dd"
                     format="dd/MM/yyyy"
                     :clearable="false"
+                    style="width: 100%"
                   ></el-date-picker>
                 </div>
               </template>
-              <div class="col-md-6">
-                <label class="control-label">Moneda
-                    <el-tooltip class="item" effect="dark" content="Filtra por moneda del documento emitido" placement="top-start">
-                        <i class="fa fa-info-circle"></i>
-                    </el-tooltip>
+            
+              <div class="filter-item">
+                <label class="control-label">
+                  Moneda
+                  <el-tooltip class="item" effect="dark" content="Filtra por moneda del documento emitido" placement="top-start">
+                    <i class="fa fa-info-circle"></i>
+                  </el-tooltip>
                 </label>
-                <el-select v-model="form.currency_id" filterable @change="loadAll">
-                    <el-option v-for="option in currencies" :key="option.id" :value="option.id" :label="option.name"></el-option>
+                <el-select v-model="form.currency_id" filterable @change="loadAll" style="width: 100%">
+                  <el-option v-for="option in currencies" :key="option.id" :value="option.id" :label="option.name"></el-option>
                 </el-select>
               </div>
             </div>
           </div>
         </section>
-      </div>
-      <div class="col-xl-6" v-if="!disc.error">
-        <section class="card card-featured-left card-featured-secondary">
-          <div class="card-body">
+      </div>      
+    </div>
+    
+    <div class="row mb-0">
+
+      <div class="col-xl-4 col-md-4">
+        <section class="card card-featured-left card-featured-primary">
+          <div class="card-body px-4 py-3">
             <div class="widget-summary">
               <div class="widget-summary-col">
-                <div class="row no-gutters">
-                  <div class="col-md-12 m-b-10">
-                    <h4 class="card-title">Disco Duro <small>Porcentaje de uso</small></h4>
+                <div class="summary">
+                  <h4 class="title d-flex justify-content-between">
+                    Total General
+                    <svg  xmlns="http://www.w3.org/2000/svg"  width="18"  height="18"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-cash text-muted"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 15h-3a1 1 0 0 1 -1 -1v-8a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v3" /><path d="M7 9m0 1a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1z" /><path d="M12 14a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /></svg>
+                  </h4>
+                  <div class="info mt-4">
+                    <strong class="amount">{{ getCurrencySymbol() + ' ' + formatNumber(kpiTotalGeneral) }}</strong>
                   </div>
-                  <div class="col-lg-12 py-2">
-                    <div class="summary">
-                      <el-progress :percentage="disc.pcent"></el-progress>
-                    </div>
+                  <div class="description mt-1">
+                    <small class="text-muted">Facturas + Remisiones + POS</small>
                   </div>
-                  <!-- <div class="col-lg-4">
-                    <div class="summary">
-                      <h4 class="title">
-                        Disponible
-                      </h4>
-                      <el-progress :percentage="disc.avail"></el-progress>
-                    </div>
-                  </div>
-                  <div class="col-lg-4">
-                    <div class="summary">
-                      <h4 class="title">
-                        Uso
-                      </h4>
-                      <el-progress :percentage="disc.used"></el-progress>
-                    </div>
-                  </div> -->
                 </div>
               </div>
             </div>
           </div>
         </section>
       </div>
+      
+      <div class="col-xl-4 col-md-4">
+        <section class="card card-featured-left card-featured-success">
+          <div class="card-body px-4 py-3">
+            <div class="widget-summary">
+              <div class="widget-summary-col">
+                <div class="summary">
+                  <h4 class="title d-flex justify-content-between">                    
+                    Total Pagado
+                    <svg  xmlns="http://www.w3.org/2000/svg"  width="18"  height="18"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-circle-check text-muted"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 12l2 2l4 -4" /></svg>
+                  </h4>
+                  <div class="info mt-4">
+                    <strong class="amount">{{ getCurrencySymbol() + ' ' + formatNumber(kpiTotalPaid) }}</strong>
+                  </div>
+                  <div class="description mt-1">
+                    <small class="text-muted">Facturas + Remisiones + POS</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+      
+      <div class="col-xl-4 col-md-4">
+        <section class="card card-featured-left card-featured-tertiary">
+          <div class="card-body px-4 py-3">
+            <div class="widget-summary">
+              <div class="widget-summary-col">
+                <div class="summary">
+                  <h4 class="title d-flex justify-content-between text-warning">
+                    Total por Pagar
+                    <svg  xmlns="http://www.w3.org/2000/svg"  width="18"  height="18"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-clock text-warning"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 7v5l3 3" /></svg>
+                  </h4>
+                  <div class="info mt-4">
+                    <strong class="amount text-warning">{{ getCurrencySymbol() + ' ' + formatNumber(kpiTotalToPay) }}</strong>
+                  </div>
+                  <div class="description mt-1">
+                    <small class="text-muted">Facturas + Remisiones + POS</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+          
     </div>
+    
     <div class="row">
       <div class="col-xl-12">
         <div class="row">
@@ -203,47 +278,48 @@
                     <div class="row no-gutters">
                       <div class="col-md-12 m-b-10">
                         <h2 class="card-title">Facturas Electrónicas</h2>
-                      </div>
-                      <div class="col-lg-4">
-                        <div class="summary">
-                          <h4 class="title text-info">
-                            Total
-                            <br />Pagado
-                          </h4>
-                          <div class="info">
-                            <strong class="amount text-info">{{ sale_note.totals.total_payment | numberFormat }}</strong>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-lg-4">
-                        <div class="summary">
-                          <h4 class="title text-danger">
-                            Total
-                            <br />por Pagar
-                          </h4>
-                          <div class="info">
-                            <strong
-                              class="amount text-danger"
-                            >{{ sale_note.totals.total_to_pay | numberFormat }}</strong>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-lg-4">
-                        <div class="summary">
-                          <h4 class="title">
-                            Total
-                            <br />&nbsp;
-                          </h4>
-                          <div class="info">
-                            <strong class="amount">{{ sale_note.totals.total | numberFormat }}</strong>
-                          </div>
-                        </div>
-                      </div>
+                      </div>                      
                     </div>
                     <div class="row m-t-20">
                       <div class="col-md-12">
                         <x-graph type="doughnut" :all-data="sale_note.graph"></x-graph>
                       </div>
+                    </div>
+                    <div class="col-lg-12 d-flex flex-column text-center px-0" v-if="sale_note.totals.total_payment > 0 || sale_note.totals.total_to_pay > 0 || sale_note.totals.total > 0">
+                       <div class="col-lg-12 px-0">                         
+                         <div class="summary amount-container">
+                            <h4 class="title text-muted">
+                              Total &nbsp;
+                            </h4>
+                            <div>
+                              <strong class="amount">{{ formatNumber(sale_note.totals.total) }}</strong>
+                            </div>
+                          </div>
+                       </div>                       
+                       <div class="col-lg-12 px-0 d-flex mt-3">
+                        <div class="col-lg-6 px-0">
+                          <div class="summary amount-container">
+                           <h4 class="title text-muted">
+                             Total Pagado
+                           </h4>
+                           <div>
+                             <strong class="amount amount-small text-muted">{{ formatNumber(sale_note.totals.total_payment) }}</strong>
+                           </div>
+                         </div>
+                        </div>
+                        <div class="col-lg-6 px-0">
+                          <div class="summary amount-container">
+                            <h4 class="title amount-danger">
+                              Monto pendiente
+                            </h4>
+                            <div>
+                              <strong
+                                class="amount amount-small amount-danger"
+                              >{{ formatNumber(sale_note.totals.total_to_pay) }}</strong>
+                            </div>
+                          </div>
+                        </div>                        
+                       </div>
                     </div>
                   </div>
                 </div>
@@ -258,45 +334,48 @@
                     <div class="row no-gutters">
                       <div class="col-md-12 m-b-10">
                         <h2 class="card-title">Remisiones</h2>
-                      </div>
-                      <div class="col-lg-4">
-                        <div class="summary">
-                          <h4 class="title text-info">
-                            Total
-                            <br />Pagado
-                          </h4>
-                          <div class="info">
-                            <strong class="amount text-info">{{ document.totals.total_payment | numberFormat }}</strong>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-lg-4">
-                        <div class="summary">
-                          <h4 class="title text-danger">
-                            Total
-                            <br />por Pagar
-                          </h4>
-                          <div class="info">
-                            <strong class="amount text-danger">{{ document.totals.total_to_pay | numberFormat }}</strong>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-lg-4">
-                        <div class="summary">
-                          <h4 class="title">
-                            Total
-                            <br />&nbsp;
-                          </h4>
-                          <div class="info">
-                            <strong class="amount">{{ document.totals.total | numberFormat }}</strong>
-                          </div>
-                        </div>
-                      </div>
+                      </div>                      
                     </div>
                     <div class="row m-t-20">
                       <div class="col-md-12">
                         <x-graph type="doughnut" :all-data="document.graph"></x-graph>
                       </div>
+                    </div>
+                    <div class="col-lg-12 d-flex flex-column text-center px-0" v-if="document.totals.total_payment > 0 || document.totals.total_to_pay > 0 || document.totals.total > 0">
+                       <div class="col-lg-12 px-0">                         
+                         <div class="summary amount-container">
+                            <h4 class="title text-muted">
+                              Total &nbsp;
+                            </h4>
+                            <div>
+                              <strong class="amount">{{ formatNumber(document.totals.total) }}</strong>
+                            </div>
+                          </div>
+                       </div>                       
+                       <div class="col-lg-12 px-0 d-flex mt-3">
+                        <div class="col-lg-6 px-0">
+                          <div class="summary amount-container">
+                           <h4 class="title text-muted">
+                             Total Pagado
+                           </h4>
+                           <div>
+                             <strong class="amount amount-small text-muted">{{ formatNumber(document.totals.total_payment) }}</strong>
+                           </div>
+                         </div>
+                        </div>
+                        <div class="col-lg-6 px-0">
+                          <div class="summary amount-container">
+                            <h4 class="title amount-danger">
+                              Monto pendiente
+                            </h4>
+                            <div>
+                              <strong
+                                class="amount amount-small amount-danger"
+                              >{{ formatNumber(document.totals.total_to_pay) }}</strong>
+                            </div>
+                          </div>
+                        </div>                        
+                       </div>
                     </div>
                   </div>
                 </div>
@@ -311,45 +390,48 @@
                     <div class="row no-gutters">
                       <div class="col-md-12 m-b-10">
                         <h2 class="card-title">Ventas POS</h2>
-                      </div>
-                      <div class="col-lg-4">
-                        <div class="summary">
-                          <h4 class="title text-info">
-                            Total
-                            <br />Pagado
-                          </h4>
-                          <div class="info">
-                            <strong class="amount text-info">{{ document_pos.totals.total_payment | numberFormat }}</strong>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-lg-4">
-                        <div class="summary">
-                          <h4 class="title text-danger">
-                            Total
-                            <br />por Pagar
-                          </h4>
-                          <div class="info">
-                            <strong class="amount text-danger">{{ document_pos.totals.total_to_pay | numberFormat }}</strong>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-lg-4">
-                        <div class="summary">
-                          <h4 class="title">
-                            Total
-                            <br />&nbsp;
-                          </h4>
-                          <div class="info">
-                            <strong class="amount">{{ document_pos.totals.total | numberFormat }}</strong>
-                          </div>
-                        </div>
-                      </div>
+                      </div>                      
                     </div>
                     <div class="row m-t-20">
                       <div class="col-md-12">
                         <x-graph type="doughnut" :all-data="document_pos.graph"></x-graph>
                       </div>
+                    </div>
+                    <div class="col-lg-12 d-flex flex-column text-center px-0" v-if="document_pos.totals.total_payment > 0 || document_pos.totals.total_to_pay > 0 || document_pos.totals.total > 0">
+                       <div class="col-lg-12 px-0">                         
+                         <div class="summary amount-container">
+                            <h4 class="title text-muted">
+                              Total &nbsp;
+                            </h4>
+                            <div>
+                              <strong class="amount">{{ formatNumber(document_pos.totals.total) }}</strong>
+                            </div>
+                          </div>
+                       </div>                       
+                       <div class="col-lg-12 px-0 d-flex mt-3">
+                        <div class="col-lg-6 px-0">
+                          <div class="summary amount-container">
+                           <h4 class="title text-muted">
+                             Total Pagado
+                           </h4>
+                           <div>
+                             <strong class="amount amount-small text-muted">{{ formatNumber(document_pos.totals.total_payment) }}</strong>
+                           </div>
+                         </div>
+                        </div>
+                        <div class="col-lg-6 px-0">
+                          <div class="summary amount-container">
+                            <h4 class="title amount-danger">
+                              Monto pendiente
+                            </h4>
+                            <div>
+                              <strong
+                                class="amount amount-small amount-danger"
+                              >{{ formatNumber(document_pos.totals.total_to_pay) }}</strong>
+                            </div>
+                          </div>
+                        </div>                        
+                       </div>
                     </div>
                   </div>
                 </div>
@@ -631,14 +713,14 @@
           </div> -->
 
           <div class="col-xl-3 col-md-6">
-            <section class="card">
+            <section class="card card-featured-left">
               <div class="card-body">
                 <h2 class="card-title">Ventas por producto</h2>
                 <div class="mt-3">
                   <el-checkbox  v-model="form.enabled_move_item" @change="loadDataAditional">Ordenar por movimientos</el-checkbox><br>
                 </div>
-                <div class="table-responsive">
-                  <table class="table">
+                <div class="table-responsive table-default">
+                  <table class="table table-default">
                     <thead>
                       <tr>
                         <th>#</th>
@@ -675,14 +757,14 @@
             </section>
           </div>
           <div class="col-xl-3 col-md-6">
-            <section class="card">
+            <section class="card card-featured-left">
               <div class="card-body">
                 <h2 class="card-title">Top clientes</h2>
                 <div class="mt-3">
                   <el-checkbox  v-model="form.enabled_transaction_customer" @change="loadDataAditional">Ordenar por transacciones</el-checkbox><br>
                 </div>
-                <div class="table-responsive">
-                  <table class="table">
+                <div class="table-responsive table-default">
+                  <table class="table table-default">
                     <thead>
                       <tr>
                         <th>#</th>
@@ -741,6 +823,54 @@
   font-size: 15px;
   font-weight: bold;
 }
+
+.widget-summary .summary .title {
+  font-size: .875rem;
+  font-weight: 500;
+}
+
+.widget-summary .summary .amount {
+  font-size: 24px;
+  font-weight: bold;
+}
+.filters-container {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.filter-item {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+.amount-container h4.title{
+  font-size: .80rem !important;
+  font-weight: normal !important;
+}
+.amount-small{
+  font-size: 18px !important;
+}
+.amount-danger{
+  color: #e9797e !important;
+}
+@media (max-width: 525px) {
+  .filters-container {
+    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .filter-item {
+    width: 100% !important;
+  }
+
+  .filter-item el-select,
+  .filter-item el-date-picker {
+    width: 100% !important;
+  }
+}
 </style>
 <script>
 // import DocumentPayments from "../../../../../../resources/js/views/tenant/documents/partials/payments.vue";
@@ -753,6 +883,7 @@ export default {
   components: { DashboardStock },
   data() {
     return {
+      showFilters: false,
       loading_search:false,
       records_base: [],
       selected_customer: null,
@@ -831,8 +962,84 @@ export default {
     //   this.loadAll();
     // });
   },
+  computed: {
+    filterLabel() {
+      const period = this.form.period;
 
+      if (!period || period === "all") {
+        return "Filtrado: Todos los registros";
+      }
+
+      if (period === "month" && this.form.month_start) {
+        return `Filtrado por mes: ${this.formatMonth(this.form.month_start)}`;
+      }
+
+      if (period === "between_months" && this.form.month_start && this.form.month_end) {
+        return `Filtrado entre meses: ${this.formatMonth(this.form.month_start)} - ${this.formatMonth(this.form.month_end)}`;
+      }
+
+      if (period === "date" && this.form.date_start) {
+        return `Filtrado por fecha: ${this.formatDate(this.form.date_start)}`;
+      }
+
+      if (period === "between_dates" && this.form.date_start && this.form.date_end) {
+        return `Filtrado entre fechas: ${this.formatDate(this.form.date_start)} - ${this.formatDate(this.form.date_end)}`;
+      }
+
+      return "Filtrado: Sin datos seleccionados";
+    },
+    kpiTotalPaid()    { return this.getTotalPaid(); },
+    kpiTotalToPay()   { return this.getTotalToPay(); },
+    kpiTotalGeneral() { return this.getTotalGeneral(); },
+  },
   methods: {
+    toNumber(v) {
+      if (v === null || v === undefined) return 0;
+      const cleaned = String(v).replace(/[^\d.-]/g, '');
+      const n = Number(cleaned);
+      return isNaN(n) ? 0 : n;
+    },
+    
+    getTotalPaid() {
+      const saleNotePaid   = this.toNumber(this.sale_note?.totals?.total_payment);
+      const documentPaid   = this.toNumber(this.document?.totals?.total_payment);
+      const documentPosPaid= this.toNumber(this.document_pos?.totals?.total_payment);
+      return saleNotePaid + documentPaid + documentPosPaid;
+    },
+
+    getTotalToPay() {
+      const saleNoteToPay   = this.toNumber(this.sale_note?.totals?.total_to_pay);
+      const documentToPay   = this.toNumber(this.document?.totals?.total_to_pay);
+      const documentPosToPay= this.toNumber(this.document_pos?.totals?.total_to_pay);
+      return saleNoteToPay + documentToPay + documentPosToPay;
+    },
+
+    getTotalGeneral() {
+      const saleNoteTotal   = this.toNumber(this.sale_note?.totals?.total);
+      const documentTotal   = this.toNumber(this.document?.totals?.total);
+      const documentPosTotal= this.toNumber(this.document_pos?.totals?.total);
+      return saleNoteTotal + documentTotal + documentPosTotal;
+    },
+    getCurrencySymbol() {
+      const selectedCurrency = this.currencies.find(currency => currency.id === this.form.currency_id);
+      return selectedCurrency?.symbol || '$';
+    },
+    toggleFilters() {
+      this.showFilters = !this.showFilters;
+    },
+    formatNumber(number) {
+      if (number === undefined || number === null || number === 0) return '0.00';
+      
+      // Convertir a número y formatear con 2 decimales
+      const num = parseFloat(number);
+      if (num === 0) return '0.00';
+      
+      // Formatear con separador de miles (coma) y 2 decimales
+      return num.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    },
     changeFilterItem(){
       this.form.item_id = null
       this.loadDataUtilities()
@@ -995,6 +1202,14 @@ export default {
         }
         return false;
       });
+    },
+    formatMonth(date) {
+      const [year, month] = date.split("-");
+      return `${month}/${year}`;
+    },
+    formatDate(date) {
+      const [year, month, day] = date.split("-");
+      return `${day}/${month}/${year}`;
     },
     async loadElectronicConsumption() {
       await this.$http.get('/dashboard/electronic-consumption').then(response => {

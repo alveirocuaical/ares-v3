@@ -1,7 +1,15 @@
 <template>
     <div>
         <div class="page-header pr-0">
-            <h2><a href="/dashboard"><i class="fas fa-tachometer-alt"></i></a></h2>
+            <h2><a href="/quotations">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text" style="margin-top: -5px;">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+            </a></h2>
             <ol class="breadcrumbs">
                 <li class="active"><span>Cotizaciones</span></li>
             </ol>
@@ -25,7 +33,7 @@
             <div class="card-body">
                 <data-table :resource="resource">
                     <tr slot="heading">
-                        <th>#</th>
+                        <!-- <th>#</th> -->
                         <th class="text-center">Fecha Emisión</th>
                         <th class="text-center" v-if="columns.delivery_date.visible">Fecha Entrega</th>
                         <th>Vendedor</th>
@@ -42,7 +50,7 @@
                         <th class="text-right">Acciones</th>
                     <tr>
                     <tr slot-scope="{ index, row }" :class="{ anulate_color : row.state_type_id == '11' }">
-                        <td>{{ index }}</td>
+                        <!-- <td>{{ index }}</td> -->
                         <td class="text-center">{{ row.date_of_issue }}</td>
                         <td class="text-center" v-if="columns.delivery_date.visible">{{ row.delivery_date }}</td>
                         <td>{{ row.user_name }}</td>
@@ -80,39 +88,71 @@
                         </td>
 
                         <td class="text-right">
-                            <el-tooltip class="item" effect="dark" content="Generar comprobante" placement="top-start">
-                                <button v-if="row.state_type_id != '11' && row.btn_generate && typeUser == 'admin' && soapCompany != '03'"
-                                        type="button"
-                                        class="btn waves-effect waves-light btn-xs btn-info"
-                                        @click.prevent="clickOptions(row.id)" >
-                                    Comprobante
-                                </button>
-                            </el-tooltip>
-
-                            <el-tooltip class="item" effect="dark" content="Generar factura POS" placement="top-start">
-                                <button v-if="row.state_type_id != '11' && row.btn_generate && typeUser == 'admin'"
-                                        type="button"
-                                        class="btn waves-effect waves-light btn-xs btn-warning"
-                                        @click.prevent="clickGeneratePos(row.id)" >
-                                    POS
-                                </button>
-                            </el-tooltip>
-
-                            <el-tooltip class="item" effect="dark" content="Generar remisión" placement="top-start">
-                                <button v-if="row.state_type_id != '11' && row.btn_generate_remission && typeUser == 'admin'"
-                                        type="button"
-                                        class="btn waves-effect waves-light btn-xs btn-primary"
-                                        @click.prevent="clickGenerateRemission(row.id)" >
-                                    Remisión
-                                </button>
-                            </el-tooltip>
-
-                            <a v-if="row.documents.length == 0 && row.state_type_id != '11'" :href="`/${resource}/edit/${row.id}`" type="button" class="btn waves-effect waves-light btn-xs btn-info">Editar</a>
-                            <button v-if="row.documents.length == 0 && row.state_type_id != '11'" type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickAnulate(row.id)">Anular</button>
-                            <button @click="duplicate(row.id)"  type="button" class="btn waves-effect waves-light btn-xs btn-info">Duplicar</button>
-
-
-
+                            <el-dropdown trigger="click">
+                                <el-button type="secondary" size="mini" class="btn btn-default btn-sm btn-dropdown-toggle">
+                                    <i class="fas fa-ellipsis-h"></i>
+                                </el-button>
+                                <el-dropdown-menu slot="dropdown" class="dropdown-actions">
+                                
+                                    <el-dropdown-item
+                                        v-if="row.state_type_id != '11' && row.btn_generate && typeUser == 'admin' && soapCompany != '03'"
+                                        @click.native="clickOptions(row.id)"
+                                    >
+                                        <span class="dropdown-item-content">
+                                            Generar comprobante
+                                        </span>
+                                    </el-dropdown-item>
+                                
+                                    <el-dropdown-item
+                                        v-if="row.state_type_id != '11' && row.btn_generate && typeUser == 'admin'"
+                                        @click.native="clickGeneratePos(row.id)"
+                                    >
+                                        <span class="dropdown-item-content">
+                                            Generar POS
+                                        </span>
+                                    </el-dropdown-item>
+                                
+                                    <el-dropdown-item
+                                        v-if="row.state_type_id != '11' && row.btn_generate_remission && typeUser == 'admin'"
+                                        @click.native="clickGenerateRemission(row.id)"
+                                    >
+                                        <span class="dropdown-item-content">
+                                            Generar remisión
+                                        </span>
+                                    </el-dropdown-item>
+                                
+                                    <el-dropdown-item
+                                        v-if="row.documents.length == 0 && row.state_type_id != '11'"
+                                        :command="`/${resource}/edit/${row.id}`"
+                                    >
+                                        <span class="dropdown-item-content">
+                                            Editar
+                                        </span>
+                                    </el-dropdown-item>
+                                
+                                    <el-dropdown-item
+                                        v-if="row.documents.length == 0 && row.state_type_id != '11'"
+                                        @click.native="clickAnulate(row.id)"
+                                    >
+                                        <span class="dropdown-item-content">
+                                            Anular
+                                        </span>
+                                    </el-dropdown-item>
+                                
+                                    <el-dropdown-item @click.native="duplicate(row.id)">
+                                        <span class="dropdown-item-content">
+                                            Duplicar
+                                        </span>
+                                    </el-dropdown-item>
+                                
+                                    <el-dropdown-item @click.native="clickOptionsPdf(row.id)">
+                                        <span class="dropdown-item-content">
+                                            PDF
+                                        </span>
+                                    </el-dropdown-item>
+                                
+                                </el-dropdown-menu>
+                            </el-dropdown>
                         </td>
 
                     </tr>

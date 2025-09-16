@@ -1,7 +1,9 @@
 <template>
     <div>
         <div class="page-header pr-0">
-            <h2><a href="/dashboard"><i class="fas fa-tachometer-alt"></i></a></h2>
+            <h2><a href="/establishments">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-users-group" style="margin-top: -5px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M10 13a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"></path><path d="M8 21v-1a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v1"></path><path d="M15 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"></path><path d="M17 10h2a2 2 0 0 1 2 2v1"></path><path d="M5 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"></path><path d="M3 13v-1a2 2 0 0 1 2 -2h2"></path></svg>
+            </a></h2>
             <ol class="breadcrumbs">
                 <li class="active"><span>Establecimientos</span></li>
             </ol>
@@ -13,15 +15,15 @@
             </div>
         </div>
         <div class="card">
-            <div class="card-header bg-info">
+            <!-- <div class="card-header bg-info">
                 <h3 class="my-0">Listado de establecimientos</h3>
-            </div>
+            </div> -->
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table">
                         <thead>
                         <tr>
-                            <th>#</th>
+                            <!-- <th>#</th> -->
                             <th>Descripción</th>
                             <th class="text-right">Dirección</th>
                             <th class="text-right">Acciones</th>
@@ -29,7 +31,7 @@
                         </thead>
                         <tbody>
                         <tr v-for="(row, index) in records" :key="index">
-                            <td>{{ index + 1 }}</td>
+                            <!-- <td>{{ index + 1 }}</td> -->
                             <td>{{ row.description }}</td>
                             <td class="text-right">{{ row.address }}</td>
                             <td class="text-right">
