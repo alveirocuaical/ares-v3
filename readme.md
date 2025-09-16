@@ -12,20 +12,20 @@
 
 * Linux - Ubuntu 20 - Docker - SSL opcional<br>
 [ver pasos y script](https://git.buho.la/facturalatam/co-facturadorpro3/-/snippets/2 "ver")
-[Video Aquí](https://www.youtube.com/watch?v=X8b5DwlWnao "ver")
+[Video Aquí](* "ver")
 
 * Windows - Laragon - entorno local<br>
 [ver pasos](https://git.buho.la/facturalatam/co-facturadorpro3/-/snippets/5#instalacion-de-entorno "ver")
-[Video Aquí](https://www.youtube.com/watch?v=kNaDz0BC4Qo "ver")
+[Video Aquí](* "ver")
 
 ### Configuración, Habilitación y producción
 
-[Video Aquí](https://www.youtube.com/watch?v=LOfMM3V2FNY&t=192s "ver")
+[Video Aquí](* "ver")
 
 
 ### Nómina electrónica
 
-[Video Aquí](https://www.youtube.com/watch?v=rnYVQfChvGs "ver")
+[Video Aquí](* "ver")
 
 
 ### Recepción de documentos (RADIAN)
@@ -34,7 +34,7 @@
 [Guía](https://docs.google.com/document/d/1qhaT5vuxkW1GuNqGk_LDp3MTVPc_Qna8pjYadam2LtU/edit?usp=sharing "Clic")<br>
 
 * Recepción de facturas desde Correo Electrónico + Eventos DIAN + Documento soporte<br>
-[ver](https://www.youtube.com/watch?v=ihmxJFKfAtI "Clic")<br>
+[ver](* "Clic")<br>
 
 
 
