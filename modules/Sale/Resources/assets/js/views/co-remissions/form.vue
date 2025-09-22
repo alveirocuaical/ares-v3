@@ -285,6 +285,11 @@
     height: 65px !important;
     min-height: 65px !important;
 }
+@media only screen and (min-width: 768px) {
+    html.fixed .inner-wrapper {
+        padding-top: 60px !important;
+    }
+}
 </style>
 <script>
 import PersonForm from '@views/persons/form.vue'

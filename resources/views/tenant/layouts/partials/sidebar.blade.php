@@ -205,7 +205,7 @@
                                     </li>
                                 @endif
 
-                                @if(in_array('remissions', $vc_module_levels))
+                                @if(auth()->user()->type != 'integrator' && in_array('documents', $vc_modules))
                                 <li class="{{ ($path[0] === 'co-remissions')?'nav-active':'' }}">
                                     <a class="nav-link" href="{{route('tenant.co-remissions.index')}}">
                                         Remisiones
