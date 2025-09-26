@@ -30,6 +30,7 @@ if($hostname) {
 
             Route::get('items/barcode/{item}', 'ItemController@generateBarcode');
             Route::get('items/barcodes', 'ItemController@generateBarcodes');
+            Route::get('items/barcode-label/{item}', 'ItemController@showBarcodeLabel');
 
             Route::post('items/import/item-price-lists', 'ItemController@importItemPriceLists');
 

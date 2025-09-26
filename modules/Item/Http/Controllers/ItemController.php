@@ -5,6 +5,7 @@ namespace Modules\Item\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\Tenant\Item;
+use App\Models\Tenant\Company;
 use App\Models\Tenant\ItemUnitType;
 use Illuminate\Routing\Controller;
 use Picqer\Barcode\BarcodeGeneratorPNG;
@@ -13,6 +14,7 @@ use Maatwebsite\Excel\Excel;
 use Modules\Item\Exports\ItemExport;
 use Carbon\Carbon;
 use Intervention\Image\Facades\Image;
+use Illuminate\Support\Facades\View;
 use Mpdf\Mpdf;
 
 
@@ -22,192 +24,138 @@ class ItemController extends Controller
     public function generateBarcode($id)
     {
         $item = Item::findOrFail($id);
-
-        $company = \App\Models\Tenant\Company::active();
+        $colour = [150,150,150];
+        $generator = new BarcodeGeneratorPNG();
+        $temp = tempnam(sys_get_temp_dir(), 'item_barcode');
+        file_put_contents($temp, $generator->getBarcode($item->internal_id, $generator::TYPE_CODE_128, 5, 70, $colour));
+        $headers = [
+            'Content-Type' => 'image/png',
+        ];
+        return response()->download($temp, "{$item->internal_id}.png", $headers);
+    }
+    public function showBarcodeLabel(Request $request, $id)
+    {
+        $item = Item::findOrFail($id);
+        $company = Company::active();
         $companyName = $company ? $company->name : 'EMPRESA';
 
-        $image = $this->buildBarcodeImage($item, $companyName);
+        // Recibe parámetros de tamaño y campos
+        $width = $request->input('width');
+        $height = $request->input('height');
+        $fields = [
+            'name' => filter_var($request->input('name', true), FILTER_VALIDATE_BOOLEAN),
+            'price' => filter_var($request->input('price', true), FILTER_VALIDATE_BOOLEAN),
+            'brand' => filter_var($request->input('brand', true), FILTER_VALIDATE_BOOLEAN),
+            'category' => filter_var($request->input('category', false), FILTER_VALIDATE_BOOLEAN),
+            'color' => filter_var($request->input('color', false), FILTER_VALIDATE_BOOLEAN),
+            'size' => filter_var($request->input('size', false), FILTER_VALIDATE_BOOLEAN),
+        ];
 
-        ob_clean();
-        header('Content-Type: image/png');
-        header('Content-Disposition: attachment; filename="barcode_'.$item->internal_id.'.png"');
-        imagepng($image);
-        imagedestroy($image);
-        exit;
+        $generator = new BarcodeGeneratorPNG();
+        $usableHeight = ($height ?? 25) * 0.32; // 32% de la altura para el código de barras
+        $usableWidth = ($width ?? 32) * 0.80;   // 80% del ancho para el código de barras
+
+        $codeLength = strlen($item->internal_id);
+
+        // Calcula el ancho de barra para que el código de barras no se desborde
+        $barcodeWidthFactor = $usableWidth / $codeLength / 2.2;
+        $barcodeWidthFactor = max(min($barcodeWidthFactor, 2), 0.5); // Limita el rango
+
+        // Altura en píxeles, proporcional a la altura de la etiqueta (1mm ≈ 3.78px)
+        $barcodeHeightPx = intval($usableHeight * 3.78);
+        $barcodeHeightPx = max(min($barcodeHeightPx, 60), 12); // Limita el rango
+
+        $barcodeData = $generator->getBarcode(
+            $item->internal_id,
+            $generator::TYPE_CODE_128,
+            $barcodeWidthFactor,
+            $barcodeHeightPx
+        );
+        $barcodeBase64 = base64_encode($barcodeData);
+
+        $html = view('tenant.item.barcode_label', compact('item', 'companyName', 'barcodeBase64', 'fields', 'width', 'height'))->render();
+
+        $mpdf = new Mpdf([
+            'format' => [(float)$width, (float)$height],
+            'unit' => 'mm',
+            'margin_left' => 0,
+            'margin_right' => 0,
+            'margin_top' => 0,
+            'margin_bottom' => 0,
+        ]);
+        $mpdf->WriteHTML($html);
+        // Sanitiza el nombre del producto para el archivo
+        $safeName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $item->name);
+        $filename = $safeName.'_barcode.pdf';
+
+        return response($mpdf->Output($filename, 'S'))
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="'.$filename.'"');
     }
 
     public function generateBarcodes(Request $request)
     {
         $ids = explode(',', $request->input('ids'));
-        $company = \App\Models\Tenant\Company::active();
+        $company = Company::active();
         $companyName = $company ? $company->name : 'EMPRESA';
 
+        // Recibe parámetros de tamaño y campos
+        $width = $request->input('width', 32);
+        $height = $request->input('height', 25);
+        $fields = [
+            'name' => filter_var($request->input('name', true), FILTER_VALIDATE_BOOLEAN),
+            'price' => filter_var($request->input('price', true), FILTER_VALIDATE_BOOLEAN),
+            'brand' => filter_var($request->input('brand', true), FILTER_VALIDATE_BOOLEAN),
+            'category' => filter_var($request->input('category', false), FILTER_VALIDATE_BOOLEAN),
+            'color' => filter_var($request->input('color', false), FILTER_VALIDATE_BOOLEAN),
+            'size' => filter_var($request->input('size', false), FILTER_VALIDATE_BOOLEAN),
+        ];
+
         $mpdf = new Mpdf([
-            'format' => [378, 295], // tamaño etiqueta en px
+            'format' => [(float)$width, (float)$height], // tamaño etiqueta en mm
+            'unit' => 'mm',
             'margin_left' => 0,
             'margin_right' => 0,
             'margin_top' => 0,
             'margin_bottom' => 0,
         ]);
 
+        $first = true;
         foreach ($ids as $id) {
             $item = Item::find($id);
             if (!$item) continue;
-            $image = $this->buildBarcodeImage($item, $companyName);
-            $tmpPath = tempnam(sys_get_temp_dir(), 'barcode_') . '.png';
-            imagepng($image, $tmpPath);
-            imagedestroy($image);
 
-            $mpdf->AddPage();
-            $mpdf->Image($tmpPath, 0, 0, 378, 295, 'png');
-            unlink($tmpPath);
-        }
+            $generator = new BarcodeGeneratorPNG();
 
-        $mpdf->Output('etiquetas.pdf', 'D');
-        exit;
-    }
-    
-    private function buildBarcodeImage($item, $companyName)
-    {
-        $fontPath = public_path('fonts/LiberationSans-Regular.ttf');
-        $finalWidth = 378;
-        $finalHeight = 295;
-        $padding = 18;
-        $lineSpacing = 12;
+            // Calcula el tamaño del código de barras igual que en showBarcodeLabel
+            $usableHeight = $height * 0.32;
+            $usableWidth = $width * 0.80;
+            $codeLength = strlen($item->internal_id);
+            $barcodeWidthFactor = $usableWidth / $codeLength / 2.2;
+            $barcodeWidthFactor = max(min($barcodeWidthFactor, 2), 0.5);
+            $barcodeHeightPx = intval($usableHeight * 3.78);
+            $barcodeHeightPx = max(min($barcodeHeightPx, 60), 12);
 
-        $image = imagecreatetruecolor($finalWidth, $finalHeight);
-        $white = imagecolorallocate($image, 255, 255, 255);
-        $black = imagecolorallocate($image, 0, 0, 0);
-        imagefill($image, 0, 0, $white);
+            $barcodeData = $generator->getBarcode(
+                $item->internal_id,
+                $generator::TYPE_CODE_128,
+                $barcodeWidthFactor,
+                $barcodeHeightPx
+            );
+            $barcodeBase64 = base64_encode($barcodeData);
 
-        // Función para ajustar el tamaño de fuente
-        $fitFontSize = function($texts, $maxWidth, $fontPath, $maxFontSize, $minFontSize = 15) {
-            // $texts puede ser array o string
-            if (!is_array($texts)) $texts = [$texts];
-            for ($size = $maxFontSize; $size >= $minFontSize; $size--) {
-                $totalWidth = 0;
-                foreach ($texts as $text) {
-                    $bbox = imagettfbbox($size, 0, $fontPath, $text);
-                    $totalWidth += abs($bbox[2] - $bbox[0]);
-                }
-                // Suma 8px de espacio entre textos si hay más de uno
-                $totalWidth += (count($texts) - 1) * 8;
-                if ($totalWidth <= $maxWidth) return $size;
+            $html = view('tenant.item.barcode_label', compact('item', 'companyName', 'barcodeBase64', 'fields', 'width', 'height'))->render();
+
+            if (!$first) {
+                $mpdf->AddPage();
             }
-            return $minFontSize;
-        };
-
-        // Título (empresa)
-        $title = $companyName;
-        $titleFontSize = $fitFontSize($title, $finalWidth - 30, $fontPath, 22, 15);
-        $bboxTitle = imagettfbbox($titleFontSize, 0, $fontPath, $title);
-        $titleWidth = abs($bboxTitle[2] - $bboxTitle[0]);
-        $titleHeight = abs($bboxTitle[7] - $bboxTitle[1]);
-        $titleX = ($finalWidth - $titleWidth) / 2;
-        $y = $padding + $titleHeight;
-        imagettftext($image, $titleFontSize, 0, $titleX, $padding + $titleHeight, $black, $fontPath, $title);
-        $y += $titleHeight + $lineSpacing;
-
-        // Bloque de detalles: nombre, categoría, marca, color, talla
-        $detailLines = [];
-        $mainLine = "{$item->name}";
-        if ($item->category && $item->category->name) {
-            $mainLine .= " | {$item->category->name}";
-        }
-        if ($item->brand && $item->brand->name) {
-            $mainLine .= " | {$item->brand->name}";
-        }
-        // Divide en líneas si es necesario
-        $maxLineWidth = $finalWidth - 30;
-        $words = explode(' ', $mainLine);
-        $currentLine = '';
-        foreach ($words as $word) {
-            $testLine = $currentLine ? $currentLine . ' ' . $word : $word;
-            $bbox = imagettfbbox(18, 0, $fontPath, $testLine);
-            $testWidth = abs($bbox[2] - $bbox[0]);
-            if ($testWidth > $maxLineWidth && $currentLine) {
-                $detailLines[] = $currentLine;
-                $currentLine = $word;
-            } else {
-                $currentLine = $testLine;
-            }
-        }
-        if ($currentLine) $detailLines[] = $currentLine;
-
-        // Color y talla en una línea aparte
-        $secondLine = '';
-        if ($item->color && $item->color->name) {
-            $secondLine .= "{$item->color->name}";
-        }
-        if ($item->size && $item->size->name) {
-            $secondLine .= ($secondLine ? " | " : "") . "{$item->size->name}";
-        }
-        if ($secondLine) $detailLines[] = $secondLine;
-
-        // Calcula el tamaño de fuente máximo para todas las líneas de detalles
-        $detailFontSize = $fitFontSize($detailLines, $maxLineWidth, $fontPath, 18, 15);
-
-        // Dibuja cada línea de detalles con el mismo tamaño
-        foreach ($detailLines as $line) {
-            $bboxLine = imagettfbbox($detailFontSize, 0, $fontPath, $line);
-            $lineWidth = abs($bboxLine[2] - $bboxLine[0]);
-            $lineHeight = abs($bboxLine[7] - $bboxLine[1]);
-            $lineX = ($finalWidth - $lineWidth) / 2;
-            imagettftext($image, $detailFontSize, 0, $lineX, $y + $lineHeight, $black, $fontPath, $line);
-            $y += $lineHeight + $lineSpacing;
+            $mpdf->WriteHTML($html);
+            $first = false;
         }
 
-        // Código de barras
-        $generator = new BarcodeGeneratorPNG();
-        $barcodeData = $generator->getBarcode($item->internal_id, $generator::TYPE_CODE_128, 2, 40);
-        $barcodeImg = imagecreatefromstring($barcodeData);
-        $barcodeWidth = imagesx($barcodeImg);
-        $barcodeHeight = imagesy($barcodeImg);
-        imagecopy(
-            $image,
-            $barcodeImg,
-            ($finalWidth - $barcodeWidth) / 2,
-            $y,
-            0,
-            0,
-            $barcodeWidth,
-            $barcodeHeight
-        );
-        $y += $barcodeHeight + $lineSpacing;
-        imagedestroy($barcodeImg);
-
-        // Código (ajuste de tamaño)
-        $codeText = $item->internal_id;
-        $fontSizeCode = $fitFontSize($codeText, $maxLineWidth, $fontPath, 16, 15);
-        $bboxCode = imagettfbbox($fontSizeCode, 0, $fontPath, $codeText);
-        $codeWidth = abs($bboxCode[2] - $bboxCode[0]);
-        $codeHeight = abs($bboxCode[7] - $bboxCode[1]);
-        $codeX = ($finalWidth - $codeWidth) / 2;
-        imagettftext($image, $fontSizeCode, 0, $codeX, $y + $codeHeight, $black, $fontPath, $codeText);
-        $y += $codeHeight + $lineSpacing;
-
-        // Precio: símbolo y número separados, tamaño ajustado
-        $currencySymbol = $item->currency_type ? $item->currency_type->symbol : 'S/';
-        $priceNumber = number_format($item->sale_unit_price, 2);
-        $priceFontSize = $fitFontSize([$currencySymbol, $priceNumber], $maxLineWidth, $fontPath, 18, 15);
-
-        // Calcula posiciones
-        $bboxSymbol = imagettfbbox($priceFontSize, 0, $fontPath, $currencySymbol);
-        $symbolWidth = abs($bboxSymbol[2] - $bboxSymbol[0]);
-        $symbolHeight = abs($bboxSymbol[7] - $bboxSymbol[1]);
-        $bboxNumber = imagettfbbox($priceFontSize, 0, $fontPath, $priceNumber);
-        $numberWidth = abs($bboxNumber[2] - $bboxNumber[0]);
-        $numberHeight = abs($bboxNumber[7] - $bboxNumber[1]);
-        $space = 8; // espacio fijo entre símbolo y número
-        $totalWidth = $symbolWidth + $space + $numberWidth;
-        $priceX = ($finalWidth - $totalWidth) / 2;
-        $priceY = $y + max($symbolHeight, $numberHeight);
-
-        // Dibuja símbolo y número
-        imagettftext($image, $priceFontSize, 0, $priceX, $priceY, $black, $fontPath, $currencySymbol);
-        imagettftext($image, $priceFontSize, 0, $priceX + $symbolWidth + $space, $priceY, $black, $fontPath, $priceNumber);
-
-        return $image;
+        return response($mpdf->Output('etiquetas.pdf', 'S'))
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="Labels_barcode.pdf"');
     }
 
 

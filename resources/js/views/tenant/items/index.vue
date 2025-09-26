@@ -22,7 +22,7 @@
             <div class="card-body">
                 <data-table :resource="resource" ref="dataTable">
                     <tr slot="heading" width="100%">
-                        <th>
+                        <th v-if="selectingBarcodes">
                             <el-checkbox
                                 class="hide-label-checkbox"
                                 v-model="selectAll"
@@ -43,14 +43,12 @@
                         <th class="text-right">Acciones</th>
                     </tr>
                     <tr slot-scope="{ index, row }" :class="{ disable_color : !row.active}">
-                        <td>
-                        <el-tooltip content="Seleccionar para imprimir código de barras" placement="top">
+                        <td v-if="selectingBarcodes">
                             <el-checkbox
-                            class="hide-label-checkbox"
-                            v-model="selectedItems"
-                            :label="row.id"
+                                class="hide-label-checkbox"
+                                v-model="selectedItems"
+                                :label="row.id"
                             ></el-checkbox>
-                        </el-tooltip>
                         </td>
                         <el-tooltip effect="dark" :content="`Stock actual: ${row.stock}`" placement="top">
                             <td>{{ index }}</td>
@@ -95,19 +93,45 @@
                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-warning" @click.prevent="duplicate(row.id)">Duplicar</button>
                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickDisable(row.id)" v-if="row.active">Inhabilitar</button>
                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-primary" @click.prevent="clickEnable(row.id)" v-else>Habilitar</button>
-                                <button type="button" class="btn waves-effect waves-light btn-xs btn-primary" @click.prevent="clickBarcode(row)">Cod. Barras</button>
+                                <button type="button" class="btn waves-effect waves-light btn-xs btn-primary" @click.prevent="downloadBarcodePng(row)"><i class="fa fa-barcode"></i>Cod. Barras</button>
+                                <button type="button" class="btn waves-effect waves-light btn-xs btn-success" @click.prevent="clickBarcodeConfig(row)"><i class="fa fa-cog"></i>Etiqueta</button>
+                                <!-- <button type="button" class="btn waves-effect waves-light btn-xs btn-success" @click.prevent="previewBarcode(row)">Ver Etiqueta</button> -->
                             </template>
                         </td>
                     </tr>
                 </data-table>
                 <div class="mt-3 text-right">
-                    <button type="button" class="btn btn-primary btn-sm"
+                    <button
+                        v-if="!selectingBarcodes"
+                        type="button"
+                        class="btn btn-primary btn-sm"
+                        @click.prevent="startSelectingBarcodes"
+                    >
+                        <i class="fa fa-barcode"></i> Seleccionar para imprimir etiquetas
+                    </button>
+                    <button
+                        v-else
+                        type="button"
+                        class="btn btn-danger btn-sm"
+                        @click.prevent="cancelSelectingBarcodes"
+                    >
+                        <i class="fa fa-times"></i> Cancelar selección
+                    </button>
+                    <button
+                        v-if="selectingBarcodes"
+                        type="button"
+                        class="btn btn-success btn-sm ml-2"
                         :disabled="selectedItems.length === 0"
-                        @click.prevent="printSelectedBarcodes">
-                        <i class="fa fa-barcode"></i> Imprimir Cod. Barras Seleccionados
+                        @click.prevent="openBarcodeConfigModal"
+                    >
+                        <i class="fa fa-cog"></i> Configurar e imprimir etiquetas Seleccionadas ({{ selectedItems.length }})
                     </button>
                 </div>
             </div>
+            <barcode-config
+                :show.sync="showBarcodeConfig"
+                :itemId="barcodeItemId">
+            </barcode-config>
 
             <items-form :showDialog.sync="showDialog"
                         :recordId="recordId"></items-form>
@@ -133,11 +157,12 @@
     import DataTable from '../../../components/DataTable.vue'
     import {deletable} from '../../../mixins/deletable'
     import {functions} from '@mixins/functions'
+    import BarcodeConfig from './barcode-config.vue';
 
     export default {
         props:['typeUser'],
         mixins: [deletable, functions],
-        components: {ItemsForm, ItemsImport, DataTable, WarehousesDetail, ItemsImportListPrice},
+        components: {ItemsForm, ItemsImport, DataTable, WarehousesDetail, ItemsImportListPrice, BarcodeConfig},
         data() {
             return {
                 showDialog: false,
@@ -149,9 +174,12 @@
                 warehousesDetail:[],
                 config: {},
                 selectedItems: [],
+                selectingBarcodes: false,
                 selectAll: false,
                 isIndeterminate: false,
                 items: [],
+                showBarcodeConfig: false,
+                barcodeItemId: null,
             }
         },
         created() {
@@ -175,6 +203,41 @@
             }
         },
         methods: {
+            startSelectingBarcodes() {
+                this.selectingBarcodes = true;
+                this.selectedItems = [];
+            },
+            cancelSelectingBarcodes() {
+                this.selectingBarcodes = false;
+                this.selectedItems = [];
+            },
+            openBarcodeConfigModal() {
+                if (this.selectedItems.length === 0) {
+                    this.$message.warning('Seleccione al menos un producto.');
+                    return;
+                }
+                this.barcodeItemId = [...this.selectedItems]; // pasa array de IDs
+                this.showBarcodeConfig = true;
+            },
+            clickBarcodeConfig(row) {
+                if(!row.internal_id){
+                    return this.$message.error('Para generar el código de barras debe registrar el código interno.');
+                }
+                this.barcodeItemId = row.id;
+                this.showBarcodeConfig = true;
+            },
+            downloadBarcodePng(row) {
+                if(!row.internal_id){
+                    return this.$message.error('Para generar el código de barras debe registrar el código interno.');
+                }
+                window.open(`/items/barcode/${row.id}`, '_blank');
+            },
+            previewBarcode(row) {
+                if(!row.internal_id){
+                    return this.$message.error('Para generar el código de barras debe registrar el código interno.');
+                }
+                window.open(`/items/barcode-label/${row.id}`, '_blank');
+            },
             toggleSelectAll(val) {
                 // Selecciona solo los productos visibles en la página actual
                 const visibleRecords = this.$refs.dataTable.records || [];
@@ -184,14 +247,6 @@
                     this.selectedItems = [];
                 }
                 this.isIndeterminate = false;
-            },
-            printSelectedBarcodes() {
-                if (this.selectedItems.length === 0) {
-                    this.$message.warning('Seleccione al menos un producto.');
-                    return;
-                }
-                // Abre la ruta para imprimir varios códigos de barras
-                window.open(`/${this.resource}/barcodes?ids=${this.selectedItems.join(',')}`, '_blank');
             },
             duplicate(id)
             {
@@ -242,14 +297,14 @@
                     this.$eventHub.$emit('reloadData')
                 )
             },
-            clickBarcode(row) {
+            // clickBarcode(row) {
 
-                if(!row.internal_id){
-                    return this.$message.error('Para generar el código de barras debe registrar el código interno.')
-                }
+            //     if(!row.internal_id){
+            //         return this.$message.error('Para generar el código de barras debe registrar el código interno.')
+            //     }
 
-                window.open(`/${this.resource}/barcode/${row.id}`)
-            },
+            //     window.open(`/${this.resource}/barcode/${row.id}`)
+            // },
             clickDeleteAll(){
 
                 this.destroyAll(`/${this.resource}/delete/all`).then(() =>
