@@ -99,6 +99,18 @@
                                 </el-input>
                             </template>
                         </div>
+                        <div class="col-lg-3 col-md-3 col-sm-12 pb-2" v-if="$attrs.showSendAllEvents">
+                            <el-button
+                                type="danger"
+                                plain
+                                icon="el-icon-upload"
+                                size="mini"
+                                @click="$emit('send-all-events')"
+                                style="margin-top: 2px; width: 100%;"
+                            >
+                                Enviar Todos los eventos Pendientes
+                            </el-button>
+                        </div>
                     </div>
                     <template v-if="search.column=='date_of_issue' && extraFilters">
                         <div class="row" v-if="applyFilter">
