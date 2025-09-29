@@ -99,6 +99,7 @@
                             <button v-if="row.state_type_id != '11'" type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickAnulate(row.id)">Anular</button>
                             <button v-if="row.state_type_id == '11'" type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickDelete(row.id)">Eliminar</button>
                             <a :href="`/${resource}/pdf/${row.id}`" type="button" class="btn waves-effect waves-light btn-xs btn-info" target="_blank">PDF</a>
+                            <el-button size="mini" type="success" class="ml-1" @click.prevent="openBarcodeConfigForPurchase(row)" title="Imprimir etiquetas de productos"><i class="fa fa-barcode"></i> Etiquetas</el-button>
 
                         </td>
                     </tr>
@@ -114,6 +115,10 @@
 
             <purchase-import :showDialog.sync="showImportDialog"></purchase-import>
         </div>
+        <barcode-config
+            :show.sync="showBarcodeConfig"
+            :itemId="barcodeItemIds">
+        </barcode-config>
 
 
         <purchase-payments
@@ -132,12 +137,13 @@
     import {deletable} from '../../../mixins/deletable'
     import PurchaseImport from './import.vue'
     import PurchasePayments from '@viewsModulePurchase/purchase_payments/payments.vue'
+    import BarcodeConfig from '../items/barcode-config.vue'
 
 
     export default {
         mixins: [deletable],
         // components: {DocumentsVoided, DocumentOptions, DataTable},
-        components: {DataTable, PurchaseImport, PurchasePayments},
+        components: {DataTable, PurchaseImport, PurchasePayments, BarcodeConfig},
         data() {
             return {
                 showDialogVoided: false,
@@ -146,6 +152,8 @@
                 showDialogOptions: false,
                 showDialogPurchasePayments: false,
                 showImportDialog: false,
+                showBarcodeConfig: false,
+                barcodeItemIds: [],
                 initSearch: {
                     column: 'date_of_issue',
                     value: this.getCurrentMonth()
@@ -190,6 +198,16 @@
         created() {
         },
         methods: {
+            openBarcodeConfigForPurchase(row) {
+                    console.log(row.items);
+                    // Extrae los IDs de los productos de la compra
+                    this.barcodeItemIds = (row.items || []).map(it => it.item_id).filter(Boolean);
+                    if (this.barcodeItemIds.length === 0) {
+                        this.$message.warning('No hay productos en esta compra.');
+                        return;
+                    }
+                    this.showBarcodeConfig = true;
+                },
             clickPurchasePayment(recordId) {
                 this.recordId = recordId;
                 this.showDialogPurchasePayments = true
