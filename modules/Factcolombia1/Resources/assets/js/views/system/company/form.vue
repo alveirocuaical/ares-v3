@@ -140,8 +140,15 @@
 
                     <div class="col-md-3">
                         <div class="form-group" :class="{'has-danger': (errors.ica_rate)}">
-                            <label class="control-label">Tasa ICA</label>
-                            <el-input  v-model="form.ica_rate"></el-input>
+                            <label class="control-label">
+                                Tasa ICA
+                                <el-tooltip class="item" effect="dark" content="Ingrese la tasa en milésimas. Ejemplo: 8.5 = 8.5‰" placement="top">
+                                    <i class="fa fa-info-circle" style="margin-left: 5px; cursor: pointer;"></i>
+                                </el-tooltip>
+                            </label>
+                            <el-input v-model="form.ica_rate">
+                                <template slot="append">‰</template>
+                            </el-input>
                             <small class="form-control-feedback" v-if="errors.ica_rate" v-text="errors.ica_rate[0]"></small>
                         </div>
                     </div>
