@@ -448,6 +448,7 @@ if ($hostname) {
            Route::get('pos', 'Tenant\PosController@index')->name('tenant.pos.index');
            Route::get('pos/configuration', 'Tenant\PosController@configuration')->name('tenant.pos.configuration');
            Route::post('pos/configuration', 'Tenant\PosController@configuration_store');
+           Route::post('/client/configuration/storeResolutionFromModal', 'Tenant\ConfigurationController@storeResolutionFromModal');
 
            Route::get('pos_full', 'Tenant\PosController@index_full')->name('tenant.pos_full.index');
 

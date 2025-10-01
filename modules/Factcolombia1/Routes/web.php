@@ -12,6 +12,7 @@ if($current_hostname) {
             Route::delete('/client/configuration/storeServiceCompanieResolution/{resolution}', 'Tenant\ConfigurationController@destroy');
             Route::post('/client/configuration/store-service-software-payroll', 'Tenant\ConfigurationController@storeServiceSoftwarePayroll');
             Route::post('/client/configuration/store-service-software-eqdocs', 'Tenant\ConfigurationController@storeServiceSoftwareEqDocs');
+            Route::post('/client/configuration/storeResolutionFromModal', 'Tenant\ConfigurationController@storeServiceCompanieResolution');
 
             Route::prefix('co-documents')->group(function () {
                 Route::get('', 'Tenant\DocumentController@index')->name('tenant.co-documents.index');
