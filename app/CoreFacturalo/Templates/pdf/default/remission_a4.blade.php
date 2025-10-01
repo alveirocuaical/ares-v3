@@ -7,6 +7,11 @@
     $total_payments = $payments->sum('payment');
     $is_paid = $total_payments == $document->total;
     $advanced_configuration = \Modules\Factcolombia1\Models\TenantService\AdvancedConfiguration::first();
+    $seller_name = null;
+    if($document->seller_id){
+        $seller = \App\Models\Tenant\Seller::find($document->seller_id);
+        $seller_name = $seller ? $seller->full_name : '';
+    }
 @endphp
 <html>
 <head>
@@ -125,6 +130,12 @@
                         <td>Medio de Pago:</td>
                         <td>{{$document->payment_method->name}}</td>
                     </tr>
+                    @if($seller_name)
+                        <tr>
+                            <td>Vendedor:</td>
+                            <td>{{ $seller_name }}</td>
+                        </tr>
+                    @endif
                     @if($document->time_days_credit)
                     <tr>
                         <td>Plazo Para Pagar:</td>

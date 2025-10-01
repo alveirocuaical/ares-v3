@@ -856,6 +856,9 @@ class DocumentController extends Controller
                     $service_invoice['payment_form']['payment_due_date'] = date('Y-m-d', strtotime($request->date_expiration));
                 $service_invoice['payment_form']['duration_measure'] = $request->time_days_credit;
             }
+            if ($request->has('seller')) {
+                $service_invoice['seller'] = $request->seller;
+            }
             $service_invoice['customer']['dv'] = $this->validarDigVerifDIAN($service_invoice['customer']['identification_number']);
             // $service_invoice['legal_monetary_totals']['line_extension_amount'] = "2350000.00";
 

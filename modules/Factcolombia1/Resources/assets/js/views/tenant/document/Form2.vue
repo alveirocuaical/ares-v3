@@ -1328,6 +1328,17 @@ export default {
 
             this.form.service_invoice = await this.createInvoiceService();
             // return
+            if (this.form.seller_id) {
+                const seller = this.sellers.find(s => s.id === this.form.seller_id);
+                if (seller) {
+                    this.form.seller = {
+                        id: seller.id,
+                        name: seller.full_name,
+                    };
+                }
+            } else {
+                delete this.form.seller;
+            }
             this.loading_submit = true
             //                console.log(JSON.stringify(this.form))
             this.$http.post(`/${this.resource}`, this.form).then(response => {

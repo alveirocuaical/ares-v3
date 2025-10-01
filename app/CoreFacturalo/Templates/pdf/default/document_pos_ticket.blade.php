@@ -41,6 +41,11 @@
     }
     $total_payment = $document->payments->sum('payment');
     $balance = ($document->total - $total_payment) - $document->payments->sum('change');
+    $seller_name = null;
+    if(isset($document->seller_id)){
+        $seller = \App\Models\Tenant\Seller::find($document->seller_id);
+        $seller_name = $seller ? $seller->full_name : '';
+    }
 @endphp
 <html>
 <head>
@@ -48,7 +53,7 @@
 </head>
 <body>
 
-@if($filename_logo != "")
+@if($filename_logo != "" && file_exists($filename_logo))
     <div class="text-center company_logo_box">
         <img src="data:{{mime_content_type($filename_logo)}};base64, {{base64_encode(file_get_contents($filename_logo))}}" alt="{{$company->name}}" class="company_logo" style="max-width: 150px;">
     </div>
@@ -118,6 +123,12 @@
     <tr>
         <td> {{--<h6>Tipo Venta: CONTADO 0 días </h6>--}}</td>
     </tr>
+    @if($seller_name)
+        <tr>
+            <td class="align-top"><h6>Vendedor:</h6></td>
+            <td colspan="3"><h6>{{ $seller_name }}</h6></td>
+        </tr>
+    @endif
 </table>
 <table class="full-width">
     <thead class="">

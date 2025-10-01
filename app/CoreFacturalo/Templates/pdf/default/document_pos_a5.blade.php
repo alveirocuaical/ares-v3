@@ -24,6 +24,11 @@
         $output = new Output\Png();
         $imagenCodigoQR = $output->output($codigoQR, 180);
     }
+    $seller_name = null;
+    if(isset($document->seller_id)){
+        $seller = \App\Models\Tenant\Seller::find($document->seller_id);
+        $seller_name = $seller ? $seller->full_name : '';
+    }
 @endphp
 <html>
 <head>
@@ -33,7 +38,7 @@
 <body>
 <table class="full-width">
     <tr>
-        @if($filename_logo != "")
+        @if($filename_logo != "" && file_exists($filename_logo))
             <td width="20%">
                 <div class="company_logo_box">
                     <img src="data:{{mime_content_type($filename_logo)}};base64, {{base64_encode(file_get_contents($filename_logo))}}" alt="{{$company->name}}" class="company_logo" style="max-width: 150px;">
@@ -168,6 +173,12 @@
             {{ $document->user->name }}
         </td>
     </tr>
+    @if($seller_name)
+        <tr>
+            <td class="align-top">Vendedor:</td>
+            <td colspan="3">{{ $seller_name }}</td>
+        </tr>
+    @endif
 </table>
 
 <table class="full-width mt-3">
