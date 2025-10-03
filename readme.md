@@ -1,5 +1,7 @@
 # **Facturador PRO 3**
+# **Facturador PRO 3**
 
+### Instalación de PRO3 (con api incluido)
 ### Instalación de PRO3 (con api incluido)
 
  Linux - Docker - SSL opcional <br>
@@ -8,6 +10,7 @@
 * [script para ubuntu 20](https://git.buho.la/facturalatam/co-facturadorpro3/-/snippets/44#L1) <br>
 * [script para ubuntu 22](https://git.buho.la/facturalatam/co-facturadorpro3/-/snippets/44#L2) <br>
 
+### Instalación de PRO3 (sin api incluido)
 ### Instalación de PRO3 (sin api incluido)
 
 * Linux - Ubuntu 20 - Docker - SSL opcional<br>
@@ -44,15 +47,19 @@
 
 
 ### Actualización del PRO 3
+### Actualización del PRO 3
 
 * Linux - Ubuntu 20 -Docker<br>
 [ver pasos](https://git.buho.la/facturalatam/co-facturadorpro3/-/blob/master/proceso_de_actualizacion_docker.md "ver")
+[ver pasos](https://git.buho.la/facturalatam/co-facturadorpro3/-/blob/master/proceso_de_actualizacion_docker.md "ver")
 * Windows - Laragon - entorno local<br>
+[ver pasos](https://git.buho.la/facturalatam/co-facturadorpro3/-/snippets/5#user-content-pasos-para-actualizar "ver")
 [ver pasos](https://git.buho.la/facturalatam/co-facturadorpro3/-/snippets/5#user-content-pasos-para-actualizar "ver")
 
 ### Actualización del SSL
 
 * Docker<br>
+[ver pasos y script](https://git.buho.la/facturalatam/co-facturadorpro3/-/snippets/1 "ver")
 [ver pasos y script](https://git.buho.la/facturalatam/co-facturadorpro3/-/snippets/1 "ver")
 
 
@@ -83,6 +90,7 @@ Acceso red local - laragon: [Guía](https://docs.google.com/document/d/13kOE5N5L
 
 ### Impresión directa con QzTray
 
+Ver los pasos en la [wiki](https://git.buho.la/facturalatam/co-facturadorpro3/-/wikis/qztray-instalacion) <br>
 Ver los pasos en la [wiki](https://git.buho.la/facturalatam/co-facturadorpro3/-/wikis/qztray-instalacion) <br>
 
 ### APP Android

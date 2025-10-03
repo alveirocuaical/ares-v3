@@ -755,6 +755,7 @@ class DocumentController extends Controller
             if ($request->filled('foot_note')) {
                 $service_invoice['foot_note'] = $request->foot_note;
             }
+            $service_invoice['is_tirilla2'] = $request->input('is_tirilla2', false);
             // if ($request->filled('notes')) {
             //     $service_invoice['notes'] = $request->notes;
             // }
@@ -1069,7 +1070,7 @@ class DocumentController extends Controller
             }
 
             $this->document = DocumentHelper::createDocument($request, $nextConsecutive, $correlative_api, $this->company, $response, $response_status, $company->type_environment_id);
-            $payments = (new DocumentHelper())->savePayments($this->document, $request->payments);
+            (new DocumentHelper())->savePayments($this->document, $request->payments,$request);
 
             // Registrar asientos contables
             $this->registerAccountingSaleEntries($this->document);
@@ -1239,6 +1240,7 @@ class DocumentController extends Controller
             $service_invoice = $request->service_invoice;
 
             $service_invoice['number'] = $correlative_api;
+            $service_invoice['is_tirilla2'] = $request->input('is_tirilla2', false);
             $service_invoice['prefix'] = $request->prefix;
             $service_invoice['resolution_number'] = $request->resolution_number;
             $service_invoice['head_note'] = "V I S T A   P R E E L I M I N A R  --  V I S T A   P R E E L I M I N A R  --  V I S T A   P R E E L I M I N A R  --  V I S T A   P R E E L I M I N A R";
@@ -1407,6 +1409,7 @@ class DocumentController extends Controller
             $note_service['tarifaica'] = $datoscompany->ica_rate;
             $note_service['actividadeconomica'] = $datoscompany->economic_activity_code;
             $note_service['notes'] = $request->observation;
+            $note_service['is_tirilla2'] = $request->input('is_tirilla2', false);
             $sucursal = \App\Models\Tenant\Establishment::where('id', auth()->user()->establishment_id)->first();
 
             if(file_exists(storage_path('sendmail.api')))
@@ -1578,6 +1581,17 @@ class DocumentController extends Controller
                 'xml' => $this->getFileName(),
                 'cufe' => $response_model->cude
             ]);
+
+            if ($request->reference_id && $this->document->type_document_id == 3) {
+                $referenced_document = Document::find($request->reference_id);
+                if ($referenced_document) {
+                    DocumentHelper::handlePaymentsOnCreditNote(
+                        $referenced_document,
+                        $request->note_concept_id,
+                        $request->total
+                    );
+                }
+            }
 
             // Registrar asientos contables
             if($this->document->type_document_id == 3 ){
@@ -2735,6 +2749,7 @@ class DocumentController extends Controller
             $service_invoice['time'] = date('H:i:s');
             $service_invoice['payment_form']['payment_form_id'] = $request->payment_form_id;
             $service_invoice['payment_form']['payment_method_id'] = $request->payment_method_id;
+            $service_invoice['is_tirilla2'] = $request->input('is_tirilla2', false);
             if($request->payment_form_id == '1')
                 $service_invoice['payment_form']['payment_due_date'] = date('Y-m-d');
             else
@@ -2893,7 +2908,7 @@ class DocumentController extends Controller
 
             $request->merge(['state_document_id' => $state_document_id]);
             $this->document = DocumentHelper::createDocument($request, $nextConsecutive, $correlative_api, $this->company, $response, $response_status, $company->type_environment_id);
-            $payments = (new DocumentHelper())->savePayments($this->document, $request->payments);
+            (new DocumentHelper())->savePayments($this->document, $request->payments,$request);
 
 
         }

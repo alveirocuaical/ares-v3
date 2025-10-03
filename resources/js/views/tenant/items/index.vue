@@ -28,9 +28,18 @@
                 <h3 class="my-0">Listado de productos</h3>
             </div> -->
             <div class="card-body">
-                <data-table :resource="resource">
+                <data-table :resource="resource" ref="dataTable">
                     <tr slot="heading" width="100%">
                         <th>ID</th>
+                        <th v-if="selectingBarcodes">
+                            <el-checkbox
+                                class="hide-label-checkbox"
+                                v-model="selectAll"
+                                @change="toggleSelectAll"
+                                :indeterminate="isIndeterminate"
+                            ></el-checkbox>
+                        </th>
+                        <th>#</th>
                         <th>Cód. Interno</th>
                         <th>Unidad</th>
                         <th>Nombre</th>
@@ -128,7 +137,38 @@
                       </el-tooltip>
                     </template>
                 </data-table>
+                <div class="mt-3 text-right">
+                    <button
+                        v-if="!selectingBarcodes"
+                        type="button"
+                        class="btn btn-primary btn-sm"
+                        @click.prevent="startSelectingBarcodes"
+                    >
+                        <i class="fa fa-barcode"></i> Seleccionar para imprimir etiquetas
+                    </button>
+                    <button
+                        v-else
+                        type="button"
+                        class="btn btn-danger btn-sm"
+                        @click.prevent="cancelSelectingBarcodes"
+                    >
+                        <i class="fa fa-times"></i> Cancelar selección
+                    </button>
+                    <button
+                        v-if="selectingBarcodes"
+                        type="button"
+                        class="btn btn-success btn-sm ml-2"
+                        :disabled="selectedItems.length === 0"
+                        @click.prevent="openBarcodeConfigModal"
+                    >
+                        <i class="fa fa-cog"></i> Configurar e imprimir etiquetas Seleccionadas ({{ selectedItems.length }})
+                    </button>
+                </div>
             </div>
+            <barcode-config
+                :show.sync="showBarcodeConfig"
+                :itemId="barcodeItemId">
+            </barcode-config>
 
             <items-form :showDialog.sync="showDialog"
                         :recordId="recordId"></items-form>
@@ -164,11 +204,12 @@
     import DataTable from '../../../components/DataTable.vue'
     import {deletable} from '../../../mixins/deletable'
     import {functions} from '@mixins/functions'
+    import BarcodeConfig from './barcode-config.vue';
 
     export default {
         props:['typeUser'],
         mixins: [deletable, functions],
-        components: {ItemsForm, ItemsImport, DataTable, WarehousesDetail, ItemsImportListPrice},
+        components: {ItemsForm, ItemsImport, DataTable, WarehousesDetail, ItemsImportListPrice, BarcodeConfig},
         data() {
             return {
                 showDialog: false,
@@ -178,7 +219,14 @@
                 resource: 'items',
                 recordId: null,
                 warehousesDetail:[],
-                config: {}
+                config: {},
+                selectedItems: [],
+                selectingBarcodes: false,
+                selectAll: false,
+                isIndeterminate: false,
+                items: [],
+                showBarcodeConfig: false,
+                barcodeItemId: null,
             }
         },
         created() {
@@ -186,10 +234,70 @@
                 this.config = response.data.data
             })
         },
+        watch: {
+            selectedItems(newVal) {
+                const visibleRecords = this.$refs.dataTable.records || [];
+                if (newVal.length === 0) {
+                    this.selectAll = false;
+                    this.isIndeterminate = false;
+                } else if (newVal.length === visibleRecords.length) {
+                    this.selectAll = true;
+                    this.isIndeterminate = false;
+                } else {
+                    this.selectAll = false;
+                    this.isIndeterminate = true;
+                }
+            }
+        },
         methods: {
             formatStock(value) {
                 if (value == null) return '0.00'
                 return parseFloat(value).toFixed(2)
+            },
+            startSelectingBarcodes() {
+                this.selectingBarcodes = true;
+                this.selectedItems = [];
+            },
+            cancelSelectingBarcodes() {
+                this.selectingBarcodes = false;
+                this.selectedItems = [];
+            },
+            openBarcodeConfigModal() {
+                if (this.selectedItems.length === 0) {
+                    this.$message.warning('Seleccione al menos un producto.');
+                    return;
+                }
+                this.barcodeItemId = [...this.selectedItems]; // pasa array de IDs
+                this.showBarcodeConfig = true;
+            },
+            clickBarcodeConfig(row) {
+                if(!row.internal_id){
+                    return this.$message.error('Para generar el código de barras debe registrar el código interno.');
+                }
+                this.barcodeItemId = row.id;
+                this.showBarcodeConfig = true;
+            },
+            downloadBarcodePng(row) {
+                if(!row.internal_id){
+                    return this.$message.error('Para generar el código de barras debe registrar el código interno.');
+                }
+                window.open(`/items/barcode/${row.id}`, '_blank');
+            },
+            previewBarcode(row) {
+                if(!row.internal_id){
+                    return this.$message.error('Para generar el código de barras debe registrar el código interno.');
+                }
+                window.open(`/items/barcode-label/${row.id}`, '_blank');
+            },
+            toggleSelectAll(val) {
+                // Selecciona solo los productos visibles en la página actual
+                const visibleRecords = this.$refs.dataTable.records || [];
+                if (val) {
+                    this.selectedItems = visibleRecords.map(item => item.id);
+                } else {
+                    this.selectedItems = [];
+                }
+                this.isIndeterminate = false;
             },
             duplicate(id)
             {
@@ -240,14 +348,14 @@
                     this.$eventHub.$emit('reloadData')
                 )
             },
-            clickBarcode(row) {
+            // clickBarcode(row) {
 
-                if(!row.internal_id){
-                    return this.$message.error('Para generar el código de barras debe registrar el código interno.')
-                }
+            //     if(!row.internal_id){
+            //         return this.$message.error('Para generar el código de barras debe registrar el código interno.')
+            //     }
 
-                window.open(`/${this.resource}/barcode/${row.id}`)
-            },
+            //     window.open(`/${this.resource}/barcode/${row.id}`)
+            // },
             clickDeleteAll(){
 
                 this.destroyAll(`/${this.resource}/delete/all`).then(() =>
@@ -258,3 +366,15 @@
         }
     }
 </script>
+<style scoped>
+.hide-label-checkbox >>> .el-checkbox__label {
+  display: none !important;
+}
+.hide-label-checkbox >>> .el-checkbox__inner {
+  border-color: #007bff !important;
+}
+.hide-label-checkbox.is-checked >>> .el-checkbox__inner {
+  background-color: #007bff !important;
+  border-color: #007bff !important;
+}
+</style>
