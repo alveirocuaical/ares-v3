@@ -705,7 +705,7 @@
                     lots:[],
                     attributes: [],
                     series_enabled: false,
-                    tax_id: 1,
+                    tax_id: 2,
                     purchase_tax_id: 1,
                     currency_type_id: 170,
                     model: null,
@@ -820,6 +820,11 @@
                         return this.$message.error('La cantidad de series registradas son diferentes al stock');
 
                 }*/
+               // Validación: el precio de venta no puede ser menor al de compra
+                if (parseFloat(this.form.sale_unit_price) < parseFloat(this.form.purchase_unit_price)) {
+                    this.$message.error('El precio de venta no puede ser menor al precio de compra');
+                    return;
+                }
 
                 if(!this.recordId && this.form.lots_enabled){
 

@@ -1,7 +1,7 @@
 <table class="combined-table">
     <thead>
         <tr>
-            <th colspan="6">Información Básica</th>
+            <th colspan="8">Información Básica</th>
             <th colspan="{{ 5 + ($taxes->count() * 2) }}">Detalles Financieros</th>
             @if($retention_types->count())
                 <th colspan="2">Retenciones</th>
@@ -14,6 +14,8 @@
             <th>PREFIJO</th>
             <th>IDENTIFICACIÓN</th>
             <th>NOMBRE</th>
+            <th>CORREO</th>
+            <th>Telefono</th>
             <th>DIRECCIÓN</th>
             <th>Total/Excento</th>
             <th>Descuento</th>
@@ -35,6 +37,7 @@
     </thead>
     <tbody>
         @php
+            use App\CoreFacturalo\Helpers\Number\NumberLetter;
             $total = 0;
             $net_total = 0;
             $total_exempt = 0;
@@ -133,15 +136,21 @@
                 <td class="celda">{{ $row['number_full'] }}</td>
                 <td class="celda">{{ $customer ? $customer->number : ($row['customer_number'] ?? '') }}</td>
                 <td class="celda">{{ $customer ? $customer->name : ($row['customer_name'] ?? '') }}</td>
+                @php
+                    $email = $customer ? $customer->email : ($row['customer_email'] ?? '');
+                    $email_formatted = str_replace('@', '<br>@', e($email));
+                @endphp
+                <td class="celda correo-cell">{!! $email_formatted !!}</td>
+                <td class="celda">{{ $customer ? $customer->telephone : ($row['customer_telephone'] ?? '') }}</td>
                 <td class="celda">{{ $customer ? $customer->address : ($row['customer_address'] ?? '') }}</td>
-                <td class="celda text-right-td">{{ number_format(floatval(str_replace(',', '', $row['total_exempt'])) * $multiplier, 2, '.', '') }}</td>
-                <td class="celda text-right-td">{{ number_format(floatval(str_replace(',', '', ($row['total_discount'] ?? 0))) * $multiplier, 2, '.', '') }}</td>
+                <td class="celda text-right-td">{{ NumberLetter::numberFormat(floatval(str_replace(',', '', $row['total_exempt'])) * $multiplier, 2, '.', '') }}</td>
+                <td class="celda text-right-td">{{ NumberLetter::numberFormat(floatval(str_replace(',', '', ($row['total_discount'] ?? 0))) * $multiplier, 2, '.', '') }}</td>
                 @foreach($taxes as $tax)
                     @php
                         $item_values = $value->getItemValuesByTax($tax->id);
                         $base_amount = floatval(str_replace(',', '', $item_values['taxable_amount'])) * $multiplier;
                     @endphp
-                    <td class="celda text-right-td">{{ number_format($base_amount, 2, '.', '') }}</td>
+                    <td class="celda text-right-td">{{ NumberLetter::numberFormat($base_amount, 2, '.', '') }}</td>
                 @endforeach
                 <td class="celda">{{ $tax_names }}</td>
                 @foreach($taxes as $tax)
@@ -150,35 +159,35 @@
                         $tax_amount = floatval(str_replace(',', '', $item_values['tax_amount'])) * $multiplier;
                         $tax_totals_by_type[$tax->id] += $tax_amount;
                     @endphp
-                    <td class="celda text-right-td">{{ number_format($tax_amount, 2, '.', '') }}</td>
+                    <td class="celda text-right-td">{{ NumberLetter::numberFormat($tax_amount, 2, '.', '') }}</td>
                 @endforeach
-                <td class="celda text-right-td">{{ number_format($tax_totals['tax'], 2, '.', '') }}</td>
-                <td class="celda text-right-td">{{ number_format(floatval(str_replace(',', '', $row['net_total'])) * $multiplier + $tax_totals['tax'], 2, '.', '') }}</td>
+                <td class="celda text-right-td">{{ NumberLetter::numberFormat($tax_totals['tax'], 2, '.', '') }}</td>
+                <td class="celda text-right-td">{{ NumberLetter::numberFormat(floatval(str_replace(',', '', $row['net_total'])) * $multiplier + $tax_totals['tax'], 2, '.', '') }}</td>
                 @if($retention_types->count())
                     <td class="celda text-right-td retencion-cell">
                         {{ $retention_names_str }}
                     </td>
                     <td class="celda text-right-td">
-                        {{ $retention_sum != 0 ? number_format($retention_sum, 2, '.', '') : '' }}
+                        {{ $retention_sum != 0 ? NumberLetter::numberFormat($retention_sum, 2, '.', '') : '' }}
                     </td>
                 @endif
-                <td class="celda text-right-td">{{ number_format(floatval(str_replace(',', '', $row['total'])) * $multiplier, 2, '.', '') }}</td>
+                <td class="celda text-right-td">{{ NumberLetter::numberFormat(floatval(str_replace(',', '', $row['total'])) * $multiplier, 2, '.', '') }}</td>
             </tr>
         @endforeach
 
         <tr>
-            <th colspan="6" class="celda text-right-td">TOTALES</th>
-            <th>{{ number_format($total_exempt, 2, '.', '') }}</th>
-            <th>{{ number_format($total_discount, 2, '.', '') }}</th>
+            <th colspan="8" class="celda text-right-td">TOTALES</th>
+            <th>{{ NumberLetter::numberFormat($total_exempt, 2, '.', '') }}</th>
+            <th>{{ NumberLetter::numberFormat($total_discount, 2, '.', '') }}</th>
             @foreach($taxes as $tax)
-                <th>{{ number_format($base_totals_by_type[$tax->id], 2, '.', '') }}</th>
+                <th>{{ NumberLetter::numberFormat($base_totals_by_type[$tax->id], 2, '.', '') }}</th>
             @endforeach
             <th></th>
             @foreach($taxes as $tax)
-                <th>{{ number_format($tax_totals_by_type[$tax->id], 2, '.', '') }}</th>
+                <th>{{ NumberLetter::numberFormat($tax_totals_by_type[$tax->id], 2, '.', '') }}</th>
             @endforeach
-            <th>{{ number_format($total_tax_amount, 2, '.', '') }}</th>
-            <th>{{ number_format($total_tax_base + $total_tax_amount, 2, '.', '') }}</th>
+            <th>{{ NumberLetter::numberFormat($total_tax_amount, 2, '.', '') }}</th>
+            <th>{{ NumberLetter::numberFormat($total_tax_base + $total_tax_amount, 2, '.', '') }}</th>
             @if($retention_types->count())
                 <th class="celda text-right-td retencion-cell">
                     @php
@@ -196,10 +205,10 @@
                             $total_retention_sum += $retention_totals[$ret['id']];
                         }
                     @endphp
-                    {{ $total_retention_sum != 0 ? number_format($total_retention_sum, 2, '.', '') : '' }}
+                    {{ $total_retention_sum != 0 ? NumberLetter::numberFormat($total_retention_sum, 2, '.', '') : '' }}
                 </th>
             @endif
-            <th>{{ number_format($total, 2, '.', '') }}</th>
+            <th>{{ NumberLetter::numberFormat($total, 2, '.', '') }}</th>
         </tr>
     </tbody>
 </table>

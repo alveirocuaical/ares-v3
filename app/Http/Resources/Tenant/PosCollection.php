@@ -43,6 +43,7 @@ class PosCollection extends ResourceCollection
                 'unit_type_id' => $row->unit_type_id,
                 'calculate_quantity' => (bool) $row->calculate_quantity,
                 'is_set' => (bool) $row->is_set,
+                'is_favorite' => (bool) $row->is_favorite,
                 'tax_id' => $row->tax_id,
                 'edit_unit_price' => false,
                 'aux_quantity' => 1,
@@ -56,6 +57,7 @@ class PosCollection extends ResourceCollection
                 }),
                 'warehouses' => collect($row->warehouses)->transform(function ($row) {
                     return [
+                        'warehouse_id' => $row->warehouse_id,
                         'warehouse_description' => $row->warehouse->description,
                         'stock' => $row->stock,
                     ];

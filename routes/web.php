@@ -290,6 +290,12 @@ if ($hostname) {
             Route::post('unit_types', 'Tenant\UnitTypeController@store');
             Route::delete('unit_types/{code}', 'Tenant\UnitTypeController@destroy');
 
+            // Unidades Colombia
+            Route::get('type_units/records', 'Tenant\TypeUnitController@records');
+            Route::get('type_units/record/{id}', 'Tenant\TypeUnitController@record');
+            Route::post('type_units', 'Tenant\TypeUnitController@store');
+            Route::delete('type_units/{id}', 'Tenant\TypeUnitController@destroy');
+
             //Detractions
             Route::get('detraction_types/records', 'Tenant\DetractionTypeController@records');
             Route::get('detraction_types/tables', 'Tenant\DetractionTypeController@tables');
@@ -464,6 +470,7 @@ if ($hostname) {
            //WhatsApp
            Route::post('pos/whatsapp/config', 'Tenant\PosController@saveWhatsappConfig');
            Route::get('pos/whatsapp/config', 'Tenant\PosController@getWhatsappConfig');
+           Route::post('pos/toggle-favorite/{item_id}', 'Tenant\PosController@toggle_favorite');
            Route::post('pos/whatsapp/send', 'Tenant\PosController@sendWhatsappPdf');
            Route::prefix('quotations')->group(function() {
             Route::post('whatsapp/send', 'Tenant\PosController@sendWhatsappPdf');

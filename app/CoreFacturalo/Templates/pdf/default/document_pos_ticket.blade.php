@@ -54,7 +54,7 @@
 
 @if($filename_logo != "" && file_exists($filename_logo))
     <div class="text-center company_logo_box">
-        <img src="data:{{mime_content_type($filename_logo)}};base64, {{base64_encode(file_get_contents($filename_logo))}}" alt="{{$company->name}}" class="company_logo" style="max-width: 150px;">
+        <img src="data:{{mime_content_type($filename_logo)}};base64,{{base64_encode(file_get_contents($filename_logo))}}" alt="{{$company->name}}" class="company_logo" style="max-width: 150px;">
     </div>
 @endif
 <table class="full-width">

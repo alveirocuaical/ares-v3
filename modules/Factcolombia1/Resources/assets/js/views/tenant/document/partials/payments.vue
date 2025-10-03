@@ -118,12 +118,17 @@
                             <tfoot>
                             <tr>
                                 <td colspan="6" class="text-right">TOTAL PAGADO</td>
-                                <td class="text-right">{{ document.total_paid }}</td>
+                                <td class="text-right">{{ document.total_paid | numberFormat }}</td>
                                 <td></td>
                             </tr>
                             <tr>
                                 <td colspan="6" class="text-right">TOTAL A PAGAR</td>
-                                <td class="text-right">{{ document.total }}</td>
+                                <td class="text-right">{{ document.total | numberFormat }}</td>
+                                <td></td>
+                            </tr>
+                            <tr v-if="document.total_notas_credito && document.total_notas_credito > 0">
+                                <td colspan="6" class="text-right">NOTAS DE CRÉDITO</td>
+                                <td class="text-right">{{ document.total_notas_credito }}</td>
                                 <td></td>
                             </tr>
                             <tr v-if="document.total_notas_credito && document.total_notas_credito > 0">

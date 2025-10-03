@@ -29,7 +29,7 @@
                 </el-dropdown> -->
             </div>
             <div class="card-body ">
-                <data-table :resource="resource" :init-search="initSearch">
+                <data-table :resource="resource" :init-search="initSearch" :extra-filters="true">
                     <tr slot="heading">
                         <th>#</th>
                         <th class="text-center">Fecha Emisión</th>
@@ -62,11 +62,11 @@
                         <!-- <td class="text-center">{{ row.acknowledgment_received }}</td> -->
                         <td class="text-center">{{ row.currency_name }}</td>
 
-                        <td class="text-right">{{ getFormatDecimal(row.sale) }}</td>
-                        <td class="text-right">{{ getFormatDecimal(row.total_discount) }}</td>
-                        <td class="text-right">{{ getFormatDecimal(row.total_tax) }}</td>
-                        <td class="text-right">{{ getFormatDecimal(row.subtotal) }}</td>
-                        <td class="text-right">{{ getFormatDecimal(row.total) }}</td>
+                        <td class="text-right">{{ row.sale | numberFormat }}</td>
+                        <td class="text-right">{{ row.total_discount | numberFormat }}</td>
+                        <td class="text-right">{{ row.total_tax | numberFormat }}</td>
+                        <td class="text-right">{{ row.subtotal | numberFormat }}</td>
+                        <td class="text-right">{{ row.total | numberFormat }}</td>
 
                         <td class="text-center">
                             <template v-if="row.type_document_name !== 'Nota crédito'">

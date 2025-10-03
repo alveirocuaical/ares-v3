@@ -37,6 +37,20 @@ Vue.prototype.$removeStorage = function(name){
     localStorage.removeItem(name)
 }
 
+Vue.filter('numberFormat', function (value) {
+  if (value === undefined || value === null) return '0,00';
+  if (typeof value === 'string') {
+    if (value.match(/^\d{1,3}(,\d{3})*\.\d{2}$/)) {
+      value = value.replace(/,/g, '');
+    }
+    else if (value.match(/^\d{1,3}(\.\d{3})*,\d{2}$/)) {
+      value = value.replace(/\./g, '').replace(',', '.');
+    }
+  }
+  if (isNaN(value)) return '0,00';
+  return Number(value).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+});
+
 // Vuetify es
 // Vue.use(Vuetify, {
 //     lang: {
@@ -121,6 +135,7 @@ Vue.component('tenant-configuration-documents', require('@viewsModuleProColombia
 Vue.component('tenant-configuration-change-ambient', require('@viewsModuleProColombia/tenant/configuration/Production.vue'))
 Vue.component('tenant-configuration-software-payroll', require('@viewsModuleProColombia/tenant/configuration/SoftwarePayroll.vue'));
 Vue.component('tenant-configuration-software-eqdocs', require('@viewsModuleProColombia/tenant/configuration/SoftwareEqDocs.vue'));
+Vue.component('tenant-configuration-whatsapp-api', require('@viewsModuleProColombia/tenant/configuration/WhatsappApiConfig.vue'));
 
 //colombia
 

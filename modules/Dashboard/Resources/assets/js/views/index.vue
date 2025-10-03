@@ -18,6 +18,48 @@
           </button>
         </div>
       </div>
+      <div class="col-xl-12">
+        <section class="card card-featured-left card-featured-secondary mb-3">
+          <div class="card-body py-2">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h4 class="card-title">Mi Consumo Electrónico</h4>
+                <div v-if="!electronicConsumption || !electronicConsumption.plan_name || electronicConsumption.plan_name === 'Sin plan'" class="alert alert-danger mb-0 py-2">
+                  No tiene un plan asignado, comuníquese con su administrador.
+                </div>
+                <div v-else class="small text-muted">
+                  <span class="mr-2"><strong>Plan:</strong> {{ electronicConsumption.plan_name }}</span>
+                  <span class="mr-2"><strong>Estado:</strong> {{ electronicConsumption.plan_status }}</span>
+                  <span class="mr-2"><strong>Vigencia:</strong> {{ electronicConsumption.plan_start }} - {{ electronicConsumption.plan_end }}</span>
+                  <span><strong>Límite:</strong>{{ electronicConsumption.plan_limit_documents == 0 ? 'Ilimitado' : electronicConsumption.plan_limit_documents }}</span>
+                </div>
+              </div>
+              <div v-if="electronicConsumption">
+                <span class="badge badge-primary p-2">
+                  <strong>Total:</strong>{{ electronicConsumption.total_documents }} / {{ electronicConsumption.plan_limit_documents == 0 ? 'Ilimitado' : electronicConsumption.plan_limit_documents }}
+                </span>
+              </div>
+            </div>
+            <div v-if="electronicConsumption" class="mt-2">
+              <table class="table table-sm table-borderless mb-0">
+                <tbody>
+                  <tr>
+                    <template v-for="(count, type) in electronicConsumption.documents">
+                      <td class="font-weight-bold text-muted text-center" :key="type">
+                        {{ type }}
+                        <span class="badge badge-info">{{ count }}</span>
+                      </td>
+                    </template>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div v-else>
+              <el-skeleton rows="1"></el-skeleton>
+            </div>
+          </div>
+        </section>
+      </div>
       <div class="col-xl-6">
         <section class="card card-featured-left card-featured-secondary">
           <div class="card-body">
@@ -169,7 +211,7 @@
                             <br />Pagado
                           </h4>
                           <div class="info">
-                            <strong class="amount text-info">{{ formatNumber(sale_note.totals.total_payment) }}</strong>
+                            <strong class="amount text-info">{{ sale_note.totals.total_payment | numberFormat }}</strong>
                           </div>
                         </div>
                       </div>
@@ -182,7 +224,7 @@
                           <div class="info">
                             <strong
                               class="amount text-danger"
-                            >{{ formatNumber(sale_note.totals.total_to_pay) }}</strong>
+                            >{{ sale_note.totals.total_to_pay | numberFormat }}</strong>
                           </div>
                         </div>
                       </div>
@@ -193,7 +235,7 @@
                             <br />&nbsp;
                           </h4>
                           <div class="info">
-                            <strong class="amount">{{ formatNumber(sale_note.totals.total) }}</strong>
+                            <strong class="amount">{{ sale_note.totals.total | numberFormat }}</strong>
                           </div>
                         </div>
                       </div>
@@ -224,7 +266,7 @@
                             <br />Pagado
                           </h4>
                           <div class="info">
-                            <strong class="amount text-info">{{ formatNumber(document.totals.total_payment) }}</strong>
+                            <strong class="amount text-info">{{ document.totals.total_payment | numberFormat }}</strong>
                           </div>
                         </div>
                       </div>
@@ -235,7 +277,7 @@
                             <br />por Pagar
                           </h4>
                           <div class="info">
-                            <strong class="amount text-danger">{{ formatNumber(document.totals.total_to_pay) }}</strong>
+                            <strong class="amount text-danger">{{ document.totals.total_to_pay | numberFormat }}</strong>
                           </div>
                         </div>
                       </div>
@@ -246,7 +288,7 @@
                             <br />&nbsp;
                           </h4>
                           <div class="info">
-                            <strong class="amount">{{ formatNumber(document.totals.total) }}</strong>
+                            <strong class="amount">{{ document.totals.total | numberFormat }}</strong>
                           </div>
                         </div>
                       </div>
@@ -277,7 +319,7 @@
                             <br />Pagado
                           </h4>
                           <div class="info">
-                            <strong class="amount text-info">{{ formatNumber(document_pos.totals.total_payment) }}</strong>
+                            <strong class="amount text-info">{{ document_pos.totals.total_payment | numberFormat }}</strong>
                           </div>
                         </div>
                       </div>
@@ -288,7 +330,7 @@
                             <br />por Pagar
                           </h4>
                           <div class="info">
-                            <strong class="amount text-danger">{{ formatNumber(document_pos.totals.total_to_pay) }}</strong>
+                            <strong class="amount text-danger">{{ document_pos.totals.total_to_pay | numberFormat }}</strong>
                           </div>
                         </div>
                       </div>
@@ -299,7 +341,7 @@
                             <br />&nbsp;
                           </h4>
                           <div class="info">
-                            <strong class="amount">{{ formatNumber(document_pos.totals.total) }}</strong>
+                            <strong class="amount">{{ document_pos.totals.total | numberFormat }}</strong>
                           </div>
                         </div>
                       </div>
@@ -623,7 +665,7 @@
                           <td>{{ row.internal_id }}</td>
                           <td>{{ row.description }}</td>
                           <td class="text-right">{{ row.move_quantity }}</td>
-                          <td class="text-right">{{ formatNumber(row.total) }}</td>
+                          <td class="text-right">{{ row.total | numberFormat }}</td>
                         </tr>
                       </template>
                     </tbody>
@@ -669,7 +711,7 @@
                             <small v-text="row.number"></small>
                           </td>
                           <td class="text-right">{{ row.transaction_quantity }}</td>
-                          <td class="text-right">{{ formatNumber(row.total) }}</td>
+                          <td class="text-right">{{ row.total | numberFormat }}</td>
                         </tr>
                       </template>
                     </tbody>
@@ -770,6 +812,7 @@ export default {
       items:[],
       currencies:[],
       resolutions: [],
+      electronicConsumption: null,
     };
   },
   async created() {
@@ -783,17 +826,13 @@ export default {
     await this.loadAll();
     await this.filterItems();
     await this.getResolutions();
-
+    await this.loadElectronicConsumption();
     // this.$eventHub.$on("reloadDataUnpaid", () => {
     //   this.loadAll();
     // });
   },
 
   methods: {
-    formatNumber(number) {
-      if (number === undefined || number === null) return '0.00';
-      return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",").replace(/\.(\d{2})/, ".$1");
-    },
     changeFilterItem(){
       this.form.item_id = null
       this.loadDataUtilities()
@@ -956,7 +995,12 @@ export default {
         }
         return false;
       });
-    }
+    },
+    async loadElectronicConsumption() {
+      await this.$http.get('/dashboard/electronic-consumption').then(response => {
+        this.electronicConsumption = response.data;
+      });
+    },
   }
 };
 </script>
