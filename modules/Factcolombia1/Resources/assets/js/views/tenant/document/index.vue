@@ -1,17 +1,24 @@
 <template>
     <div v-loading="loading">
         <div class="page-header pr-0">
-            <h2><a href="/dashboard"><i class="fas fa-tachometer-alt"></i></a></h2>
+            <h2><a href="/co-documents">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text" style="margin-top: -5px;">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+            </a></h2>
             <ol class="breadcrumbs">
-                <li class="active"><span></span> </li>
-                <!-- <li><span class="text-muted">Facturas - Notas <small>(crédito y débito)</small> - Boletas - Anulaciones</span></li> -->
+                <li class="active"><span>Listado de comprobantes</span> </li>
             </ol>
             <div class="right-wrapper pull-right" >
                 <a :href="`/${resource}/create`" class="btn btn-custom btn-sm  mt-2 mr-2"><i class="fa fa-plus-circle"></i> Nuevo</a>
                 <el-tooltip class="item" effect="dark" content="Importa las facturas con estado Aceptada en el API que no se encuentran registradas" placement="bottom">
-                    <el-button class="btn btn-custom btn-sm  mt-2 mr-2" :loading="Sincronizing" @click.prevent="openSyncDialog"><i class="fas fa-sync-alt" ></i> Sincronizar Envios API</el-button>
+                    <button class="btn btn-custom btn-sm  mt-2 mr-2" :loading="Sincronizing" @click.prevent="openSyncDialog"><i class="fas fa-sync-alt" ></i> Sincronizar Envios API</button>
                 </el-tooltip>
-                <el-button class="btn btn-custom btn-sm  mt-2 mr-2" @click.prevent="clickImport()"><i class="fa fa-arrows-alt" ></i> Carga Masiva</el-button>
+                <button class="btn btn-custom btn-sm  mt-2 mr-2" @click.prevent="clickImport()"><i class="fa fa-arrows-alt" ></i> Carga Masiva</button>
             </div>
         </div>
         <div class="card mb-0">
@@ -31,7 +38,7 @@
             <div class="card-body ">
                 <data-table :resource="resource" :init-search="initSearch" :extra-filters="true">
                     <tr slot="heading">
-                        <th>#</th>
+                        <!-- <th>#</th> -->
                         <th class="text-center">Fecha Emisión</th>
                         <th>Cliente</th>
                         <th>Documento</th>
@@ -48,7 +55,7 @@
                         <th class="text-right">Acciones</th>
                     </tr>
                     <tr slot-scope="{ index, row }" >
-                        <td>{{ index }}</td>
+                        <!-- <td>{{ index }}</td> -->
                         <td class="text-center">{{ row.date_of_issue }}</td>
                         <td>{{ row.customer_name }}<br/><small v-text="row.customer_number"></small></td>
                         <td>{{ row.number_full }}<br/>
@@ -62,15 +69,17 @@
                         <!-- <td class="text-center">{{ row.acknowledgment_received }}</td> -->
                         <td class="text-center">{{ row.currency_name }}</td>
 
-                        <td class="text-right">{{ getFormatDecimal(row.sale) }}</td>
-                        <td class="text-right">{{ getFormatDecimal(row.total_discount) }}</td>
-                        <td class="text-right">{{ getFormatDecimal(row.total_tax) }}</td>
-                        <td class="text-right">{{ getFormatDecimal(row.subtotal) }}</td>
-                        <td class="text-right">{{ getFormatDecimal(row.total) }}</td>
+                        <td class="text-right">{{ row.sale | numberFormat }}</td>
+                        <td class="text-right">{{ row.total_discount | numberFormat }}</td>
+                        <td class="text-right">{{ row.total_tax | numberFormat }}</td>
+                        <td class="text-right">{{ row.subtotal | numberFormat }}</td>
+                        <td class="text-right">{{ row.total | numberFormat }}</td>
 
                         <td class="text-center">
-                            <button type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2"
-                                    @click.prevent="clickPayment(row.id)">Pagos</button>
+                            <template v-if="row.type_document_name !== 'Nota crédito'">
+                                <button type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2"
+                                        @click.prevent="clickPayment(row.id)">Pagos</button>
+                            </template>
                         </td>
                         <td class="text-right" >
                             <button type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2"

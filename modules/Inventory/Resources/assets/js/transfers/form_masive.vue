@@ -1,9 +1,10 @@
 <template>
   <div class="card mb-0 pt-2 pt-md-0">
-    <div class="card-header bg-info">
+    <!-- <div class="card-header bg-info">
       <h3 class="my-0">Nuevo Traslado</h3>
-    </div>
+    </div> -->
     <div class="card-body">
+      <div class="invoice">
       <form autocomplete="off" @submit.prevent="submit">
         <div class="form-body">
           <div class="row">
@@ -145,6 +146,7 @@
           <el-button type="primary" native-type="submit" :loading="loading_submit">Guardar</el-button>
         </div>
       </form>
+      </div>
     </div>
 
     <output-lots-form
@@ -154,7 +156,13 @@
     ></output-lots-form>
   </div>
 </template>
-
+<style>
+@media only screen and (min-width: 768px) {
+    html.fixed .inner-wrapper {
+        padding-top: 60px !important;
+    }
+}
+</style>
 <script>
 import OutputLotsForm from "./partials/lots.vue";
 import queryString from 'query-string';
@@ -253,18 +261,23 @@ export default {
         }
       }
 
-      let dup = this.form.items.find(x => x.id == this.form_add.item_id);
-      if (dup) {
-        return;
-      }
-
+      // Buscar si el producto ya está en la lista
+      let idx = this.form.items.findIndex(x => x.id == this.form_add.item_id);
       let row = this.items.find(x => x.id == this.form_add.item_id);
-      this.form.items.push({
-        id: row.id,
-        description: row.description,
-        quantity: this.form_add.quantity,
-        lots: this.form_add.lots
-      });
+
+      if (idx !== -1) {
+        // Si existe, actualiza cantidad y lotes
+        this.form.items[idx].quantity = this.form_add.quantity;
+        this.form.items[idx].lots = this.form_add.lots;
+      } else {
+        // Si no existe, lo agrega
+        this.form.items.push({
+          id: row.id,
+          description: row.description,
+          quantity: this.form_add.quantity,
+          lots: this.form_add.lots
+        });
+      }
 
       this.initFormAdd();
     },

@@ -1,7 +1,9 @@
 <template>
     <div>
         <div class="page-header pr-0">
-            <h2><a href="/dashboard"><i class="fas fa-tachometer-alt"></i></a></h2>
+            <h2><a :href="breadcrumbUrl">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-address-book" style="margin-top: -5px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M20 6v12a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2z"></path><path d="M10 16h6"></path><path d="M13 11m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path><path d="M4 8h3"></path><path d="M4 12h3"></path><path d="M4 16h3"></path></svg>
+            </a></h2>
             <ol class="breadcrumbs">
                 <li class="active"><span>{{ title }}</span></li>
             </ol>
@@ -12,20 +14,17 @@
                 <button type="button" class="btn btn-custom btn-sm  mt-2 mr-2" @click.prevent="clickCreate()"><i class="fa fa-plus-circle"></i> Nuevo</button>
             </div>
         </div>
-        <div class="card mb-0">
-            <div class="card-header bg-info">
-                <h3 class="my-0">Listado de {{ title }}</h3>
-            </div>
+        <div class="card mb-0">            
             <div class="card-body">
                 <data-table :resource="resource+`/${this.type}`">
                     <tr slot="heading">
-                        <th>#</th>
+                        <!-- <th>#</th> -->
                         <th>Nombre</th>
                         <th class="text-right">Número</th>
                         <th class="text-right">Acciones</th>
-                    <tr>
+                    </tr>
                     <tr slot-scope="{ index, row }" :class="{ disable_color : !row.enabled}">
-                        <td>{{ index }}</td>
+                        <!-- <td>{{ index }}</td> -->
                         <td>{{ row.name }}</td>
                         <td class="text-right">{{ row.number }}</td>
                         <td class="text-right">
@@ -79,6 +78,13 @@
         },
         created() {
             this.title = (this.type === 'customers')?'Clientes':'Proveedores'
+        },
+        computed: {
+            breadcrumbUrl() {
+                return this.type === 'customers' 
+                    ? '/persons/customers' 
+                    : '/persons/suppliers';
+            }
         },
         methods: {
             clickExport() {

@@ -1,9 +1,29 @@
 <template>
+<div>
+    <div class="page-header pr-0">
+        <h2><a href="/finances/income">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-calculator" style="margin-top: -5px;">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                <path d="M4 3m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                <path d="M8 7m0 1a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v1a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1z"></path>
+                <path d="M8 14l0 .01"></path>
+                <path d="M12 14l0 .01"></path>
+                <path d="M16 14l0 .01"></path>
+                <path d="M8 17l0 .01"></path>
+                <path d="M12 17l0 .01"></path>
+                <path d="M16 17l0 .01"></path>
+            </svg>
+        </a></h2>
+        <ol class="breadcrumbs">
+            <li class="active"><span>Nuevo Ingreso</span></li>
+        </ol>
+    </div>
     <div class="card mb-0 pt-2 pt-md-0">
-        <div class="card-header bg-info">
+        <!-- <div class="card-header bg-info">
             <h3 class="my-0">Nuevo Ingreso</h3>
-        </div>
+        </div> -->
         <div class="card-body">
+            <div class="invoice">
             <form autocomplete="off" @submit.prevent="submit">
                 <div class="form-body">
 
@@ -94,8 +114,11 @@
                                 <tr v-for="(row, index) in form.payments" :key="index">
                                     <td>
                                         <div class="form-group mb-2 mr-2">
-                                            <el-select v-model="row.payment_method_type_id" >
+                                            <!-- <el-select v-model="row.payment_method_type_id" >
                                                 <el-option v-for="option in payment_method_types" :key="option.id" :value="option.id" :label="option.description"></el-option>
+                                            </el-select> -->
+                                            <el-select v-model="row.payment_method_id">
+                                                <el-option v-for="option in payment_methods" :key="option.id" :value="option.id" :label="option.name"></el-option>
                                             </el-select>
                                         </div>
                                     </td>
@@ -150,7 +173,7 @@
                                         <tr v-for="(row, index) in form.items" :key="index">
                                             <td>{{ index + 1 }}</td>
                                             <td>{{ row.description }}</td>
-                                            <td class="text-right">{{ currency_type.symbol }} {{ row.total }}</td>
+                                            <td class="text-right">{{ currency_type.symbol }} {{ row.total | numberFormat }}</td>
                                             <td class="text-right">
                                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickRemoveItem(index)">x</button>
                                             </td>
@@ -160,7 +183,7 @@
                             </div>
                         </div>
                         <div class="col-md-12">
-                            <h3 class="text-right" v-if="form.total > 0"><b>TOTAL: </b>{{ currency_type.symbol }} {{ form.total }}</h3>
+                            <h3 class="text-right" v-if="form.total > 0"><b>TOTAL: </b>{{ currency_type.symbol }} {{ form.total | numberFormat }}</h3>
                         </div>
                     </div>
                 </div>
@@ -169,6 +192,7 @@
                     <el-button type="primary" native-type="submit" :loading="loading_submit" v-if="form.items.length > 0">Generar</el-button>
                 </div>
             </form>
+            </div>            
         </div>
 
         <income-form-item :showDialog.sync="showDialogAddItem"
@@ -181,6 +205,7 @@
                           :recordId="incomeNewId"
                           :showClose="false"></income-options>
     </div>
+</div>
 </template>
 
 <script>
@@ -212,7 +237,8 @@
                 payment_destinations:  [],
                 income_reasons: [],
                 expenseNewId: null,
-                incomeNewId:null
+                incomeNewId:null,
+                payment_methods: [],
             }
         },
         created() {
@@ -222,6 +248,7 @@
 
                     this.income_reasons = response.data.income_reasons
                     this.payment_method_types = response.data.payment_method_types
+                    this.payment_methods = response.data.payment_methods
                     this.income_types = response.data.income_types
                     this.currencies = response.data.currencies
                     this.establishment = response.data.establishment
@@ -287,7 +314,8 @@
                     id: null,
                     income_id: null,
                     date_of_payment:  moment().format('YYYY-MM-DD'),
-                    payment_method_type_id: '01',
+                    payment_method_id: 10,
+                    payment_method_type_id: null,
                     payment_destination_id: 'cash',
                     reference: null,
                     payment: 0,

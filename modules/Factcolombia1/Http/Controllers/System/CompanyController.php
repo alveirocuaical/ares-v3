@@ -115,6 +115,8 @@ class CompanyController extends Controller
                     : $now->copy()->addMonth();
                 $company->plan_active = true;
                 $company->plan_auto_renew = false;
+                $company->locked_emission = true;
+                $company->locked_users = true;
                 $company->save();
             }
 
@@ -173,7 +175,32 @@ class CompanyController extends Controller
         ];
 
     }
+    protected $nameclient;
+    public function setNameClient($name)
+    {
+        $this->nameclient = $name;
+    }
 
+    public function searchName($nit)
+    {
+        $client = new \Goutte\Client();
+        $crawler = $client->request('GET', "https://www.einforma.co/servlet/app/portal/ENTP/prod/LISTA_EMPRESAS/razonsocial/{$nit}");
+        $crawler->filter('h1[class="title01"]')->each(function($node) {
+            $text = $node->text();
+            $marker = 'Situación de la empresa:';
+            if (strpos($text, $marker) !== false) {
+                $name = substr($text, 0, strpos($text, $marker));
+            } else {
+                $name = $text;
+            }
+            $name = trim($name);
+            $this->setNameClient($name);
+        });
+
+        return [
+            'name' => $this->nameclient
+        ];
+    }
 
     public function validateWebsite($uuid, $website){
 

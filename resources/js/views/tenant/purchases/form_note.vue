@@ -1,9 +1,23 @@
 <template>
+<div>
+    <div class="page-header pr-0">
+        <h2><a href="/purchases">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-shopping-bag" style="margin-top: -5px;">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                <path d="M6.331 8h11.339a2 2 0 0 1 1.977 2.304l-1.255 8.152a3 3 0 0 1 -2.966 2.544h-6.852a3 3 0 0 1 -2.965 -2.544l-1.255 -8.152a2 2 0 0 1 1.977 -2.304z"></path>
+                <path d="M9 11v-5a3 3 0 0 1 6 0v5"></path>
+            </svg>
+        </a></h2>
+        <ol class="breadcrumbs">
+            <li class="active"><span>Generar nota</span></li>
+        </ol>        
+    </div>
     <div class="card mb-0 pt-2 pt-md-0">
-        <div class="card-header bg-info">
+        <!-- <div class="card-header bg-info">
             <h3 class="my-0">Generar nota</h3>
-        </div>
+        </div> -->
         <div class="card-body">
+            <div class="invoice">
             <form autocomplete="off" @submit.prevent="submit">
                 <div class="form-body">
 
@@ -146,10 +160,13 @@
                                     <tr v-for="(row, index) in form.payments" :key="index">
                                         <td>
                                             <div class="form-group mb-2 mr-2">
-                                                <el-select v-model="row.payment_method_type_id"
+                                                <!-- <el-select v-model="row.payment_method_type_id"
                                                     @change="changePaymentMethodType(true, index)">
                                                     <el-option v-for="option in payment_method_types" :key="option.id"
                                                         :value="option.id" :label="option.description"></el-option>
+                                                </el-select> -->
+                                                <el-select v-model="row.payment_method_id">
+                                                    <el-option v-for="option in payment_methods" :key="option.id" :value="option.id" :label="option.name"></el-option>
                                                 </el-select>
                                             </div>
                                         </td>
@@ -220,9 +237,9 @@
                                             <td class="text-right">{{ row.quantity }}</td>
                                             <!-- <td class="text-right">{{ currency_type.symbol }} {{ row.unit_price }}</td> -->
                                             <td class="text-right">{{ ratePrefix() }} {{
-                                                getFormatUnitPriceRow(row.unit_price) }}</td>
-                                            <td class="text-right">{{ ratePrefix() }} {{ row.discount }}</td>
-                                            <td class="text-right">{{ ratePrefix() }} {{ row.total }}</td>
+                                                getFormatUnitPriceRow(row.unit_price) | numberFormat }}</td>
+                                            <td class="text-right">{{ ratePrefix() }} {{ row.discount | numberFormat }}</td>
+                                            <td class="text-right">{{ ratePrefix() }} {{ row.total | numberFormat }}</td>
 
                                             <td class="text-right">
                                                 <button type="button"
@@ -241,12 +258,12 @@
                                 <tr>
                                     <td>TOTAL VENTA</td>
                                     <td>:</td>
-                                    <td class="text-right">{{ ratePrefix() }} {{ form.sale }}</td>
+                                    <td class="text-right">{{ ratePrefix() }} {{ form.sale | numberFormat }}</td>
                                 </tr>
                                 <tr>
                                     <td>TOTAL DESCUENTO (-)</td>
                                     <td>:</td>
-                                    <td class="text-right">{{ ratePrefix() }} {{ form.total_discount }}</td>
+                                    <td class="text-right">{{ ratePrefix() }} {{ form.total_discount | numberFormat }}</td>
                                 </tr>
                                 <template v-for="(tax, index) in form.taxes">
                                     <tr v-if="((tax.total > 0) && (!tax.is_retention))" :key="index">
@@ -254,13 +271,13 @@
                                             {{ tax.name }}(+)
                                         </td>
                                         <td>:</td>
-                                        <td class="text-right">{{ ratePrefix() }} {{ Number(tax.total).toFixed(2) }}</td>
+                                        <td class="text-right">{{ ratePrefix() }} {{ Number(tax.total).toFixed(2) | numberFormat }}</td>
                                     </tr>
                                 </template>
                                 <tr>
                                     <td>SUBTOTAL</td>
                                     <td>:</td>
-                                    <td class="text-right">{{ ratePrefix() }} {{ form.subtotal }}</td>
+                                    <td class="text-right">{{ ratePrefix() }} {{ form.subtotal | numberFormat }}</td>
                                 </tr>
 
                                 <template v-for="(tax, index) in form.taxes">
@@ -288,7 +305,7 @@
 
                         <div class="col-md-12">
                             <h3 class="text-right" v-if="form.total > 0"><b>TOTAL COMPRAS: </b>{{ ratePrefix() }} {{
-                                form.total }}</h3>
+                                form.total | numberFormat }}</h3>
 
                             <template v-if="is_perception_agent">
                                 <hr>
@@ -349,6 +366,7 @@
                         v-if="form.items.length > 0 && !hide_button">Generar</el-button>
                 </div>
             </form>
+            </div>            
         </div>
 
         <purchase-form-item :showDialog.sync="showDialogAddItem" :currency-type-id-active="form.currency_type_id"
@@ -360,6 +378,7 @@
         <purchase-options :type="type" :showDialog.sync="showDialogOptions" :recordId="purchaseNewId"
             :showClose="false"></purchase-options>
     </div>
+</div>    
 </template>
 
 <script>
@@ -428,6 +447,7 @@ export default {
                 this.establishment = response.data.establishment
                 this.all_suppliers = response.data.suppliers
                 this.payment_method_types = response.data.payment_method_types
+                this.payment_methods = response.data.payment_methods
                 this.payment_destinations = response.data.payment_destinations
                 this.all_customers = response.data.customers
 
@@ -663,7 +683,8 @@ export default {
                 id: null,
                 purchase_id: null,
                 date_of_payment: moment().format('YYYY-MM-DD'),
-                payment_method_type_id: '01',
+                payment_method_id: null,
+                payment_method_type_id: null,
                 reference: null,
                 payment_destination_id: 'cash',
                 payment: 0,

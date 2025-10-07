@@ -69,7 +69,7 @@ class EstablishmentController extends Controller
 
     public function records()
     {
-        $records = Establishment::all();
+        $records = Establishment::orderBy('id', 'desc')->get();
 
         return new EstablishmentCollection($records);
     }

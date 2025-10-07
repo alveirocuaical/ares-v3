@@ -1,12 +1,17 @@
 @php
-$establishment = $document->establishment;
-$customer = $document->customer;
-$paymentForm = $document->payment_form;
-$payments = $document->payments;
-$tittle = $document->prefix.'-'.str_pad($document->id, 8, '0', STR_PAD_LEFT);
-$total_payments = $payments->sum('payment');
-$is_paid = $total_payments == $document->total;
-$advanced_configuration = \Modules\Factcolombia1\Models\TenantService\AdvancedConfiguration::first();
+    $establishment = $document->establishment;
+    $customer = $document->customer;
+    $paymentForm = $document->payment_form;
+    $payments = $document->payments;
+    $tittle = $document->prefix.'-'.str_pad($document->id, 8, '0', STR_PAD_LEFT);
+    $total_payments = $payments->sum('payment');
+    $is_paid = $total_payments == $document->total;
+    $advanced_configuration = \Modules\Factcolombia1\Models\TenantService\AdvancedConfiguration::first();
+    $seller_name = null;
+    if($document->seller_id){
+        $seller = \App\Models\Tenant\Seller::find($document->seller_id);
+        $seller_name = $seller ? $seller->full_name : '';
+    }
 @endphp
 
 <html>
@@ -94,6 +99,12 @@ $advanced_configuration = \Modules\Factcolombia1\Models\TenantService\AdvancedCo
                         <td style="font-size: 12px;">Medio de Pago:</td>
                         <td style="font-size: 12px;">{{ $document->payment_method->name }}</td>
                     </tr>
+                    @if($seller_name)
+                        <tr>
+                            <td>Vendedor:</td>
+                            <td>{{ $seller_name }}</td>
+                        </tr>
+                    @endif
                     @if($document->time_days_credit)
                     <tr>
                         <td style="font-size: 12px;">Plazo Para Pagar:</td>

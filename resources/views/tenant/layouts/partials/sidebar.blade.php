@@ -16,7 +16,7 @@
 <aside id="sidebar-left" class="sidebar-left">
     <div class="sidebar-header">
         <a href="{{route('tenant.dashboard.index')}}"
-           class="logo pt-2 pt-md-0">
+           class="logo logo-contain pt-2 pt-md-0">
             @if($vc_company->logo)
                 <img src="{{ asset('storage/uploads/logos/'.$vc_company->logo) }}"
                      alt="Logo"/>
@@ -40,8 +40,13 @@
                     @if(in_array('dashboard', $vc_modules))
                     <li class="{{ ($path[0] === 'dashboard')?'nav-active':'' }}">
                         <a class="nav-link" href="{{ route('tenant.dashboard.index') }}">
-                            <span class="float-right badge badge-red badge-danger mr-3">Nuevo</span>
-                            <i class="fas fa-tachometer-alt" aria-hidden="true"></i>
+                            {{-- <span class="float-right badge badge-red badge-danger mr-3">Nuevo</span> --}}
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-dashboard">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                <path d="M12 13m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
+                                <path d="M13.45 11.55l2.05 -2.05"></path>
+                                <path d="M6.4 20a9 9 0 1 1 11.2 0z"></path>
+                            </svg>
                             <span>Dashboard</span>
                         </a>
                     </li>
@@ -51,16 +56,12 @@
                     <li class="
                         nav-parent
                         {{ ($path[0] === 'documents')?'nav-active nav-expanded':'' }}
-                        {{ ($path[0] === 'items')?'nav-active nav-expanded':'' }}
-                        {{ ($path[0] === 'persons' && $path[1] === 'customers')?'nav-active nav-expanded':'' }}
                         {{ ($path[0] === 'summaries')?'nav-active nav-expanded':'' }}
                         {{ ($path[0] === 'voided')?'nav-active nav-expanded':'' }}
                         {{ ($path[0] === 'quotations')?'nav-active nav-expanded':'' }}
                         {{ ($path[0] === 'sale-notes')?'nav-active nav-expanded':'' }}
                         {{ ($path[0] === 'contingencies')?'nav-active nav-expanded':'' }}
                         {{ ($path[0] === 'person-types')?'nav-active nav-expanded':'' }}
-                        {{ ($path[0] === 'brands')?'nav-active nav-expanded':'' }}
-                        {{ ($path[0] === 'categories')?'nav-active nav-expanded':'' }}
                         {{ ($path[0] === 'incentives')?'nav-active nav-expanded':'' }}
                         {{ ($path[0] === 'order-notes')?'nav-active nav-expanded':'' }}
                         {{ ($path[0] === 'sale-opportunities')?'nav-active nav-expanded':'' }}
@@ -70,15 +71,19 @@
                         {{ ($path[0] === 'user-commissions')?'nav-active nav-expanded':'' }}
 
                         {{ ($path[0] === 'co-documents')?'nav-active nav-expanded':'' }}
-                        {{ ($path[0] === 'co-items')?'nav-active nav-expanded':'' }}
-                        {{ ($path[0] === 'co-clients')?'nav-active nav-expanded':'' }}
                         {{ ($path[0] === 'co-taxes')?'nav-active nav-expanded':'' }}
                         {{ ($path[0] === 'co-documents-aiu')?'nav-active nav-expanded':'' }}
                         {{ ($path[0] === 'co-documents-health')?'nav-active nav-expanded':'' }}
                         {{ ($path[0] === 'co-remissions')?'nav-active nav-expanded':'' }}
                         ">
                         <a class="nav-link" href="#">
-                            <i class="fas fa-file-invoice" aria-hidden="true"></i>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
                             <span>Ventas</span>
                         </a>
                         <ul class="nav nav-children" style="">
@@ -87,27 +92,27 @@
                                     @if(in_array('new_document', $vc_module_levels))
                                         <li class="{{ ($path[0] === 'co-documents'  && $path[1] === 'create')?'nav-active':'' }}">
                                             <a class="nav-link" href="{{route('tenant.co-documents.create')}}">
-                                                Nueva Factura Electronica
+                                                Factura Electronica
                                             </a>
                                         </li>
 
                                         @if(in_array('invoicehealth', $vc_modules))
                                             <li class="{{ ($path[0] === 'co-documents-health'  && $path[1] === 'create')?'nav-active':'' }}">
                                                 <a class="nav-link" href="{{route('tenant.co-documents-health.create')}}">
-                                                    Nueva F.E. Sector Salud
+                                                    Factura Salud
                                                 </a>
                                             </li>
                                         @endif
 
                                         <li class="{{ ($path[0] === 'co-documents-aiu'  && $path[1] === 'create')?'nav-active':'' }}">
                                             <a class="nav-link" href="{{route('tenant.co-documents-aiu.create')}}">
-                                                Nueva Factura Electronica AIU
+                                                Factura AIU
                                             </a>
                                         </li>
 
                                         <li class="{{ ($path[0] === 'co-documents-unreferenced-note'  && $path[1] === 'create')?'nav-active':'' }}">
                                             <a class="nav-link" href="{{route('tenant.co-documents-unreferenced-note.create')}}">
-                                                Nueva Nota Contable Sin Referencia A Factura Electronica
+                                                Nota Contable (sin ref.)
                                             </a>
                                         </li>
                                         {{-- <li class="{{ ($path[0] === 'documents' && $path[1] === 'create')?'nav-active':'' }}">
@@ -130,7 +135,7 @@
 
                                     <li class="{{ ($path[0] === 'co-documents'  && $path[1] != 'create'  )?'nav-active':'' }}">
                                         <a class="nav-link" href="{{route('tenant.co-documents.index')}}">
-                                            Listado de comprobantes
+                                            Mis comprobantes
                                         </a>
                                     </li>
                                 @endif
@@ -159,69 +164,7 @@
                                 </li>
                                 @endif --}}
 
-                                @if(in_array('catalogs', $vc_module_levels))
-
-                                    <li class="nav-parent
-                                        {{ ($path[0] === 'items')?'nav-active nav-expanded':'' }}
-                                        {{ ($path[0] === 'co-items')?'nav-active nav-expanded':'' }}
-                                        {{ ($path[0] === 'co-clients')?'nav-active nav-expanded':'' }}
-                                        {{ ($path[0] === 'categories')?'nav-active nav-expanded':'' }}
-                                        {{ ($path[0] === 'brands')?'nav-active nav-expanded':'' }}
-                                        {{ ($path[0] === 'person-types')?'nav-active nav-expanded':'' }}
-                                        {{ ($path[0] === 'co-taxes')?'nav-active nav-expanded':'' }}
-                                        {{ ($path[0] === 'persons' && $path[1] === 'customers')?'nav-active nav-expanded':'' }}
-                                        ">
-                                        <a class="nav-link" href="#">
-                                            Catálogos
-                                        </a>
-                                        <ul class="nav nav-children">
-
-                                            {{-- <li class="{{ ($path[0] === 'co-items')?'nav-active':'' }}">
-                                                <a class="nav-link" href="{{route('tenant.co-items.index')}}">
-                                                    Productos colombia
-                                                </a>
-                                            </li>
-
-                                            <li class="{{ ($path[0] === 'co-clients')?'nav-active':'' }}">
-                                                <a class="nav-link" href="{{route('tenant.co-clients.index')}}">
-                                                    Clientes colombia
-                                                </a>
-                                            </li> --}}
-
-                                            <li class="{{ ($path[0] === 'co-taxes')?'nav-active':'' }}">
-                                                <a class="nav-link" href="{{route('tenant.co-taxes.index')}}">
-                                                    Impuestos colombia
-                                                </a>
-                                            </li>
-
-                                            <li class="{{ ($path[0] === 'items')?'nav-active':'' }}">
-                                                <a class="nav-link" href="{{route('tenant.items.index')}}">
-                                                    Productos
-                                                </a>
-                                            </li>
-                                            <li class="{{ ($path[0] === 'categories')?'nav-active':'' }}">
-                                                <a class="nav-link" href="{{route('tenant.categories.index')}}">
-                                                    Categorías
-                                                </a>
-                                            </li>
-                                            <li class="{{ ($path[0] === 'brands')?'nav-active':'' }}">
-                                                <a class="nav-link" href="{{route('tenant.brands.index')}}">
-                                                    Marcas
-                                                </a>
-                                            </li>
-                                            <li class="{{ ($path[0] === 'persons' && $path[1] === 'customers')?'nav-active':'' }}">
-                                                <a class="nav-link" href="{{route('tenant.persons.index', ['type' => 'customers'])}}">
-                                                    Clientes
-                                                </a>
-                                            </li>
-                                            <!-- <li class="{{ ($path[0] === 'person-types')?'nav-active':'' }}">
-                                                <a class="nav-link" href="{{route('tenant.person_types.index')}}">
-                                                    Tipos de clientes
-                                                </a>
-                                            </li> -->
-                                        </ul>
-                                    </li>
-                                @endif
+                                {{-- Catálogos removed: Productos moved to a top-level 'Productos' menu below Clientes --}}
 
                                 {{-- @if(in_array('summary_voided', $vc_module_levels) && $vc_company->soap_type_id != '03')
 
@@ -262,7 +205,7 @@
                                     </li>
                                 @endif
 
-                                @if(in_array('remissions', $vc_module_levels))
+                                @if(auth()->user()->type != 'integrator' && in_array('documents', $vc_modules))
                                 <li class="{{ ($path[0] === 'co-remissions')?'nav-active':'' }}">
                                     <a class="nav-link" href="{{route('tenant.co-remissions.index')}}">
                                         Remisiones
@@ -372,8 +315,8 @@
                         {{ ($path[0] === 'document-pos')?'nav-active nav-expanded':'' }}
                         ">
                             <a class="nav-link" href="#">
-                                <span class="float-right badge badge-red badge-danger mr-3">Nuevo</span>
-                                <i class="fas fa-cash-register" aria-hidden="true"></i>
+                                {{-- <span class="float-right badge badge-red badge-danger mr-3">Nuevo</span> --}}
+                                <svg  xmlns="http://www.w3.org/2000/svg"  width="20"  height="20"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-cash-register"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M21 15h-2.5c-.398 0 -.779 .158 -1.061 .439c-.281 .281 -.439 .663 -.439 1.061c0 .398 .158 .779 .439 1.061c.281 .281 .663 .439 1.061 .439h1c.398 0 .779 .158 1.061 .439c.281 .281 .439 .663 .439 1.061c0 .398 -.158 .779 -.439 1.061c-.281 .281 -.663 .439 -1.061 .439h-2.5" /><path d="M19 21v1m0 -8v1" /><path d="M13 21h-7c-.53 0 -1.039 -.211 -1.414 -.586c-.375 -.375 -.586 -.884 -.586 -1.414v-10c0 -.53 .211 -1.039 .586 -1.414c.375 -.375 .884 -.586 1.414 -.586h2m12 3.12v-1.12c0 -.53 -.211 -1.039 -.586 -1.414c-.375 -.375 -.884 -.586 -1.414 -.586h-2" /><path d="M16 10v-6c0 -.53 -.211 -1.039 -.586 -1.414c-.375 -.375 -.884 -.586 -1.414 -.586h-4c-.53 0 -1.039 .211 -1.414 .586c-.375 .375 -.586 .884 -.586 1.414v6m8 0h-8m8 0h1m-9 0h-1" /><path d="M8 14v.01" /><path d="M8 17v.01" /><path d="M12 13.99v.01" /><path d="M12 17v.01" /></svg>
                                 <span>Punto de Venta P.O.S.</span>
                             </a>
                             <ul class="nav nav-children">
@@ -407,14 +350,84 @@
                             </ul>
                         </li>
                         @endif
+                        {{-- Nuevo menú Contactos con clientes y proveedores --}}
+                        @if(auth()->user()->type != 'integrator' && (in_array('documents', $vc_modules) || in_array('purchases', $vc_modules)))
+                        <li class="nav-parent
+                            {{ ($path[0] === 'persons' && in_array($path[1], ['customers', 'suppliers'])) ? 'nav-active nav-expanded' : '' }}
+                            ">
+                            <a class="nav-link" href="#">
+                                <svg  xmlns="http://www.w3.org/2000/svg"  width="20"  height="20"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-address-book"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M20 6v12a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2z" /><path d="M10 16h6" /><path d="M13 11m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 8h3" /><path d="M4 12h3" /><path d="M4 16h3" /></svg>
+                                <span>Contactos</span>
+                            </a>
+                            <ul class="nav nav-children">
+                                @if(in_array('purchases', $vc_modules))
+                                <li class="{{ ($path[0] === 'persons' && $path[1] === 'suppliers') ? 'nav-active' : '' }}">
+                                    <a class="nav-link" href="{{route('tenant.persons.index', ['type' => 'suppliers'])}}">
+                                        Proveedores
+                                    </a>
+                                </li>
+                                @endif
+                                @if(in_array('documents', $vc_modules))
+                                <li class="{{ ($path[0] === 'persons' && $path[1] === 'customers') ? 'nav-active' : '' }}">
+                                    <a class="nav-link" href="{{route('tenant.persons.index', ['type' => 'customers'])}}">
+                                        Clientes
+                                    </a>
+                                </li>
+                                @endif
+                            </ul>
+                        </li>
+                        @endif
+
+                        {{-- Nuevo menú Productos (antes en Catálogos) colocado debajo de Clientes --}}
+                        @if(in_array('documents', $vc_modules) && auth()->user()->type != 'integrator')
+                        <li class="nav-parent
+                            {{ ($path[0] === 'items')?'nav-active nav-expanded':'' }}
+                            {{ ($path[0] === 'categories')?'nav-active nav-expanded':'' }}
+                            {{ ($path[0] === 'brands')?'nav-active nav-expanded':'' }}
+                            ">
+                            <a class="nav-link" href="#">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-category-2">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M14 4h6v6h-6z"></path>
+                                    <path d="M4 14h6v6h-6z"></path>
+                                    <path d="M17 17m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"></path>
+                                    <path d="M7 7m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"></path>
+                                </svg>
+                                <span>Productos</span>
+                            </a>
+                            <ul class="nav nav-children">
+                                <li class="{{ ($path[0] === 'items')?'nav-active':'' }}">
+                                    <a class="nav-link" href="{{route('tenant.items.index')}}">
+                                        Productos
+                                    </a>
+                                </li>
+                                <li class="{{ ($path[0] === 'categories')?'nav-active':'' }}">
+                                    <a class="nav-link" href="{{route('tenant.categories.index')}}">
+                                        Categorías
+                                    </a>
+                                </li>
+                                <li class="{{ ($path[0] === 'brands')?'nav-active':'' }}">
+                                    <a class="nav-link" href="{{route('tenant.brands.index')}}">
+                                        Marcas
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        @endif
                     @endif
 
 
                     @if(in_array('ecommerce', $vc_modules))
                     <li class="nav-parent {{ in_array($path[0], ['ecommerce','items_ecommerce', 'tags', 'promotions', 'orders', 'configuration'])?'nav-active nav-expanded':'' }}">
                         <a class="nav-link" href="#">
-                            <span class="float-right badge badge-red badge-danger mr-3">Nuevo</span>
-                            <i class="fas fa-store" aria-hidden="true"></i>
+                            {{-- <span class="float-right badge badge-red badge-danger mr-3">Nuevo</span> --}}
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-shopping-cart">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                <path d="M6 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
+                                <path d="M17 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
+                                <path d="M17 17h-11v-14h-2"></path>
+                                <path d="M6 5l14 1l-1 7h-13"></path>
+                            </svg>
                             <span>Tienda Virtual</span>
                         </a>
                         <ul class="nav nav-children">
@@ -459,7 +472,6 @@
                         <li class="
                             nav-parent
                             {{ ($path[0] === 'purchases')?'nav-active nav-expanded':'' }}
-                            {{ ($path[0] === 'persons' && $path[1] === 'suppliers')?'nav-active nav-expanded':'' }}
                             {{ ($path[0] === 'expenses')?'nav-active nav-expanded':'' }}
                             {{ ($path[0] === 'purchase-quotations')?'nav-active nav-expanded':'' }}
                             {{ ($path[0] === 'purchase-orders')?'nav-active nav-expanded':'' }}
@@ -468,7 +480,11 @@
                             {{ ($path[0] === 'support-document-adjust-notes')?'nav-active nav-expanded':'' }}
                             ">
                             <a class="nav-link" href="#">
-                                <i class="fas fa-cart-plus" aria-hidden="true"></i>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-shopping-bag">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M6.331 8h11.339a2 2 0 0 1 1.977 2.304l-1.255 8.152a3 3 0 0 1 -2.966 2.544h-6.852a3 3 0 0 1 -2.965 -2.544l-1.255 -8.152a2 2 0 0 1 1.977 -2.304z"></path>
+                                    <path d="M9 11v-5a3 3 0 0 1 6 0v5"></path>
+                                </svg>
                                 <span>Compras</span>
                             </a>
                             <ul class="nav nav-children" style="">
@@ -498,26 +514,10 @@
                                     </a>
                                 </li>
 
-                                <li class="nav-parent
-                                    {{ ($path[0] === 'persons' && $path[1] === 'suppliers')?'nav-active nav-expanded':'' }}
-                                    {{ ($path[0] === 'purchase-quotations')?'nav-active nav-expanded':'' }}
-                                    ">
-                                    <a class="nav-link" href="#">
-                                        Proveedores
+                                <li class="{{ ($path[0] === 'purchase-quotations')?'nav-active':'' }}">
+                                    <a class="nav-link" href="{{route('tenant.purchase-quotations.index')}}">
+                                        Solicitar cotización
                                     </a>
-                                    <ul class="nav nav-children">
-
-                                        <li class="{{ ($path[0] === 'persons' && $path[1] === 'suppliers')?'nav-active':'' }}">
-                                            <a class="nav-link" href="{{route('tenant.persons.index', ['type' => 'suppliers'])}}">
-                                                Listado
-                                            </a>
-                                        </li>
-                                        <li class="{{ ($path[0] === 'purchase-quotations')?'nav-active':'' }}">
-                                            <a class="nav-link" href="{{route('tenant.purchase-quotations.index')}}">
-                                                Solicitar cotización
-                                            </a>
-                                        </li>
-                                    </ul>
                                 </li>
 
                                 {{-- documento de soporte --}}
@@ -574,7 +574,12 @@
                         <li class="nav-parent {{ (in_array($path[0], ['inventory', 'warehouses', 'moves', 'transfers']) ||
                                                 ($path[0] === 'reports' && in_array($path[1], ['kardex', 'inventory', 'valued-kardex'])))?'nav-active nav-expanded':'' }}">
                             <a class="nav-link" href="#">
-                                <i class="fas fa-warehouse" aria-hidden="true"></i>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-building-warehouse">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M3 21v-13l9 -4l9 4v13"></path>
+                                    <path d="M13 13h4v8h-10v-6h6"></path>
+                                    <path d="M13 21v-9a1 1 0 0 0 -1 -1h-2a1 1 0 0 0 -1 1v3"></path>
+                                </svg>
                                 <span>Inventario</span>
                             </a>
                             <ul class="nav nav-children" style="">
@@ -606,27 +611,6 @@
                         </li>
                         @endif
 
-                    @endif
-
-                    @if(in_array('configuration', $vc_modules))
-                    <li class="nav-parent {{ in_array($path[0], ['users', 'establishments'])?'nav-active nav-expanded':'' }}">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-users" aria-hidden="true"></i>
-                            <span>Usuarios/Locales & Series</span>
-                        </a>
-                        <ul class="nav nav-children" style="">
-                            <li class="{{ ($path[0] === 'users')?'nav-active':'' }}">
-                                <a class="nav-link" href="{{route('tenant.users.index')}}">
-                                    Usuarios
-                                </a>
-                            </li>
-                            <li class="{{ ($path[0] === 'establishments')?'nav-active':'' }}">
-                                <a class="nav-link" href="{{route('tenant.establishments.index')}}">
-                                    Establecimientos
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
                     @endif
 
                     {{-- @if(in_array('advanced', $vc_modules) && $vc_company->soap_type_id != '03')
@@ -668,7 +652,14 @@
                                         'order-notes-general', 'sales-consolidated', 'user-commissions', 'co-remissions', 'co-items-sold', 'co-sales-book'])) ? 'nav-active nav-expanded' : ''}}">
 
                         <a class="nav-link" href="#">
-                            <i class="fas fa-chart-area" aria-hidden="true"></i>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-analytics">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
+                                <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"></path>
+                                <path d="M9 17l0 -5"></path>
+                                <path d="M12 17l0 -1"></path>
+                                <path d="M15 17l0 -3"></path>
+                            </svg>
                             <span>Reportes</span>
                         </a>
                         <ul class="nav nav-children" style="">
@@ -881,8 +872,16 @@
                     @if(in_array('accounting', $vc_modules))
                     <li class="nav-parent {{$path[0] === 'accounting' && in_array($path[1], ['journal', 'charts', 'income-statement', 'financial-position', 'auxiliary-movement']) ? 'nav-active nav-expanded' : ''}}">
                         <a class="nav-link" href="#">
-                            <span class="float-right badge badge-red badge-danger mr-3">Nuevo</span>
-                            <i class="fas fa-hand-holding-usd" aria-hidden="true"></i>
+                            <span class="float-right badge badge-red badge-danger mr-3 bg-secondary bg-danger mt-1">Nuevo</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chart-histogram">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                <path d="M3 3v18h18"></path>
+                                <path d="M20 18v3"></path>
+                                <path d="M16 16v5"></path>
+                                <path d="M12 13v8"></path>
+                                <path d="M8 16v5"></path>
+                                <path d="M3 11c6 0 5 -5 9 -5s3 5 9 5"></path>
+                            </svg>
                             <span>Contabilidad</span>
                         </a>
                         <ul class="nav nav-children" style="">
@@ -923,8 +922,18 @@
                                             ? 'nav-active nav-expanded' : ''}}">
 
                         <a class="nav-link" href="#">
-                            <span class="float-right badge badge-red badge-danger mr-3">Nuevo</span>
-                            <i class="fas fa-hand-holding-usd" aria-hidden="true"></i>
+                            {{-- <span class="float-right badge badge-red badge-danger mr-3">Nuevo</span> --}}
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-calculator">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                <path d="M4 3m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                                <path d="M8 7m0 1a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v1a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1z"></path>
+                                <path d="M8 14l0 .01"></path>
+                                <path d="M12 14l0 .01"></path>
+                                <path d="M16 14l0 .01"></path>
+                                <path d="M8 17l0 .01"></path>
+                                <path d="M12 17l0 .01"></path>
+                                <path d="M16 17l0 .01"></path>
+                            </svg>
                             <span>Finanzas</span>
                         </a>
                         <ul class="nav nav-children" style="">
@@ -977,8 +986,8 @@
                                             ? 'nav-active nav-expanded' : ''}}">
 
                         <a class="nav-link" href="#">
-                            <span class="float-right badge badge-red badge-danger mr-3">Nuevo</span>
-                            <i class="fas fa-clipboard-list" aria-hidden="true"></i>
+                            {{-- <span class="float-right badge badge-red badge-danger mr-3">Nuevo</span> --}}
+                            <svg  xmlns="http://www.w3.org/2000/svg"  width="20"  height="20"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-clipboard-list"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" /><path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z" /><path d="M9 12l.01 0" /><path d="M13 12l2 0" /><path d="M9 16l.01 0" /><path d="M13 16l2 0" /></svg>
                             <span>Nóminas</span>
                         </a>
 
@@ -1014,102 +1023,10 @@
                     </li>
                     @endif
 
-
-                    @if(in_array('configuration', $vc_modules))
-                    <li class="nav-parent {{in_array($path[0], [
-                        'co-configuration-change-ambient', 'co-configuration', 'co-configuration-documents',
-                        'companies', 'catalogs', 'advanced', 'tasks', 'inventories','company_accounts','bussiness_turns',
-                        'offline-configurations','series-configurations','configurations','co-advanced-configuration'
-                    ]) ? 'nav-active nav-expanded' : ''}}">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-cogs" aria-hidden="true"></i>
-                            <span>Configuración</span>
-                        </a>
-                        <ul class="nav nav-children">
-                            <li class="{{($path[0] === 'co-configuration-change-ambient') ? 'nav-active': ''}}">
-                                <a class="nav-link" href="{{route('tenant.configuration.change.ambient')}}">
-                                    Cambiar ambiente
-                                </a>
-                            </li>
-                            <li class="{{($path[0] === 'co-configuration-documents') ? 'nav-active': ''}}">
-                                <a class="nav-link" href="{{route('tenant.configuration.documents')}}">
-                                    Documentos
-                                </a>
-                            </li>
-                            <li class="{{($path[0] === 'co-configuration') ? 'nav-active': ''}}">
-                                <a class="nav-link" href="{{route('tenant.configuration')}}">
-                                    Empresa
-                                </a>
-                            </li>
-                            {{-- <li class="{{($path[0] === 'companies') ? 'nav-active': ''}}">
-                                <a class="nav-link" href="{{route('tenant.companies.create')}}">
-                                    Empresa
-                                </a>
-                            </li>
-                            <li class="{{($path[0] === 'company_accounts') ? 'nav-active': ''}}">
-                                <a class="nav-link" href="{{route('tenant.company_accounts.create')}}">
-                                    Cuentas contables
-                                </a>
-                            </li>
-                            <li class="{{($path[0] === 'bussiness_turns') ? 'nav-active': ''}}">
-                                <a class="nav-link" href="{{route('tenant.bussiness_turns.index')}}">
-                                    Giro de negocio
-                                </a>
-                            </li> --}}
-                            @if(auth()->user()->type != 'integrator')
-                            <li class="{{($path[0] === 'catalogs') ? 'nav-active' : ''}}">
-                                <a class="nav-link" href="{{route('tenant.catalogs.index')}}">
-                                    Catálogos
-                                </a>
-                            </li>
-                            @endif
-
-                            <li class="{{($path[0] === 'co-advanced-configuration') ? 'nav-active' : ''}}">
-                                <a class="nav-link" href="{{route('tenant.co-advanced-configuration.index')}}">
-                                    Avanzado
-                                </a>
-                            </li>
-
-                            {{-- <li class="{{($path[0] === 'advanced') ? 'nav-active' : ''}}">
-                                <a class="nav-link" href="{{route('tenant.advanced.index')}}">
-                                    Avanzado
-                                </a>
-                            </li>
-
-                            <li class="{{($path[1] === 'pdf_templates') ? 'nav-active' : ''}}">
-                                <a class="nav-link" href="{{route('tenant.advanced.pdf_templates')}}">
-                                    Plantillas PDF
-                                </a>
-                            </li>
-                            @if($vc_company->soap_type_id != '03')
-                            <li class="{{($path[0] === 'offline-configurations') ? 'nav-active' : ''}}">
-                                <a class="nav-link" href="{{route('tenant.offline_configurations.index')}}">
-                                    Modo offline
-                                </a>
-                            </li>
-                            <li class="{{($path[0] === 'series-configurations') ? 'nav-active' : ''}}">
-                                <a class="nav-link" href="{{route('tenant.series_configurations.index')}}">
-                                    Numeración de facturación
-                                </a>
-                            </li>
-                            @endif --}}
-                            {{-- @if(auth()->user()->type != 'integrator' && $vc_company->soap_type_id != '03')
-                            <li class="{{($path[0] === 'tasks') ? 'nav-active': ''}}">
-                                <a class="nav-link" href="{{route('tenant.tasks.index')}}">Tareas programadas</a>
-                            </li>
-                            @endif --}}
-
-                            {{-- <li class="{{($path[0] === 'inventories' && $path[1] === 'configuration') ? 'nav-active': ''}}">
-                                <a class="nav-link" href="{{route('tenant.inventories.configuration.index')}}">Inventarios</a>
-                            </li> --}}
-                        </ul>
-                    </li>
-                    @endif
-
                     @if(in_array('radian', $vc_modules))
                         <li class="nav-parent {{in_array($path[0], ['co-radian-events', 'co-email-reading']) ? 'nav-active nav-expanded' : ''}}">
                             <a class="nav-link" href="#">
-                                <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                                <svg  xmlns="http://www.w3.org/2000/svg"  width="20"  height="20"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-calendar-check"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M11.5 21h-5.5a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v6" /><path d="M16 3v4" /><path d="M8 3v4" /><path d="M4 11h16" /><path d="M15 19l2 2l4 -4" /></svg>
                                 {{-- <i class="fas fa-calendar-check"></i> --}}
                                 <span>Eventos RADIAN</span>
                             </a>
@@ -1178,6 +1095,87 @@
                     sidebarLeft.scrollTop = initialPosition;
                 }
             }
+            
         </script>
     </div>
+    @php
+        $isConfigRoute = in_array($path[0], [
+            'co-configuration-change-ambient', 'co-configuration', 'co-configuration-documents',
+            'companies', 'catalogs', 'advanced', 'tasks', 'inventories','company_accounts','bussiness_turns',
+            'offline-configurations','series-configurations','configurations','co-advanced-configuration'
+        ]);
+    @endphp
+
+    @if(in_array('configuration', $vc_modules))
+    <div id="sticky-config" class="sidebar-config dropup">
+        <a href="#" id="configMenuToggle"
+           class="config-btn d-flex align-items-center justify-content-between"
+           data-toggle="dropdown" aria-expanded="{{ $isConfigRoute ? 'true' : 'false' }}">
+            <span class="d-inline-flex align-items-center span-link">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-settings mr-1">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                    </path>
+                </svg>
+                <span>Configuración y más</span>
+            </span>
+            <i class="fa custom-caret"></i>
+        </a>
+
+        <div id="configDropdownMenu" class="dropdown-menu dropdown-menu-sidebar"
+             role="menu" aria-labelledby="configMenuToggle">
+            <ul class="list-unstyled mb-0">
+                <li class="{{($path[0] === 'co-configuration-change-ambient') ? 'nav-active': ''}}">
+                    <a class="dropdown-item" href="{{route('tenant.configuration.change.ambient')}}">
+                        <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-server"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 4m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v2a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z" /><path d="M3 12m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v2a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z" /><path d="M7 8l0 .01" /><path d="M7 16l0 .01" /></svg>
+                        Cambiar ambiente
+                    </a>
+                </li>
+                <li class="{{($path[0] === 'co-configuration-documents') ? 'nav-active': ''}}">                    
+                    <a class="dropdown-item" href="{{route('tenant.configuration.documents')}}">
+                        <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-file-text"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M9 9l1 0" /><path d="M9 13l6 0" /><path d="M9 17l6 0" /></svg>
+                        Documentos</a>
+                </li>
+                <li class="{{($path[0] === 'co-taxes') ? 'nav-active': ''}}">
+                    <a class="dropdown-item" href="{{route('tenant.co-taxes.index')}}">
+                        <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-receipt"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2l-3 2m4 -14h6m-6 4h6m-2 4h2" /></svg>
+                        Impuestos colombia
+                    </a>
+                </li>
+                <li class="{{($path[0] === 'co-configuration') ? 'nav-active': ''}}">                    
+                    <a class="dropdown-item" href="{{route('tenant.configuration')}}">
+                        <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-building"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21l18 0" /><path d="M9 8l1 0" /><path d="M9 12l1 0" /><path d="M9 16l1 0" /><path d="M14 8l1 0" /><path d="M14 12l1 0" /><path d="M14 16l1 0" /><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16" /></svg>
+                        Empresa</a>
+                </li>
+                @if(auth()->user()->type != 'integrator')
+                <li class="{{($path[0] === 'users') ? 'nav-active': ''}}">
+                    <a class="dropdown-item" href="{{route('tenant.users.index')}}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-users-group"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M10 13a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"></path><path d="M8 21v-1a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v1"></path><path d="M15 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"></path><path d="M17 10h2a2 2 0 0 1 2 2v1"></path><path d="M5 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"></path><path d="M3 13v-1a2 2 0 0 1 2 -2h2"></path></svg>
+                        Usuarios
+                    </a>
+                </li>
+                <li class="{{($path[0] === 'establishments') ? 'nav-active': ''}}">
+                    <a class="dropdown-item" href="{{route('tenant.establishments.index')}}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M3 21l18 0"></path><path d="M4 21l0 -10"></path><path d="M20 21l0 -10"></path><path d="M5 11l14 0"></path><path d="M5 11l1 -6h12l1 6"></path><path d="M9 21l0 -8l6 0l0 8"></path></svg>
+                        Establecimientos
+                    </a>
+                </li>
+                @endif
+                @if(auth()->user()->type != 'integrator')
+                <li class="{{($path[0] === 'catalogs') ? 'nav-active' : ''}}">                    
+                    <a class="dropdown-item" href="{{route('tenant.catalogs.index')}}">
+                        <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-library"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 3m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z" /><path d="M4.012 7.26a2.005 2.005 0 0 0 -1.012 1.737v10c0 1.1 .9 2 2 2h10c.75 0 1.158 -.385 1.5 -1" /><path d="M11 7h5" /><path d="M11 10h6" /><path d="M11 13h3" /></svg>
+                        Catálogos</a>
+                </li>
+                @endif
+                <li class="{{($path[0] === 'co-advanced-configuration') ? 'nav-active' : ''}}">                    
+                    <a class="dropdown-item" href="{{route('tenant.co-advanced-configuration.index')}}">
+                        <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-tools"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21h4l13 -13a1.5 1.5 0 0 0 -4 -4l-13 13v4" /><path d="M14.5 5.5l4 4" /><path d="M12 8l-5 -5l-4 4l5 5" /><path d="M7 8l-1.5 1.5" /><path d="M16 12l5 5l-4 4l-5 -5" /><path d="M16 17l-1.5 1.5" /></svg>
+                        Avanzado</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    @endif
+
 </aside>

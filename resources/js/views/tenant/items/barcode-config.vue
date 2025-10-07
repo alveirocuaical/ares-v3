@@ -7,7 +7,7 @@
     custom-class="barcode-config-dialog"
   >
     <div class="barcode-config-content">
-      <h5 class="mb-2">Opciones de etiqueta</h5>
+      <label class="font-weight-bold mb-1">Opciones de etiqueta</label>
       <div class="form-group mb-2">
         <div class="row align-items-center">
           <!-- <div class="col-6 col-md-4 d-flex flex-column align-items-center justify-content-center">
@@ -43,6 +43,23 @@
           <div class="col-6 col-md-4 d-flex flex-column align-items-center">
             <el-input-number
               class="w-100"
+              v-model="gapX"
+              :min="0.1"
+              :max="5"
+              label="Espacio horizontal"
+              controls-position="right"
+              placeholder="Espacio entre etiquetas (mm)"
+            />
+            <div class="text-muted small text-center mt-1">Espacio entre etiquetas (mm)</div>
+          </div>
+        </div>
+      </div>
+      <label class="font-weight-bold mb-1">Opciones de hoja</label>
+      <div class="form-group mb-2">
+        <div class="row align-items-center">
+          <div class="col-6 col-md-4 d-flex flex-column align-items-center">
+            <el-input-number
+              class="w-100"
               v-model="pageWidth"
               :min="60"
               :max="300"
@@ -63,18 +80,6 @@
               placeholder="Columnas"
             />
             <div class="text-muted small text-center mt-1">Columnas</div>
-          </div>
-          <div class="col-6 col-md-4 d-flex flex-column align-items-center">
-            <el-input-number
-              class="w-100"
-              v-model="gapX"
-              :min="0.1"
-              :max="5"
-              label="Espacio horizontal"
-              controls-position="right"
-              placeholder="Espacio entre etiquetas (mm)"
-            />
-            <div class="text-muted small text-center mt-1">Espacio entre etiquetas (mm)</div>
           </div>
           <div class="form-group mb-2">
             <label class="font-weight-bold mb-1">Cantidad de etiquetas a imprimir:</label>

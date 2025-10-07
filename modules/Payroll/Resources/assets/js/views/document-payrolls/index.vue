@@ -1,7 +1,9 @@
 <template>
     <div  v-loading="loading">
         <div class="page-header pr-0">
-            <h2><a href="/dashboard"><i class="fas fa-tachometer-alt"></i></a></h2>
+            <h2><a href="/payroll/document-payrolls">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-clipboard-list" style="margin-top: -5px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"></path><path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"></path><path d="M9 12l.01 0"></path><path d="M13 12l2 0"></path><path d="M9 16l.01 0"></path><path d="M13 16l2 0"></path></svg>
+            </a></h2>
             <ol class="breadcrumbs">
                 <li class="active"><span>Nóminas</span></li>
             </ol>
@@ -10,13 +12,13 @@
             </div>
         </div>
         <div class="card mb-0">
-            <div class="card-header bg-info">
+            <!-- <div class="card-header bg-info">
                 <h3 class="my-0">Listado de Nóminas</h3>
-            </div>
+            </div> -->
             <div class="card-body">
                 <data-table :resource="resource" :init-search="initSearch">
                     <tr slot="heading" width="100%">
-                        <th>#</th>
+                        <!-- <th>#</th> -->
                         <th>Fecha</th>
                         <th>Empleado</th>
                         <th class="text-left">Tipo nómina</th>
@@ -29,7 +31,7 @@
                         <th class="text-right">Acciones</th>
                     </tr>
                     <tr slot-scope="{ index, row }">
-                        <td>{{ index }}</td>
+                        <!-- <td>{{ index }}</td> -->
                         <td>{{ row.date_of_issue }}</td>
                         <td>{{ row.worker_full_name }}</td>
                         <td class="text-left">{{ row.type_payroll_description }}</td>
@@ -50,9 +52,9 @@
                                 <br>
                             </span>
                         </td>
-                        <td class="text-center">{{ formatNumber(row.salary) }}</td>
-                        <td class="text-center">{{ formatNumber(row.accrued_total) }}</td>
-                        <td class="text-center">{{ formatNumber(row.deductions_total) }}</td>
+                        <td class="text-center">{{ row.salary | numberFormat }}</td>
+                        <td class="text-center">{{ row.accrued_total | numberFormat }}</td>
+                        <td class="text-center">{{ row.deductions_total | numberFormat }}</td>
                         <td class="text-right">
 
                             <template v-if="row.btn_adjust_note_elimination">
@@ -179,12 +181,6 @@
                 const year = date.getFullYear();
                 const month = String(date.getMonth() + 1).padStart(2, '0');
                 return `${year}-${month}`;
-            },
-            formatNumber(number) {
-                return number ? new Intl.NumberFormat('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                }).format(number) : '0.00'
             },
         }
     }

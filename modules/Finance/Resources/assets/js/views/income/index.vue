@@ -1,7 +1,19 @@
 <template>
     <div>
         <div class="page-header pr-0">
-            <h2><a href="/dashboard"><i class="fas fa-tachometer-alt"></i></a></h2>
+            <h2><a href="/finances/income">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-calculator" style="margin-top: -5px;">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M4 3m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                    <path d="M8 7m0 1a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v1a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1z"></path>
+                    <path d="M8 14l0 .01"></path>
+                    <path d="M12 14l0 .01"></path>
+                    <path d="M16 14l0 .01"></path>
+                    <path d="M8 17l0 .01"></path>
+                    <path d="M12 17l0 .01"></path>
+                    <path d="M16 17l0 .01"></path>
+                </svg>
+            </a></h2>
             <ol class="breadcrumbs">
                 <li class="active"><span>Ingresos diversos</span></li>
             </ol>
@@ -13,8 +25,8 @@
             <div class="card-body">
                 <data-table :resource="resource">
                     <tr slot="heading">
-                        <th>#</th>
-                        <th class="text-center">Fecha Emisión</th>
+                        <!-- <th>#</th> -->
+                        <th class="text-left">Fecha Emisión</th>
                         <th>Cliente</th>
                         <th>Número</th>
                         <th>Motivo</th>
@@ -24,8 +36,8 @@
                         <th class="text-center">Dist. Ingreso</th>
                     <tr>
                     <tr slot-scope="{ index, row }" :class="{'text-danger': (row.state_type_id === '11'), 'text-warning': (row.state_type_id === '13'), 'border-light': (row.state_type_id === '01'), 'border-left border-info': (row.state_type_id === '03'), 'border-left border-success': (row.state_type_id === '05'), 'border-left border-secondary': (row.state_type_id === '07'), 'border-left border-dark': (row.state_type_id === '09'), 'border-left border-danger': (row.state_type_id === '11'), 'border-left border-warning': (row.state_type_id === '13')}">
-                        <td>{{ index }}</td>
-                        <td class="text-center">{{ row.date_of_issue }}</td>
+                        <!-- <td>{{ index }}</td> -->
+                        <td class="text-left">{{ row.date_of_issue }}</td>
                         <td>{{ row.customer_name }}</td>
                         <td >{{ row.number }}<br/>
                             <small v-text="row.income_type_description"></small><br/>
@@ -40,7 +52,7 @@
                             >Pagos</button>
                         </td> -->
                         <td class="text-center">{{ row.currency_type_id }}</td>
-                        <td class="text-right">{{ row.total }}</td>
+                        <td class="text-right">{{ row.total | numberFormat }}</td>
 
                         <td class="text-center">
                             <button type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2"

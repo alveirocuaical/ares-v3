@@ -12,6 +12,7 @@ if($current_hostname) {
             Route::delete('/client/configuration/storeServiceCompanieResolution/{resolution}', 'Tenant\ConfigurationController@destroy');
             Route::post('/client/configuration/store-service-software-payroll', 'Tenant\ConfigurationController@storeServiceSoftwarePayroll');
             Route::post('/client/configuration/store-service-software-eqdocs', 'Tenant\ConfigurationController@storeServiceSoftwareEqDocs');
+            Route::post('/client/configuration/storeResolutionFromModal', 'Tenant\ConfigurationController@storeServiceCompanieResolution');
 
             Route::prefix('co-documents')->group(function () {
                 Route::get('', 'Tenant\DocumentController@index')->name('tenant.co-documents.index');
@@ -151,6 +152,13 @@ if($current_hostname) {
                 Route::get('/active', 'Tenant\SellerController@activeSellers');
             });
 
+            Route::prefix('co-payment-methods')->group(function () {
+                Route::get('/records', 'Tenant\PaymentMethodController@records');
+                Route::get('/record/{id}', 'Tenant\PaymentMethodController@record');
+                Route::post('', 'Tenant\PaymentMethodController@store');
+                Route::delete('/{id}', 'Tenant\PaymentMethodController@destroy');
+            });
+
         });
     });
 
@@ -177,6 +185,7 @@ if($current_hostname) {
                 Route::get('records', 'System\CompanyController@records');
                 Route::get('record/{id}', 'System\CompanyController@record');
                 Route::delete('{company}', 'System\CompanyController@destroy');
+                Route::get('searchName/{nit}', 'System\CompanyController@searchName');
 
                 // Route::post('locked_emission', 'System\CompanyController@lockedEmission');
                 Route::post('locked_tenant', 'System\CompanyController@lockedTenant');

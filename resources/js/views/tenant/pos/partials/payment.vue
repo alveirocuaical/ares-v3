@@ -1,7 +1,7 @@
 <template >
-    <div class="row col-lg-12 m-0 p-0" v-loading="loading_submit">
-        <div class="col-lg-4 col-md-6 bg-white m-0 p-0" style="height: calc(100vh - 110px)">
-            <div class="h-75 bg-light" style="overflow-y: auto">
+    <div class="row col-lg-12 m-0 p-0 pos-payment" v-loading="loading_submit">
+        <div class="col-lg-4 col-md-6 bg-white m-0 p-0 order-list" style="height: calc(100vh - 60px);">
+            <div class="h-60" style="overflow-y: auto">
 
                 <div class="row pl-3 py-2 border-bottom m-0 p-0 bg-white">
                     <div class="col-12 px-0 py-3">
@@ -12,85 +12,104 @@
                 <template v-for="(item,index) in form.items">
                     <div class="row py-1 border-bottom m-0 p-0" :key="index">
                         <div class="col-2 p-r-0 m-l-2">
-                            <h4 class="font-weight-semibold m-0 text-center">{{item.quantity}}</h4>
+                            <p class="font-weight-semibold m-0 text-center">{{item.quantity}}</p>
 
                         </div>
                         <div class="col-6 px-0">
-                            <h4 class="font-weight-semibold m-0 text-center m-b-0">{{item.item.name}}</h4>
+                            <p class="font-weight-semibold m-0 text-center m-b-0">{{item.item.name}}</p>
                             <!-- <p class="m-b-0">Descripción del producto</p> -->
                             <!-- <p class="text-muted m-b-0"><small>Descuento 2%</small></p> -->
                         </div>
                         <div class="col-4 p-l-0">
                             <!-- <p class="font-weight-semibold m-b-0">{{currencyTypeActive.symbol}} 240.00</p> -->
                             <h4 class="font-weight-semibold m-0 text-right">{{currencyTypeActive.symbol}} {{
-                                getFormatDecimal(item.total) }}</h4>
+                                item.total | numberFormat }}</h4>
                         </div>
                     </div>
                 </template>
 
 
             </div>
-            <div class="h-25 bg-info" style="overflow-y: auto">
-                <div class="row m-0 p-0 bg-white h-10 d-flex align-items-center">
+            <div class="h-40 bg-light" style="overflow-y: auto">
+                <div class="row m-0 p-0 h-10 d-flex align-items-center">
                     <div class="col-sm-6 py-1">
                         <p class="font-weight-semibold mb-0">TOTAL VENTA</p>
                     </div>
                     <div class="col-sm-6 py-1 text-right">
                         <p class="font-weight-semibold mb-0">{{currencyTypeActive.symbol}} {{
-                            getFormatDecimal(form.sale) }}</p>
+                            form.sale | numberFormat }}</p>
                     </div>
                 </div>
-                <div class="row m-0 p-0 bg-white h-10 d-flex align-items-center" v-if="discount_amount > 0">
+                <div class="row m-0 p-0 h-10 d-flex align-items-center" v-if="discount_amount > 0">
                     <div class="col-sm-6 py-1 ">
                         <p class="font-weight-semibold mb-0">TOTAL DESCUENTO (-)</p>
                     </div>
                     <div class="col-sm-6 py-1 text-right">
                         <p class="font-weight-semibold mb-0">{{currencyTypeActive.symbol}}
-                            {{getFormatDecimal(discount_amount)}}</p>
+                            {{discount_amount | numberFormat}}</p>
                     </div>
                 </div>
 
                 <template v-for="(tax, index) in form.taxes">
-                    <div class="row m-0 p-0 bg-white h-10 d-flex align-items-center"
+                    <div class="row m-0 p-0 h-10 d-flex align-items-center"
                         v-if="((tax.total > 0) && (!tax.is_retention))" :key="index">
                         <div class="col-sm-8 py-1">
                             <p class="font-weight-semibold mb-0">{{tax.name}}(+)</p>
                         </div>
                         <div class="col-sm-4 py-1 text-right">
                             <p class="font-weight-semibold mb-0">{{currencyTypeActive.symbol}}
-                                {{getFormatDecimal(tax.total)}}</p>
+                                {{tax.total | numberFormat}}</p>
                         </div>
                     </div>
                 </template>
 
-                <div class="row m-0 p-0 bg-white h-10 d-flex align-items-center" v-if="form.subtotal > 0">
+                <div class="row m-0 p-0 h-10 d-flex align-items-center" v-if="form.subtotal > 0">
                     <div class="col-sm-6 py-1">
                         <p class="font-weight-semibold mb-0">SUBTOTAL</p>
                     </div>
                     <div class="col-sm-6 py-1 text-right">
                         <p class="font-weight-semibold mb-0">{{currencyTypeActive.symbol}}
-                            {{getFormatDecimal(form.subtotal)}}</p>
+                            {{form.subtotal | numberFormat}}</p>
                     </div>
                 </div>
 
-                <div class="row m-0 p-0 h-50 d-flex align-items-center">
-                    <div class="col-sm-6 py-2">
-                        <p class="font-weight-semibold mb-0 text-white">TOTAL</p>
+                <div class="row m-0 p-0 h-10 d-flex align-items-center">
+                    <div class="col-sm-6 py-1">
+                        <p class="font-weight-semibold mb-0 text-sm">TOTAL</p>
                     </div>
                     <div class="col-sm-6 py-2 text-right">
                         <p class="font-weight-semibold mb-0 text-white">{{currencyTypeActive.symbol}} {{
-                            getFormatDecimal(form.total) }}</p>
+                            form.total | numberFormat }}</p>
+                    </div>
+                </div>
+
+                <div class="col-lg-12 py-2">
+                    <div class="d-flex flex-column">
+                        <div class="col-lg-12 px-0">
+                            <button class="btn py-3 btn-block btn-primary" @click="clickPayment"
+                                :disabled="button_payment">PAGAR
+                                <svg  xmlns="http://www.w3.org/2000/svg"  width="20"  height="20"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-wallet"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12" /><path d="M20 12v4h-4a2 2 0 0 1 0 -4h4" /></svg>
+                            </button>
+                        </div>
+                        <div class="col-lg-12 center">
+                            <button class="btn btn-link text-danger" @click="clickCancel">CANCELAR</button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-lg-8 col-md-6 px-4 pt-3 hyo">
+        <div class="col-lg-8 col-md-6 px-4 pt-3 hyo" style="max-height: 100vh;">
             <div class="row d-flex justify-content-center pt-2">
-                <div class="col-md-12 col-lg-8">
-                    <div class="card card-default">
+                <div class="col-md-12 col-lg-10 border-highlight">
+                    <div class="card card-default mb-0">
                         <div class="card-body ">
                             <div class="row">
-                                <div class="col-md-8">
+                                <div class="col-md-4 ">
+                                    <button class="text-center btn btn-sm btn-block btn-primary"
+                                        @click="back"><i class="fas fa-angle-left"></i> Regresar</button>
+                                </div>
+
+                                <div class="col-md-8 text-right">
                                     <el-radio-group v-model="form.document_type_id" size="small"
                                         @change="filterSeries(form.document_type_id)">
                                         <template v-for="(resource, index) in resources">
@@ -98,11 +117,7 @@
                                                 }}</el-radio-button>
                                         </template>
                                     </el-radio-group>
-                                </div>
-                                <div class="col-md-4 ">
-                                    <button class="text-center btn btn-sm btn-block btn-primary pull-right"
-                                        @click="back"><i class="fas fa-angle-left"></i> Regresar</button>
-                                </div>
+                                </div>                                
                             </div>
                             <div class="row">
                                 <div class="col-md-4">
@@ -139,7 +154,7 @@
                                         </el-option>
                                     </el-select>
                                 </div>
-                                <div class="col-lg-6" v-show="['COT', 'RM'].includes(form.document_type_id)">
+                                <div :class="['90','RM'].includes(form.document_type_id) && advanced_configuration.enable_seller_views ? 'col-lg-6' : 'col-lg-12'" v-show="['COT', 'RM'].includes(form.document_type_id)">
                                     <div class="form-group" :class="{'has-danger': errors.exchange_rate_sale}">
                                         <label class="control-label">Descripción
                                         </label>
@@ -222,19 +237,19 @@
                     </div>
                 </div>
 
-                <div class="col-lg-8">
-                    <div class="card card-default">
+                <div class="col-lg-10 border-highlight">
+                    <div class="card card-default mb-0">
                         <div class="card-body text-center">
                             <p class="my-0"><small>Monto a cobrar</small></p>
-                            <h1 class="mb-2 mt-0">{{currencyTypeActive.symbol}} {{ getFormatDecimal(form.total) }}</h1>
+                            <h1 class="mb-2 mt-0">{{currencyTypeActive.symbol}} {{ form.total | numberFormat }}</h1>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-8">
-                    <div class="card card-default">
+                <div class="col-lg-10 border-highlight">
+                    <div class="card card-default mb-0">
                         <div class="card-body text-center">
                             <div class="row col-lg-12">
-                                <div class="col-lg-6">
+                                <div class="col-lg-4">
                                     <div class="form-group">
                                         <label class="control-label">Ingrese monto</label>
                                         <el-input :value="formattedEnterAmount" @input="onEnterAmountInput"
@@ -251,7 +266,7 @@
                                             <template slot="prepend">{{currencyTypeActive.symbol}}</template>
                                         </el-input> -->
                                         <h4 class="control-label font-weight-semibold m-0 text-center m-b-0">
-                                            {{currencyTypeActive.symbol}} {{ getFormatDecimal(difference)}}</h4>
+                                            {{currencyTypeActive.symbol}} {{ difference | numberFormat }}</h4>
                                     </div>
                                 </div>
                             </div>
@@ -306,8 +321,8 @@
                     </div>
                 </div>
 
-                <div class="col-lg-8">
-                    <div class="card card-default">
+                <div class="col-lg-10 border-highlight">
+                    <div class="card card-default mb-0">
                         <div class="card-body">
                             <!-- <p class="text-center">Método de Pago</p> -->
                             <div class="input-group mb-3">
@@ -334,11 +349,11 @@
                                                 <label>{{index + 1}}.-</label>
                                             </div>
                                             <div class="col-lg-6" :key="pay.id">
-                                                <label>{{getDescriptionPaymentMethodType(pay.payment_method_type_id)}}</label>
+                                                <label>{{ getDescriptionPaymentMethod(pay.payment_method_id) }}</label>
                                             </div>
                                             <div class="col-lg-5" :key="pay.id">
                                                 <label><strong>{{currencyTypeActive.symbol}} {{
-                                                        getFormatDecimal(pay.payment) }}</strong> </label>
+                                                        pay.payment | numberFormat }}</strong> </label>
                                             </div>
                                         </template>
                                     </div>
@@ -348,32 +363,32 @@
                                         <div class="col-lg-3 mb-2">
                                             <button class="btn btn-block btn-secondary"
                                                 @click="setAmountCash(2000)">{{currencyTypeActive.symbol}}
-                                                {{getFormatDecimal(2000)}}</button>
+                                                {{2000 | numberFormat}}</button>
                                         </div>
                                         <div class="col-lg-3 mb-2">
                                             <button class="btn btn-block btn-secondary"
                                                 @click="setAmountCash(5000)">{{currencyTypeActive.symbol}}
-                                                {{getFormatDecimal(5000)}}</button>
+                                                {{5000 | numberFormat}}</button>
                                         </div>
                                         <div class="col-lg-3 mb-2">
                                             <button class="btn btn-block btn-secondary"
                                                 @click="setAmountCash(10000)">{{currencyTypeActive.symbol}}
-                                                {{getFormatDecimal(10000)}}</button>
+                                                {{10000 | numberFormat}}</button>
                                         </div>
                                         <div class="col-lg-3 mb-2">
                                             <button class="btn btn-block btn-secondary"
                                                 @click="setAmountCash(20000)">{{currencyTypeActive.symbol}}
-                                                {{getFormatDecimal(20000)}}</button>
+                                                {{20000 | numberFormat}}</button>
                                         </div>
                                         <div class="col-lg-3 mb-2">
                                             <button class="btn btn-block btn-secondary"
                                                 @click="setAmountCash(50000)">{{currencyTypeActive.symbol}}
-                                                {{getFormatDecimal(50000)}}</button>
+                                                {{50000 | numberFormat}}</button>
                                         </div>
                                         <div class="col-lg-3 mb-2">
                                             <button class="btn btn-block btn-secondary"
                                                 @click="setAmountCash(100000)">{{currencyTypeActive.symbol}}
-                                                {{getFormatDecimal(100000)}}</button>
+                                                {{100000 | numberFormat}}</button>
                                         </div>
                                     </div>
                                 </div>
@@ -381,18 +396,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="col-lg-8 mb-4">
-                    <div class="row">
-                        <div class="col-lg-6">
-                            <button class="btn btn-block btn-primary" @click="clickPayment"
-                                :disabled="button_payment">PAGAR</button>
-                        </div>
-                        <div class="col-lg-6">
-                            <button class="btn btn-block btn-danger" @click="clickCancel">CANCELAR</button>
-                        </div>
-                    </div>
-                </div>
+                </div>                
             </div>
         </div>
         <options-form :showDialog.sync="showDialogOptions" :recordId="documentNewId" :statusDocument="statusDocument"
@@ -426,7 +430,32 @@
     padding: 0!important;
     margin-right: 0!important;
 }
-
+.el-input-group__append, .el-input-group__prepend {
+    padding: 0 8px;
+}
+.switch-wrapper .el-switch{
+    position: absolute;
+    top: 35px;
+    transition: 0.2;
+}
+.switch-wrapper .el-switch.is-checked{
+    position: absolute;
+    top: -6px !important;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.el-input-group--prepend .el-input__inner {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
+@media only screen and (max-width: 991px){
+    .descount-container{
+        margin-top: 1.8rem !important;
+    }
+    .switch-wrapper .el-switch{
+        top: -12px !important;
+    }
+}
 </style>
 
 <script>
@@ -449,7 +478,7 @@
             return {
                 enabled_discount: false,
                 discount_amount:0,
-                is_percentage: false,
+                is_percentage: true,
                 discount_percentage: 0,
                 loading_submit: false,
                 showDialogOptions:false,
@@ -552,6 +581,9 @@
                 } else {
                     return parseInt(val).toLocaleString('en-US');
                 }
+            },
+            paymentContainerStyle() {
+                return window.innerWidth >= 768 ? 'padding-top: 60px !important;' : '';
             }
         },
         methods: {
@@ -790,12 +822,19 @@
                 return (payment_method_type) ? payment_method_type.description:''
 
             },
+            getDescriptionPaymentMethod(id) {
+                let method = _.find(this.payment_methods, {'id': id})
+                return method ? method.name : ''
+            },
             changePaymentMethodType(){
                 let payment_method_type = _.find(this.payment_method_types,{'id':this.form_payment.payment_method_type_id})
                 this.has_card = payment_method_type.has_card
                 this.form_payment.card_brand_id = (payment_method_type.has_card) ? this.form_payment.card_brand_id:null
             },
             addRow(payments) {
+                payments.forEach(pay => {
+                    if (!pay.payment_destination_id) pay.payment_destination_id = 'cash'
+                })
 
                 this.form.payments = payments
                 let acum_payment = 0
@@ -815,61 +854,40 @@
                 this.enter_amount =  parseFloat(amount).toFixed(3) //+ parseFloat(amount)
                 this.inputAmount()
             },
-            setAmountCash(amount)
-            {
-
-                let row = _.last(this.payments, { 'payment_method_type_id' : '01' })
-                row.payment = parseFloat(row.payment) + parseFloat(amount)
-                // console.log(row.payment)
-
-                this.form.payments = this.payments
-                let acum_payment = 0
-
-                this.form.payments.forEach((item)=>{
-                    acum_payment += parseFloat(item.payment)
-                })
-
-                this.setAmount(acum_payment)
-
+            setAmountCash(amount) {
+                // Suma el monto al input "Ingrese monto"
+                this.enter_amount = parseFloat(this.enter_amount || 0) + parseFloat(amount)
+                this.enterAmount()
             },
-            async enterAmount(){
+            async enterAmount() {
+                // Solo actualizar el campo payment si hay un solo pago
+                if (this.form.payments.length === 1) {
+                    let r_item = await _.last(this.payments, { 'payment_method_type_id': '01' });
+                    if (r_item) {
+                        r_item.payment = parseFloat(this.form.total);
+                    }
 
-                let r_item = await _.last(this.payments, { 'payment_method_type_id' : '01' })
-                r_item.payment = await parseFloat(this.enter_amount)
-                // console.log(r_item.payment)
-
-                let ind = this.form.payments.length - 1
-                this.form.payments[ind].payment = parseFloat(this.enter_amount)
-                // this.setAmount(item.payment)
-
-                let acum_payment = 0
-
-                await this.form.payments.forEach((item)=>{
-                    acum_payment += parseFloat(item.payment)
-                })
-                // console.log(this.form.payments)
-
-                // this.amount = item.payment
-                this.amount = acum_payment
-                // this.amount = this.enter_amount
-                // console.log(this.amount)
-                this.difference = this.amount - this.form.total
-
-                if(isNaN(this.difference)) {
-                    this.button_payment = true
-                    this.difference = "-"
-                }else if(this.difference >=0){
-                    this.button_payment = false
-                    this.difference = this.amount - this.form.total
-                }else{
-                    this.button_payment = true
+                    let ind = this.form.payments.length - 1;
+                    if (this.form.payments[ind]) {
+                        this.form.payments[ind].payment = parseFloat(this.form.total);
+                    }
                 }
-                this.difference = _.round(this.difference,2)
 
-                this.$eventHub.$emit('eventSetFormPosLocalStorage', this.form)
+                this.amount = parseFloat(this.enter_amount) || 0;
+                this.difference = this.amount - parseFloat(this.form.total);
 
-                await this.lStoPayment()
+                if (isNaN(this.difference)) {
+                    this.button_payment = true;
+                    this.difference = "-";
+                } else if (this.difference >= 0) {
+                    this.button_payment = false;
+                } else {
+                    this.button_payment = true;
+                }
+                this.difference = _.round(this.difference, 2);
 
+                this.$eventHub.$emit('eventSetFormPosLocalStorage', this.form);
+                await this.lStoPayment();
             },
             getLocalStoragePayment(key, re_default = null){
 
@@ -1034,6 +1052,7 @@
                 // }
                 const items_final = this.form.items.concat(this.items_refund);
                 this.form.items = items_final
+                this.form.enter_amount = this.enter_amount
                 this.loading_submit = true
                 this.$http.post(`/${this.resource_documents}`, this.form).then(response => {
                     if (response.data.success == true) {
@@ -1313,7 +1332,7 @@
                 // Reiniciar flags y montos de descuento
                 this.enabled_discount = false
                 this.discount_amount = 0
-                this.is_percentage = false
+                this.is_percentage = true
                 this.discount_percentage = 0
 
                 // Restaurar total original si existe descuento previo
@@ -1336,9 +1355,11 @@
 
                 // Pago por defecto en 0
                 const defaultPayment = {
-                    payment_method_type_id: '01',
+                    payment_method_type_id: null,
+                    payment_method_id: 10,
                     payment: 0,
-                    date_of_payment: moment().format('YYYY-MM-DD')
+                    date_of_payment: moment().format('YYYY-MM-DD'),
+                    payment_destination_id: 'cash'
                 }
                 this.form.payments.push(defaultPayment)
                 this.payments.push(defaultPayment)

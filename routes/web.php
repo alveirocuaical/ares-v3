@@ -290,6 +290,12 @@ if ($hostname) {
             Route::post('unit_types', 'Tenant\UnitTypeController@store');
             Route::delete('unit_types/{code}', 'Tenant\UnitTypeController@destroy');
 
+            // Unidades Colombia
+            Route::get('type_units/records', 'Tenant\TypeUnitController@records');
+            Route::get('type_units/record/{id}', 'Tenant\TypeUnitController@record');
+            Route::post('type_units', 'Tenant\TypeUnitController@store');
+            Route::delete('type_units/{id}', 'Tenant\TypeUnitController@destroy');
+
             //Detractions
             Route::get('detraction_types/records', 'Tenant\DetractionTypeController@records');
             Route::get('detraction_types/tables', 'Tenant\DetractionTypeController@tables');
@@ -448,6 +454,7 @@ if ($hostname) {
            Route::get('pos', 'Tenant\PosController@index')->name('tenant.pos.index');
            Route::get('pos/configuration', 'Tenant\PosController@configuration')->name('tenant.pos.configuration');
            Route::post('pos/configuration', 'Tenant\PosController@configuration_store');
+           Route::post('/client/configuration/storeResolutionFromModal', 'Tenant\ConfigurationController@storeResolutionFromModal');
 
            Route::get('pos_full', 'Tenant\PosController@index_full')->name('tenant.pos_full.index');
 
@@ -464,6 +471,7 @@ if ($hostname) {
            //WhatsApp
            Route::post('pos/whatsapp/config', 'Tenant\PosController@saveWhatsappConfig');
            Route::get('pos/whatsapp/config', 'Tenant\PosController@getWhatsappConfig');
+           Route::post('pos/toggle-favorite/{item_id}', 'Tenant\PosController@toggle_favorite');
            Route::post('pos/whatsapp/send', 'Tenant\PosController@sendWhatsappPdf');
            Route::prefix('quotations')->group(function() {
             Route::post('whatsapp/send', 'Tenant\PosController@sendWhatsappPdf');

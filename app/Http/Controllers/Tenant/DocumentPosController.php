@@ -67,6 +67,7 @@ use App\Models\Tenant\DocumentPosPayment;
 use App\Models\Tenant\ConfigurationPos;
 use App\Http\Resources\Tenant\DocumentPosResource;
 use App\Models\Tenant\Cash;
+use App\Models\Tenant\Seller;
 use Modules\Factcolombia1\Http\Controllers\Tenant\DocumentController;
 use Illuminate\Support\Facades\View;
 use Modules\Accounting\Models\AccountingChartAccountConfiguration;
@@ -211,6 +212,9 @@ class DocumentPosController extends Controller
         try{
 //        DB::connection('tenant')->transaction(function () use ($request) {
             $data = $this->mergeData($request);
+            if ($request->has('enter_amount')) {
+                $data['enter_amount'] = $request->input('enter_amount');
+            }
 //            \Log::debug($request);
 //            \Log::debug(json_encode($data));
             $customer = Person::where('number', $data['customer']['number'])->where('type', 'customers')->firstOrFail();
@@ -366,6 +370,15 @@ class DocumentPosController extends Controller
                 'head_note' => $request->input('head_note', null),
                 'foot_note' => $request->input('foot_note', null),
             ];
+            $data_invoice_pos['seller_id'] = $data['seller_id'] ?? null;
+            if ($data['seller_id']) {
+                $seller = Seller::find($data['seller_id']);
+                if ($seller) {
+                    $data_invoice_pos['seller'] = [
+                        'name' => $seller->full_name
+                    ];
+                }
+            }
             // \Log::debug(json_encode($data_invoice_pos));
 //            return [
 //                'success' => false,

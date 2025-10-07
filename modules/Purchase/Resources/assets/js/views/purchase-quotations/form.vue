@@ -141,7 +141,13 @@
                           :showClose="false"></purchase-quotation-options>
     </div>
 </template>
-
+<style>
+@media only screen and (min-width: 768px) {
+    html.fixed .inner-wrapper {
+        padding-top: 60px !important;
+    }
+}
+</style>
 <script>
     import QuotationFormItem from './partials/item.vue'
     import PurchaseQuotationOptions from './partials/options.vue'

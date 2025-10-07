@@ -99,6 +99,24 @@
                                 </el-input>
                             </template>
                         </div>
+                        <div class="col-lg-3 col-md-3 col-sm-12 pb-2" v-if="$attrs.showSendAllEvents">
+                            <el-tooltip
+                                placement="top"
+                                effect="dark"
+                                :content="`Procesa los eventos en este orden: 1) Acuse de Recibo 2) Recepción de Bienes 3) Aceptación Expresa\nSi algún evento falla, los siguientes para ese documento no se ejecutan.`"
+                            >
+                                <el-button
+                                    type="danger"
+                                    plain
+                                    icon="el-icon-upload"
+                                    size="mini"
+                                    @click="$emit('send-all-events')"
+                                    style="margin-top: 2px; width: 100%; white-space: normal; line-height: 1.1;"
+                                >
+                                    Enviar Todos los eventos Pendientes
+                                </el-button>
+                            </el-tooltip>
+                        </div>
                     </div>
                     <template v-if="search.column=='date_of_issue' && extraFilters">
                         <div class="row" v-if="applyFilter">
@@ -117,8 +135,8 @@
                                         <el-option
                                             v-for="res in resolutions"
                                             :key="res.id"
-                                            :label="res.description"
-                                            :value="res.id">
+                                            :label="res.prefix"
+                                            :value="res.prefix">
                                         </el-option>
                                         <template v-if="resolutions.length === 0">
                                             <el-option disabled label="No hay resoluciones activas" value=""></el-option>
@@ -382,7 +400,12 @@
                     params.fecha_fin = null;
                 }
                 if (this.selectedResolution) {
-                    params.resolution_id = this.selectedResolution;
+                    const selectedRes = this.resolutions.find(res => 
+                        res.prefix === this.selectedResolution
+                    );
+                    if (selectedRes) {
+                        params.resolution_id = selectedRes.id;
+                    }
                 }
                 if (this.comprobanteSearch) {
                     params.comprobante = this.comprobanteSearch;

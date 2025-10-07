@@ -12,12 +12,14 @@
             height: 100%;
         }
         table.grid {
+            width: 90%;
+            height: 90%;
             border-collapse: separate;
             border-spacing: {{ $gapX }}mm {{ $gapX }}mm; /* mismo espacio horizontal y vertical */
             width: 100%;
             height: 100%;
             table-layout: fixed;
-            border: 1px solid transparent;
+            border: 1px solid red;
         }
         td.label-cell {
             width: {{ $width }}mm;
@@ -27,6 +29,7 @@
             vertical-align: top;
             text-align: center;
             overflow: hidden;
+            border: 1px solid blue;
         }
         .etiqueta-content {
             width: 100%;
@@ -38,6 +41,7 @@
             box-sizing: border-box;
             overflow: hidden;
             text-align: center;
+            border: 1px solid green;
         }
         .company, .details, .code, .price {
             box-sizing: border-box;

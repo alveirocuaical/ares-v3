@@ -155,6 +155,9 @@
                                         <el-option label="Carta" value="2"></el-option>
                                         <el-option label="Tirilla" value="3"></el-option>
                                     </el-select>
+                                    <el-checkbox v-model="form.is_tirilla2" v-if="form.format_print === '3'">
+                                        Usar plantilla alternativa de tirilla
+                                    </el-checkbox>
                                     <small class="form-control-feedback" v-if="errors.format_print">{{
                                         errors.format_print }}</small>
                                 </div>
@@ -797,7 +800,7 @@ export default {
                 return value;
             }
             // Asumiendo que numericPrice es un número
-            const formattedPrice = numericPrice.toLocaleString('en-US', {
+            const formattedPrice = numericPrice.toLocaleString('es-CO', {
                 style: 'decimal',  // Estilo 'decimal' para separadores de mil y dos decimales
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
@@ -826,7 +829,9 @@ export default {
             // Configura el ítem para la edición
             row.indexi = index;
             this.recordItem = row;
-            this.showDialogAddItem = true;
+            this.$nextTick(() => {
+                this.showDialogAddItem = true;
+            });
         },
         clickEditUser(row, index) {
             row.indexi = index
@@ -888,6 +893,7 @@ export default {
                 this.form.health_fields = this.health_sector ? this.duplicated_health_fields : {};
                 this.form.health_users = this.health_sector ? this.duplicated_health_users : [];
                 this.changeResolution();
+                this.form.is_tirilla2 = typeof this.invoice.is_tirilla2 !== 'undefined' ? this.invoice.is_tirilla2 : false;
                 if (this.is_edit) {
                     this.form.number = this.invoice.number
                     this.calculateTotal()
@@ -901,6 +907,7 @@ export default {
             else
                 this.health_sector = false
             this.form = {
+                is_tirilla2: false,
                 type_document_id: null,
                 resolution_id: null,
                 currency_id: this.invoice ? this.invoice.currency_id : null,
@@ -966,7 +973,7 @@ export default {
             // this.form.establishment_id = (this.establishments.length > 0)?this.establishments[0].id:null
             this.form.type_invoice_id = (this.type_invoices.length > 0) ? this.type_invoices[0].id : null
             this.form.payment_form_id = (this.payment_forms.length > 0) ? this.payment_forms[0].id : null;
-            this.form.payment_method_id = (this.payment_methods.length > 0) ? this.payment_methods[0].id : null;
+            this.form.payment_method_id = (this.payment_methods.length > 0) ? this.payment_methods[9].id : null;
             // this.form.operation_type_id = (this.operation_types.length > 0)?this.operation_types[0].id:null
             // this.selectDocumentType()
             // this.changeEstablishment()
@@ -1212,6 +1219,12 @@ export default {
             if (!this.form.format_print) {
                 return this.$message.error('Debe seleccionar un Formato de Impresión')
             }
+            // Establecer el valor booleano para `is_tirilla2`
+            if (this.form.format_print === "3") {
+                this.form.is_tirilla2 = this.form.format_print === "3" && this.form.is_tirilla2
+            } else {
+                this.form.is_tirilla2 = false; // O puedes: delete this.form.is_tirilla2;
+            }
             if (!this.validateResolution()) {
                 // La validación falló, detener la ejecución del método
                 return;
@@ -1295,6 +1308,12 @@ export default {
             if (!this.form.format_print) {
                 return this.$message.error('Debe seleccionar un Formato de Impresión')
             }
+            // Establecer el valor booleano para `is_tirilla2`
+            if (this.form.format_print === "3") {
+                this.form.is_tirilla2 = this.form.format_print === "3" && this.form.is_tirilla2
+            } else {
+                this.form.is_tirilla2 = false; // O puedes: delete this.form.is_tirilla2;
+            }
             if (this.health_sector) {
                 if (this.form.health_users.length == 0)
                     return this.$message.error('Para facturas del sector salud se debe incluir los datos de al menos un usuario del servicio')
@@ -1326,6 +1345,17 @@ export default {
 
             this.form.service_invoice = await this.createInvoiceService();
             // return
+            if (this.form.seller_id) {
+                const seller = this.sellers.find(s => s.id === this.form.seller_id);
+                if (seller) {
+                    this.form.seller = {
+                        id: seller.id,
+                        name: seller.full_name,
+                    };
+                }
+            } else {
+                delete this.form.seller;
+            }
             this.loading_submit = true
             //                console.log(JSON.stringify(this.form))
             this.$http.post(`/${this.resource}`, this.form).then(response => {

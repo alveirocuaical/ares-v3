@@ -1,8 +1,31 @@
 <template>
+<div>
+    <div class="page-header pr-0">
+        <h2>
+            <a href="/finances/to-pay">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-calculator" style="margin-top: -5px;">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M4 3m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                    <path d="M8 7m0 1a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v1a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1z"></path>
+                    <path d="M8 14l0 .01"></path>
+                    <path d="M12 14l0 .01"></path>
+                    <path d="M16 14l0 .01"></path>
+                    <path d="M8 17l0 .01"></path>
+                    <path d="M12 17l0 .01"></path>
+                    <path d="M16 17l0 .01"></path>
+                </svg>
+            </a>
+        </h2>
+        <ol class="breadcrumbs">
+            <li class="active">
+                <span>Cuentas por pagar</span>
+            </li>
+        </ol>
+    </div>
     <div class="card mb-0 pt-2 pt-md-0">
-        <div class="card-header bg-info">
+        <!-- <div class="card-header bg-info">
             <h3 class="my-0">Cuentas por pagar</h3>
-        </div>
+        </div> -->
         <div class="card mb-0">
             <div class="card-body"> 
 
@@ -137,7 +160,7 @@
                             <table class="table">
                                 <thead>
                                 <tr>
-                                    <th>#</th>
+                                    <!-- <th>#</th> -->
                                     <th>F.Emisión</th>
                                     <th>F.Vencimiento</th>
                                     <th>Número</th>
@@ -153,7 +176,7 @@
                                 <tbody>
                                     <template v-for="(row, index) in records">
                                         <tr v-if="row.total_to_pay > 0" :key="index">
-                                            <td>{{ index + 1 }}</td>
+                                            <!-- <td>{{ index + 1 }}</td> -->
                                             <td>{{ row.date_of_issue }}</td>
                                             <td>{{ row.date_of_due ? row.date_of_due : 'No tiene fecha de vencimiento.'}}</td>
                                             <td>{{ row.number_full }}</td>
@@ -164,7 +187,7 @@
                                                 <el-popover placement="right" width="300" trigger="click">
                                                 <p>
                                                     Saldo actual:
-                                                    <span class="custom-badge">{{ row.total_to_pay }}</span>
+                                                    <span class="custom-badge">{{ row.total_to_pay | numberFormat }}</span>
                                                 </p>
                                                 <p>
                                                     Fecha ultimo pago:
@@ -190,8 +213,8 @@
                                                 </el-popover>
                                             </td>
                                                 <td>{{row.currency_id}}</td>
-                                            <td class="text-right text-danger">{{ row.total_to_pay }}</td>
-                                            <td class="text-right">{{ row.total }}</td>
+                                            <td class="text-right text-danger">{{ row.total_to_pay | numberFormat }}</td>
+                                            <td class="text-right">{{ row.total | numberFormat }}</td>
                                             <td class="text-right">
                                                 <template v-if="row.type === 'purchase'">
                                                 <button
@@ -200,6 +223,14 @@
                                                     class="btn waves-effect waves-light btn-xs btn-info m-1__2"
                                                     @click.prevent="clickPurchasePayment(row.id)"
                                                 >Pagos</button>
+                                                </template>
+                                                <template v-else-if="row.type === 'support_document'">
+                                                    <button
+                                                        type="button"
+                                                        style="min-width: 41px"
+                                                        class="btn waves-effect waves-light btn-xs btn-info m-1__2"
+                                                        @click.prevent="clickSupportDocumentPayment(row.id)"
+                                                    >Pagos</button>
                                                 </template>
                                                 <template v-else>
                                                 <button
@@ -228,6 +259,12 @@
             :purchaseId="recordId"
             :external="true"
             ></purchase-payments>
+        
+        <support-document-payments
+            :showDialog.sync="showDialogSupportDocumentPayments"
+            :recordId="recordId"
+            :external="true"
+        ></support-document-payments>
 
         <expense-payments
             :showDialog.sync="showDialogExpensePayments"
@@ -236,17 +273,19 @@
             ></expense-payments>
 
     </div>
+</div>
 </template>
 
 <script>
 
     import ExpensePayments from "@viewsModuleExpense/expense_payments/payments.vue";
+    import SupportDocumentPayments from "@viewsModulePurchase/support-documents/payments.vue";
     import PurchasePayments from "@viewsModulePurchase/purchase_payments/payments.vue";
     import DataTable from '../../components/DataTableWithoutPaging.vue'
     import queryString from "query-string";
 
     export default {
-        components: {ExpensePayments, PurchasePayments, DataTable},
+        components: {ExpensePayments, PurchasePayments, DataTable, SupportDocumentPayments},
         data() {
             return {
                 resource: 'finances/to-pay',
@@ -268,7 +307,8 @@
                     }
                 },
                 showDialogPurchasePayments: false,
-                showDialogExpensePayments: false
+                showDialogExpensePayments: false,
+                showDialogSupportDocumentPayments: false,
             }
         },
         async created() {
@@ -409,6 +449,10 @@
                     });
 
                 }
+            },
+            clickSupportDocumentPayment(recordId) {
+                this.recordId = recordId;
+                this.showDialogSupportDocumentPayments = true;
             },
             clickPurchasePayment(recordId) {
                 this.recordId = recordId;

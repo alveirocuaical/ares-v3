@@ -198,7 +198,7 @@ class DocumentController extends Controller
         $resolutions = TypeDocument::whereNotNull('resolution_number')
             ->where('resolution_date_end', '>', now())
             ->orderBy('description')
-            ->get(['id', 'description']);
+            ->get(['id', 'description', 'prefix']);
 
         return response()->json($resolutions);
     }
@@ -755,6 +755,7 @@ class DocumentController extends Controller
             if ($request->filled('foot_note')) {
                 $service_invoice['foot_note'] = $request->foot_note;
             }
+            $service_invoice['is_tirilla2'] = $request->input('is_tirilla2', false);
             // if ($request->filled('notes')) {
             //     $service_invoice['notes'] = $request->notes;
             // }
@@ -855,6 +856,9 @@ class DocumentController extends Controller
                 else
                     $service_invoice['payment_form']['payment_due_date'] = date('Y-m-d', strtotime($request->date_expiration));
                 $service_invoice['payment_form']['duration_measure'] = $request->time_days_credit;
+            }
+            if ($request->has('seller')) {
+                $service_invoice['seller'] = $request->seller;
             }
             $service_invoice['customer']['dv'] = $this->validarDigVerifDIAN($service_invoice['customer']['identification_number']);
             // $service_invoice['legal_monetary_totals']['line_extension_amount'] = "2350000.00";
@@ -1066,7 +1070,7 @@ class DocumentController extends Controller
             }
 
             $this->document = DocumentHelper::createDocument($request, $nextConsecutive, $correlative_api, $this->company, $response, $response_status, $company->type_environment_id);
-            $payments = (new DocumentHelper())->savePayments($this->document, $request->payments);
+            (new DocumentHelper())->savePayments($this->document, $request->payments,$request);
 
             // Registrar asientos contables
             $this->registerAccountingSaleEntries($this->document);
@@ -1236,6 +1240,7 @@ class DocumentController extends Controller
             $service_invoice = $request->service_invoice;
 
             $service_invoice['number'] = $correlative_api;
+            $service_invoice['is_tirilla2'] = $request->input('is_tirilla2', false);
             $service_invoice['prefix'] = $request->prefix;
             $service_invoice['resolution_number'] = $request->resolution_number;
             $service_invoice['head_note'] = "V I S T A   P R E E L I M I N A R  --  V I S T A   P R E E L I M I N A R  --  V I S T A   P R E E L I M I N A R  --  V I S T A   P R E E L I M I N A R";
@@ -1404,6 +1409,7 @@ class DocumentController extends Controller
             $note_service['tarifaica'] = $datoscompany->ica_rate;
             $note_service['actividadeconomica'] = $datoscompany->economic_activity_code;
             $note_service['notes'] = $request->observation;
+            $note_service['is_tirilla2'] = $request->input('is_tirilla2', false);
             $sucursal = \App\Models\Tenant\Establishment::where('id', auth()->user()->establishment_id)->first();
 
             if(file_exists(storage_path('sendmail.api')))
@@ -1575,6 +1581,17 @@ class DocumentController extends Controller
                 'xml' => $this->getFileName(),
                 'cufe' => $response_model->cude
             ]);
+
+            if ($request->reference_id && $this->document->type_document_id == 3) {
+                $referenced_document = Document::find($request->reference_id);
+                if ($referenced_document) {
+                    DocumentHelper::handlePaymentsOnCreditNote(
+                        $referenced_document,
+                        $request->note_concept_id,
+                        $request->total
+                    );
+                }
+            }
 
             // Registrar asientos contables
             if($this->document->type_document_id == 3 ){
@@ -2128,8 +2145,8 @@ class DocumentController extends Controller
             $establishment_id = auth()->user()->establishment_id;
             $warehouse = ModuleWarehouse::where('establishment_id', $establishment_id)->first();
 
-            $items_u = ItemP::whereNotItemsAiu()->whereWarehouse()->whereIsActive()->whereNotIsSet()->orderBy('description')->take(20)->get();
-            $items_s = ItemP::whereNotItemsAiu()->where('unit_type_id','ZZ')->whereIsActive()->orderBy('description')->take(10)->get();
+            $items_u = ItemP::whereNotItemsAiu()->whereWarehouse()->whereIsActive()->whereNotIsSet()->orderBy('internal_id')->take(20)->get();
+            $items_s = ItemP::whereNotItemsAiu()->where('unit_type_id','ZZ')->whereIsActive()->orderBy('internal_id')->take(10)->get();
 
            // $items_aiu = ItemP::whereIn('internal_id', ['aiu00001', 'aiu00002', 'aiu00003'])->get();
 
@@ -2206,6 +2223,7 @@ class DocumentController extends Controller
                     'series_enabled' => (bool) $row->series_enabled,
                     'unit_type' => $row->unit_type,
                     'tax' => $row->tax,
+                    'active' => (bool) $row->active,
                 ];
             });
         }
@@ -2284,6 +2302,7 @@ class DocumentController extends Controller
                     'series_enabled' => (bool) $row->series_enabled,
                     'unit_type' => $row->unit_type,
                     'tax' => $row->tax,
+                    'active' => (bool) $row->active,
                 ];
             });
         }
@@ -2390,6 +2409,7 @@ class DocumentController extends Controller
                     'unit_type' => $row->unit_type,
                     'tax' => $row->tax,
                     'is_set' => (bool) $row->is_set,
+                    'active' => (bool) $row->active,
                 ];
             });
 
@@ -2633,6 +2653,7 @@ class DocumentController extends Controller
                 'series_enabled' => (bool) $row->series_enabled,
                 'unit_type' => $row->unit_type,
                 'tax' => $row->tax,
+                'active' => (bool) $row->active,
 
             ];
         });
@@ -2728,6 +2749,7 @@ class DocumentController extends Controller
             $service_invoice['time'] = date('H:i:s');
             $service_invoice['payment_form']['payment_form_id'] = $request->payment_form_id;
             $service_invoice['payment_form']['payment_method_id'] = $request->payment_method_id;
+            $service_invoice['is_tirilla2'] = $request->input('is_tirilla2', false);
             if($request->payment_form_id == '1')
                 $service_invoice['payment_form']['payment_due_date'] = date('Y-m-d');
             else
@@ -2886,7 +2908,7 @@ class DocumentController extends Controller
 
             $request->merge(['state_document_id' => $state_document_id]);
             $this->document = DocumentHelper::createDocument($request, $nextConsecutive, $correlative_api, $this->company, $response, $response_status, $company->type_environment_id);
-            $payments = (new DocumentHelper())->savePayments($this->document, $request->payments);
+            (new DocumentHelper())->savePayments($this->document, $request->payments,$request);
 
 
         }

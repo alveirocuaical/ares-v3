@@ -2,8 +2,16 @@
     <div>
         <div class="page-header pr-0">
             <h2>
-                <a href="/dashboard">
-                    <i class="fas fa-tachometer-alt"></i>
+                <a href="/accounting/auxiliary-movement">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chart-histogram" style="margin-top: -5px;">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                        <path d="M3 3v18h18"></path>
+                        <path d="M20 18v3"></path>
+                        <path d="M16 16v5"></path>
+                        <path d="M12 13v8"></path>
+                        <path d="M8 16v5"></path>
+                        <path d="M3 11c6 0 5 -5 9 -5s3 5 9 5"></path>
+                    </svg>
                 </a>
             </h2>
             <ol class="breadcrumbs">
@@ -57,10 +65,10 @@
                                         <td colspan="7">
                                             <span class="font-weight-bold">Cuenta contable:</span> {{ group.account_code }} {{ group.account_name }}
                                         </td>
-                                        <td>{{ group.balance_initial }}</td>
-                                        <td>{{ group.total_debit }}</td>
-                                        <td>{{ group.total_credit }}</td>
-                                        <td>{{ group.balance_final }}</td>
+                                        <td>{{ group.balance_initial | numberFormat }}</td>
+                                        <td>{{ group.total_debit | numberFormat }}</td>
+                                        <td>{{ group.total_credit | numberFormat }}</td>
+                                        <td>{{ group.balance_final | numberFormat }}</td>
                                     </tr>
                                     <tr v-for="row in group.details" :key="row.id">
                                         <td>{{ row.account_code }}</td>
@@ -71,16 +79,16 @@
                                         <td>{{ row.document_info && row.document_info.third_party_name }}</td>
                                         <td>{{ row.description }}</td>
                                         <td class="text-right">0</td>
-                                        <td class="text-right">{{ row.debit }}</td>
-                                        <td class="text-right">{{ row.credit }}</td>
+                                        <td class="text-right">{{ row.debit | numberFormat }}</td>
+                                        <td class="text-right">{{ row.credit | numberFormat }}</td>
                                         <td class="text-right">0</td>
                                     </tr>
                                 </template>
                                 <tr>
                                     <td>TOTAL</td>
                                     <td colspan="7"></td>
-                                    <td>{{ parseFloat(accounts.reduce((acc, group) => acc + group.total_debit, 0)).toFixed(2) }}</td>
-                                    <td>{{ parseFloat(accounts.reduce((acc, group) => acc + group.total_credit, 0)).toFixed(2) }}</td>
+                                    <td>{{ parseFloat(accounts.reduce((acc, group) => acc + group.total_debit, 0)).toFixed(2) | numberFormat }}</td>
+                                    <td>{{ parseFloat(accounts.reduce((acc, group) => acc + group.total_credit, 0)).toFixed(2) | numberFormat }}</td>
                                     <td></td>
                                 </tr>
                             </tbody>

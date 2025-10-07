@@ -43,8 +43,8 @@
       </div>
       <br />
       <div class="row" v-show="!showGenerate">
-        <div class="col-md-6">
-          <el-input v-model="customer_email">
+        <div class="col-md-12">
+          <el-input v-model="customer_email" placeholder="Correo electrónico">
             <el-button
               slot="append"
               icon="el-icon-message"
@@ -53,7 +53,7 @@
             >Enviar</el-button>
           </el-input>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-12 mt-4">
           <el-input v-model="whatsapp_number" placeholder="Número WhatsApp">
             <el-button
               slot="append"

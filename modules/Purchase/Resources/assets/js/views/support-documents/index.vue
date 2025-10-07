@@ -1,7 +1,13 @@
 <template>
     <div  v-loading="loading">
         <div class="page-header pr-0">
-            <h2><a href="/dashboard"><i class="fas fa-tachometer-alt"></i></a></h2>
+            <h2><a href="/support-documents">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-shopping-bag" style="margin-top: -5px;">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M6.331 8h11.339a2 2 0 0 1 1.977 2.304l-1.255 8.152a3 3 0 0 1 -2.966 2.544h-6.852a3 3 0 0 1 -2.965 -2.544l-1.255 -8.152a2 2 0 0 1 1.977 -2.304z"></path>
+                    <path d="M9 11v-5a3 3 0 0 1 6 0v5"></path>
+                </svg>
+            </a></h2>
             <ol class="breadcrumbs">
                 <li class="active"><span>DSNOF</span></li>
             </ol>
@@ -10,13 +16,13 @@
             </div>
         </div>
         <div class="card mb-0">
-            <div class="card-header bg-info">
+            <!-- <div class="card-header bg-info">
                 <h3 class="my-0">Listado de Documentos de soporte</h3>
-            </div>
+            </div> -->
             <div class="card-body">
                 <data-table :resource="resource" :init-search="initSearch">
                     <tr slot="heading" width="100%">
-                        <th>#</th>
+                        <!-- <th>#</th> -->
                         <th>Fecha</th>
                         <th>Proveedor</th>
                         <th>Tipo</th>
@@ -28,7 +34,7 @@
                         <th class="text-right">Acciones</th>
                     <tr>
                     <tr slot-scope="{ index, row }">
-                        <td>{{ index }}</td>
+                        <!-- <td>{{ index }}</td> -->
                         <td>{{ row.date_of_issue }}</td>
                         <td>{{ row.supplier_full_name }}</td>  
                         <td>{{ row.type_document_name }}</td>  
@@ -49,7 +55,7 @@
                             </template>
                         </td>  
                         <td class="text-center">{{ row.currency_name }}</td> 
-                        <td class="text-center">{{ formatNumber(row.total) }}</td> 
+                        <td class="text-center">{{ row.total | numberFormat }}</td> 
                         <td class="text-right">
 
                             <template v-if="!row.is_adjust_note">
@@ -57,6 +63,7 @@
                             </template>
 
                             <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickOptions(row.id)">Opciones</button>
+                            <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickSupportDocumentPayment(row.id)">Pagos</button>
 
                         </td>
                     </tr>
@@ -69,11 +76,18 @@
                 :showClose="true">
             </support-document-options>
 
+            <support-document-payments
+                :showDialog.sync="showDialogSupportDocumentPayments"
+                :recordId="recordId"
+                :showClose="true">
+            </support-document-payments>
+
         </div>
     </div>
 </template>
 <script>
 
+    import SupportDocumentPayments from './payments.vue'
     import SupportDocumentOptions from './partials/options.vue' 
     import DataTable from '@components/DataTableResource.vue'
     import {deletable} from '@mixins/deletable'
@@ -83,9 +97,11 @@
         components: { 
             DataTable, 
             SupportDocumentOptions, 
+            SupportDocumentPayments
         },
         data() {
             return {
+                showDialogSupportDocumentPayments: false,
                 showDialog: false,
                 resource: 'support-documents',
                 recordId: null,
@@ -104,18 +120,16 @@
             clickOptions(recordId) {
                 this.recordId = recordId
                 this.showDialogOptions = true
-            },  
+            },
+            clickSupportDocumentPayment(recordId) {
+                this.recordId = recordId
+                this.showDialogSupportDocumentPayments = true
+            },
             getCurrentMonth() {
                 const date = new Date();
                 const year = date.getFullYear();
                 const month = String(date.getMonth() + 1).padStart(2, '0');
                 return `${year}-${month}`;
-            },
-            formatNumber(number) {
-                return Number(number).toLocaleString('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                });
             },
         }
     }

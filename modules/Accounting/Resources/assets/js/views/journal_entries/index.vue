@@ -2,8 +2,16 @@
     <div>
         <div class="page-header pr-0">
             <h2>
-                <a href="/dashboard">
-                    <i class="fas fa-tachometer-alt"></i>
+                <a href="/accounting/journal/entries">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chart-histogram" style="margin-top: -5px;">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                        <path d="M3 3v18h18"></path>
+                        <path d="M20 18v3"></path>
+                        <path d="M16 16v5"></path>
+                        <path d="M12 13v8"></path>
+                        <path d="M8 16v5"></path>
+                        <path d="M3 11c6 0 5 -5 9 -5s3 5 9 5"></path>
+                    </svg>
                 </a>
             </h2>
             <ol class="breadcrumbs">
@@ -19,13 +27,13 @@
         </div>
 
         <div class="card mb-0">
-            <div class="card-header bg-info">
+            <!-- <div class="card-header bg-info">
                 <h3 class="my-0">Listado de Asientos Contables</h3>
-            </div>
+            </div> -->
             <div class="card-body">
-                <data-table :resource="resource" ref="dataTable">
+                <data-table :resource="resource" ref="dataTable" :journal-prefixes="journalPrefixes">
                     <tr slot="heading">
-                        <th>#</th>
+                        <!-- <th>#</th> -->
                         <th>Fecha</th>
                         <th>Número</th>
                         <th>Descripción</th>
@@ -34,7 +42,7 @@
                     </tr>
 
                     <tr slot-scope="{ index, row }">
-                        <td>{{ index }}</td>
+                        <!-- <td>{{ index }}</td> -->
                         <td>{{ row.date }}</td>
                         <td>{{ row.journal_prefix.prefix }}-{{ row.number }}</td>
                         <td>{{ row.description }}</td>
@@ -62,19 +70,25 @@
                                 @click.prevent="clickDetail(row.id)">
                                 Detalle
                             </button>
+                            <button v-if="row.status === 'posted'" class="btn btn-xs btn-primary"
+                                @click.prevent="clickPdf(row.id)">
+                                PDF
+                            </button>
                         </td>
                     </tr>
                 </data-table>
             </div>
 
         </div>
-        <journal-entry-form :showDialog.sync="showDialog" :recordId="recordId"></journal-entry-form>
+        <journal-entry-form
+            :showDialog.sync="showDialog"
+            :recordId="recordId"
+            :journal-prefixes="journalPrefixes"></journal-entry-form>
 
         <journal-entry-detail
             :showDialog.sync="showDialogDetail"
             :recordId="recordId"
-            >
-        </journal-entry-detail>
+            :journal-prefixes="journalPrefixes"></journal-entry-detail>
     </div>
 </template>
 
@@ -94,7 +108,11 @@ export default {
             resource: "accounting/journal/entries",
             recordId: null,
             isAdmin: true, // Esto debería venir desde el backend con la sesión
+            journalPrefixes: []
         };
+    },
+    created() {
+        this.loadJournalPrefixes();
     },
     methods: {
         clickCreate(recordId = null) {
@@ -132,6 +150,14 @@ export default {
             this.recordId = recordId;
             this.showDialogDetail = true;
         },
+        async loadJournalPrefixes() {
+            await this.$http.get("/accounting/journal/prefixes").then((response) => {
+                this.journalPrefixes = response.data;
+            });
+        },
+        clickPdf(recordId) {
+            window.open(`/accounting/journal/entries/pdf/${recordId}`, '_blank');
+        }
     },
 };
 </script>

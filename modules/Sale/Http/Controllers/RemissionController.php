@@ -37,12 +37,13 @@ use Modules\Factcolombia1\Helpers\DocumentHelper;
 use App\Models\Tenant\ItemWarehouse;
 use App\Models\Tenant\InventoryKardex;
 use Carbon\Carbon;
-
+use Modules\Finance\Traits\FinanceTrait;
+use Modules\Sale\Models\RemissionPayment;
 
 class RemissionController extends Controller
 {
 
-    use StorageDocument;
+    use StorageDocument, FinanceTrait;
 
     protected $remission;
 
@@ -140,7 +141,13 @@ class RemissionController extends Controller
             foreach ($data['items'] as $row) {
                 $this->remission->items()->create($row);
             }
-
+            if(isset($data['payments']) && is_array($data['payments'])) {
+                foreach ($data['payments'] as $payment) {
+                    $payment['remission_id'] = $this->remission->id;
+                    $remission_payment = RemissionPayment::create($payment);
+                    $this->createGlobalPayment($remission_payment, $payment);
+                }
+            }
             $this->setFilename();
             $this->createPdf();
 
@@ -325,25 +332,37 @@ class RemissionController extends Controller
             $remission->save();
 
             foreach ($remission->items as $item) {
-                // Buscar el stock en el almacén correspondiente
-                $itemWarehouse = ItemWarehouse::where('item_id', $item->item_id)
-                    ->where('warehouse_id', $item->warehouse_id)
-                    ->first();
+                $warehouse_id = $item->warehouse_id;
+                if (empty($warehouse_id)) {
+                    $mainWarehouse = ItemWarehouse::where('item_id', $item->item_id)->orderBy('id')->first();
+                    if ($mainWarehouse) {
+                        $warehouse_id = $mainWarehouse->warehouse_id;
+                    }
+                }
+                if ($warehouse_id) {
+                    // Actualizar stock en el almacén correspondiente
+                    $itemWarehouse = ItemWarehouse::where('item_id', $item->item_id)
+                        ->where('warehouse_id', $warehouse_id)
+                        ->first();
 
-            if ($itemWarehouse) {
-                $itemWarehouse->stock += $item->quantity;
-                $itemWarehouse->save();
-            }
+                    if ($itemWarehouse) {
+                        $itemWarehouse->stock += $item->quantity;
+                        $itemWarehouse->save();
+                    }
 
-                // Registrar entrada en inventory_kardex
-                InventoryKardex::create([
-                    'date_of_issue' => now(),
-                    'item_id' => $item->item_id,
-                    'inventory_kardexable_id' => $remission->id,
-                    'inventory_kardexable_type' => Remission::class,
-                    'warehouse_id' => $item->warehouse_id,
-                    'quantity' => $item->quantity,
-                ]);
+                    // Registrar entrada en inventory_kardex
+                    InventoryKardex::create([
+                        'date_of_issue' => now(),
+                        'item_id' => $item->item_id,
+                        'inventory_kardexable_id' => $remission->id,
+                        'inventory_kardexable_type' => Remission::class,
+                        'warehouse_id' => $warehouse_id,
+                        'quantity' => $item->quantity,
+                    ]);
+                } else {
+                    // Si no se encuentra ningún almacén, registrar en el log
+                    \Log::warning("No se encontró almacén para el item {$item->item_id} en la remisión {$remission->id}. No se actualizó el stock ni el kardex.");
+                }
             }
         });
 

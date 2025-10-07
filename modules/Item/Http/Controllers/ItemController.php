@@ -58,7 +58,7 @@ class ItemController extends Controller
         ];
 
         // Calcular filas necesarias
-        $pageHeight = $height + $gapX+0.1;
+        $pageHeight = $height + $gapX + 0.1;
 
         $html = view('tenant.item.barcode_labels_grid', [
             'width' => $width,
@@ -101,6 +101,11 @@ class ItemController extends Controller
         // Recibe parámetros de tamaño y campos
         $width = $request->input('width', 32);
         $height = $request->input('height', 25);
+        $pageWidth = $request->input('pageWidth', 100);
+        $columns = $request->input('columns', 3);
+        $gapX = $request->input('gapX', 2);
+        $repeat = $request->input('repeat', 1);
+
         $fields = [
             'name' => filter_var($request->input('name', true), FILTER_VALIDATE_BOOLEAN),
             'price' => filter_var($request->input('price', true), FILTER_VALIDATE_BOOLEAN),
@@ -110,8 +115,38 @@ class ItemController extends Controller
             'size' => filter_var($request->input('size', false), FILTER_VALIDATE_BOOLEAN),
         ];
 
+        // Obtener los items seleccionados
+        $items = Item::whereIn('id', $ids)->get();
+
+        // Generar un array de items repetidos según $repeat
+        $allItems = [];
+        foreach ($items as $item) {
+            for ($i = 0; $i < $repeat; $i++) {
+                $allItems[] = $item;
+            }
+        }
+
+        // Calcular filas necesarias
+        $total = count($allItems);
+        $col = $columns;
+        $rows = ceil($total / $col);
+        $pageHeight = $height + $gapX + 0.1;
+
+        $html = view('tenant.item.barcode_labels_grid', [
+            'width' => $width,
+            'height' => $height,
+            'gapX' => $gapX,
+            'columns' => $columns,
+            'repeat' => $total,
+            'items' => $allItems,
+            'companyName' => $companyName,
+            'fields' => $fields,
+            'pageWidth' => $pageWidth,
+            'pageHeight' => $pageHeight,
+        ])->render();
+
         $mpdf = new Mpdf([
-            'format' => [(float)$width, (float)$height], // tamaño etiqueta en mm
+            'format' => [(float)$pageWidth, (float)$pageHeight],
             'unit' => 'mm',
             'margin_left' => 0,
             'margin_right' => 0,
@@ -119,42 +154,13 @@ class ItemController extends Controller
             'margin_bottom' => 0,
         ]);
 
-        $first = true;
-        foreach ($ids as $id) {
-            $item = Item::find($id);
-            if (!$item) continue;
+        $mpdf->WriteHTML($html);
 
-            $generator = new BarcodeGeneratorPNG();
+        $filename = 'etiquetas_barcode.pdf';
 
-            // Calcula el tamaño del código de barras igual que en showBarcodeLabel
-            $usableHeight = $height * 0.32;
-            $usableWidth = $width * 0.80;
-            $codeLength = strlen($item->internal_id);
-            $barcodeWidthFactor = $usableWidth / $codeLength / 2.2;
-            $barcodeWidthFactor = max(min($barcodeWidthFactor, 2), 0.5);
-            $barcodeHeightPx = intval($usableHeight * 3.78);
-            $barcodeHeightPx = max(min($barcodeHeightPx, 60), 12);
-
-            $barcodeData = $generator->getBarcode(
-                $item->internal_id,
-                $generator::TYPE_CODE_128,
-                $barcodeWidthFactor,
-                $barcodeHeightPx
-            );
-            $barcodeBase64 = base64_encode($barcodeData);
-
-            $html = view('tenant.item.barcode_label', compact('item', 'companyName', 'barcodeBase64', 'fields', 'width', 'height'))->render();
-
-            if (!$first) {
-                $mpdf->AddPage();
-            }
-            $mpdf->WriteHTML($html);
-            $first = false;
-        }
-
-        return response($mpdf->Output('etiquetas.pdf', 'S'))
+        return response($mpdf->Output($filename, 'I'))
             ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'attachment; filename="Labels_barcode.pdf"');
+            ->header('Content-Disposition', 'attachment; filename="'.$filename.'"');
     }
 
 
