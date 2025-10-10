@@ -30,7 +30,7 @@
             <div class="card-body">
                 <data-table :resource="resource" ref="dataTable">
                     <tr slot="heading" width="100%">
-                        <th>ID</th>
+                        <!-- <th>ID</th> -->
                         <th v-if="selectingBarcodes">
                             <el-checkbox
                                 class="hide-label-checkbox"
@@ -61,7 +61,14 @@
                             :open-delay="200"
                           >
                         <tr :class="{ disable_color : !row.active }">
-                            <td>{{ row.id }}</td>
+                            <td v-if="selectingBarcodes">
+                                <el-checkbox
+                                v-model="selectedItems"
+                                :label="row.id"
+                                class="hide-label-checkbox"
+                                ></el-checkbox>
+                            </td>
+                            <td>{{ row.id }}</td>                            
                             <td>{{ row.internal_id }}</td>
                             <td>{{ row.unit_type_id }}</td>
                             <td>{{ row.name }}</td>
@@ -120,6 +127,12 @@
                                                     <svg  xmlns="http://www.w3.org/2000/svg"  width="16"  height="16"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-barcode text-muted"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7v-1a2 2 0 0 1 2 -2h2" /><path d="M4 17v1a2 2 0 0 0 2 2h2" /><path d="M16 4h2a2 2 0 0 1 2 2v1" /><path d="M16 20h2a2 2 0 0 0 2 -2v-1" /><path d="M5 11h1v2h-1z" /><path d="M10 11l0 2" /><path d="M14 11h1v2h-1z" /><path d="M19 11l0 2" /></svg>
                                                 </span>
                                             </el-dropdown-item>
+                                            <el-dropdown-item @click.native="clickBarcodeConfig(row)">
+                                                <span class="dropdown-item-content">
+                                                    Etiquetas
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-printer text-muted"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><rect x="5" y="13" width="14" height="8" rx="2" /><polyline points="17 17 17 17.01" /><rect x="7" y="3" width="10" height="6" rx="2" /><path d="M17 7v4a2 2 0 0 1 2 2" /><path d="M7 7v4a2 2 0 0 0 -2 2" /></svg>
+                                                </span>
+                                            </el-dropdown-item>
 
                                             <el-dropdown-item divided></el-dropdown-item>
 
@@ -167,7 +180,8 @@
             </div>
             <barcode-config
                 :show.sync="showBarcodeConfig"
-                :itemId="barcodeItemId">
+                :itemId="barcodeItemId"
+                :stock="selectedStock">
             </barcode-config>
 
             <items-form :showDialog.sync="showDialog"
@@ -227,6 +241,7 @@
                 items: [],
                 showBarcodeConfig: false,
                 barcodeItemId: null,
+                selectedStock: null,
             }
         },
         created() {
@@ -267,7 +282,14 @@
                     this.$message.warning('Seleccione al menos un producto.');
                     return;
                 }
-                this.barcodeItemId = [...this.selectedItems]; // pasa array de IDs
+                // Obtén todos los productos seleccionados (sin filtrar por stock)
+                const visibleRecords = this.$refs.dataTable.records || [];
+                const selectedRows = this.selectedItems
+                    .map(id => visibleRecords.find(r => r.id === id))
+                    .filter(item => !!item);
+
+                this.barcodeItemId = selectedRows.map(item => item.id);
+                this.selectedStock = selectedRows.map(item => parseFloat(item.stock));
                 this.showBarcodeConfig = true;
             },
             clickBarcodeConfig(row) {
@@ -275,6 +297,7 @@
                     return this.$message.error('Para generar el código de barras debe registrar el código interno.');
                 }
                 this.barcodeItemId = row.id;
+                this.selectedStock = parseFloat(row.stock);
                 this.showBarcodeConfig = true;
             },
             downloadBarcodePng(row) {
