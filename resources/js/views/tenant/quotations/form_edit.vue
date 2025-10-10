@@ -435,13 +435,11 @@
                     // }
                 }
             },
-            initRecord()
-            {
-                this.$http.get(`/${this.resource}/record/${this.resourceId}` )
+            initRecord() {
+                this.$http.get(`/${this.resource}/record/${this.resourceId}`)
                 .then(response => {
-
                     let dato = response.data.data.quotation
-                  //  console.log(dato)
+                    
                     this.form.id = dato.id
                     this.form.customer_id = dato.customer_id
                     this.form.currency_type_id = dato.currency_type_id
@@ -454,13 +452,33 @@
                     this.form.shipping_address = dato.shipping_address
                     this.form.account_number = dato.account_number
                     this.form.terms_condition = dato.terms_condition
-                    this.form.active_terms_condition = dato.terms_condition ? true:false
-                    this.form.items = dato.items
+                    this.form.active_terms_condition = dato.terms_condition ? true : false
+                    
+                    this.form.items = dato.items.map(item => {
+                        if (item.tax) {
+                            const tax_calculable = parseFloat(item.tax.rate) / (item.tax.conversion || 1);
+                            const unit_price = parseFloat(item.unit_price);
+                            const subtotal = parseFloat(item.subtotal);
+                            const price_with_tax_included = unit_price * (1 + tax_calculable);
+                            
+                            if (Math.abs(subtotal - price_with_tax_included) < 0.1) {
+                                item.tax_included_in_price = true;
+                                item.price = subtotal.toFixed(2);
+                            } else {
+                                item.tax_included_in_price = false;
+                                item.price = unit_price.toFixed(2);
+                            }
+                        } else {
+                            item.tax_included_in_price = false;
+                            item.price = item.unit_price;
+                        }
+                        
+                        return item;
+                    });
+                    
                     this.form.payments = dato.payments
                     this.calculateTotal()
-                    //console.log(response.data)
                 })
-
             },
 
             searchRemoteCustomers(input) {
@@ -545,8 +563,18 @@
                 this.customers = this.all_customers
             },
             addRow(row) {
+                const originalPrice = row.unit_price;
+                
+                if(row.tax_included_in_price) {
+                    const tax_calculable = parseFloat(row.tax.rate) / (row.tax.conversion || 1);
+                    const price_without_tax = parseFloat(row.unit_price) / (1 + tax_calculable);
+                    row.unit_price = price_without_tax.toFixed(2);
+                    row.price = parseFloat(originalPrice).toFixed(2);
+                } else {
+                    row.price = parseFloat(originalPrice).toFixed(2);
+                }
+                
                 this.form.items.push(JSON.parse(JSON.stringify(row)));
-
                 this.calculateTotal();
             },
             clickRemoveItem(index) {
@@ -599,9 +627,13 @@
                         tax.total = (Number(tax.total) + Number(item.total_tax)).toFixed(2);
                     }
 
-                    item.subtotal = (
-                        Number(item.unit_price * item.quantity) + Number(item.total_tax)
-                    ).toFixed(2);
+                    if (item.tax_included_in_price === true && item.price) {
+                        item.subtotal = (Number(item.price) * Number(item.quantity)).toFixed(2);
+                    } else {
+                        item.subtotal = (
+                            Number(item.unit_price * item.quantity) + Number(item.total_tax)
+                        ).toFixed(2);
+                    }
 
                     this.$set(
                         item,

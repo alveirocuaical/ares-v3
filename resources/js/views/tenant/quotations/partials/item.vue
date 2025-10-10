@@ -326,18 +326,17 @@
                 this.form.item_unit_type_id = row.id
             },
             clickAddItem() {
-
                 let unit_price = this.form.unit_price;
 
                 this.form.unit_price = unit_price;
                 this.form.item.unit_price = unit_price;
-
                 this.form.item.presentation = this.item_unit_type;
-
                 this.form.tax = _.find(this.taxes, {'id': this.form.tax_id})
                 this.form.unit_type = this.form.item.unit_type
 
-                // this.initializeFields()
+                // Agregar esta línea para incluir el estado del checkbox
+                this.form.tax_included_in_price = this.tax_included_in_price;
+
                 this.$emit('add', this.form);
                 this.initForm();
                 this.setFocusSelectItem()

@@ -123,7 +123,7 @@
                                 
                                     <el-dropdown-item
                                         v-if="row.documents.length == 0 && row.state_type_id != '11'"
-                                        :command="`/${resource}/edit/${row.id}`"
+                                        @click.native="clickEdit(row.id)"
                                     >
                                         <span class="dropdown-item-content">
                                             Editar
@@ -235,8 +235,7 @@
             },
             clickEdit(id)
             {
-                this.recordId = id
-                this.showDialogFormEdit = true
+                window.location.href = `/${this.resource}/edit/${id}`;
             },
             clickOptions(recordId = null) {
                 this.recordId = recordId

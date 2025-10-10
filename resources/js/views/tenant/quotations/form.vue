@@ -544,13 +544,17 @@ export default {
                     }
                 }
             }
+            const originalPrice = row.price || row.unit_price;  
             if(row.tax_included_in_price) {
-                const tax_caculable = parseFloat(row.tax.rate) / row.tax.conversion;
-                const price_without_tax = row.price / (1 + tax_caculable);
+                const tax_calculable = parseFloat(row.tax.rate) / (row.tax.conversion || 1);
+                const price_without_tax = parseFloat(originalPrice) / (1 + tax_calculable);
                 row.unit_price = price_without_tax.toFixed(2);
+                row.price = originalPrice;
             } else {
-                row.unit_price = row.price;
+                row.unit_price = originalPrice;
+                row.price = originalPrice;
             }
+            
             if (this.recordItem) {
                 this.form.items[this.recordItem.indexi] = row
                 this.recordItem = null
@@ -603,9 +607,13 @@ export default {
                         tax.total = Number(0).toFixed(2);
                     tax.total = (Number(tax.total) + Number(item.total_tax)).toFixed(2);
                 }
-                item.subtotal = (
-                    Number(item.unit_price * item.quantity) + Number(item.total_tax)
-                ).toFixed(2);
+                if (item.tax_included_in_price) {
+                    item.subtotal = (Number(item.price) * Number(item.quantity)).toFixed(2);
+                } else {
+                    item.subtotal = (
+                        Number(item.unit_price * item.quantity) + Number(item.total_tax)
+                    ).toFixed(2);
+                }    
                 this.$set(item, "total", (Number(item.subtotal) - Number(total_discount)).toFixed(2));
             });
             val.total_tax = val.items.reduce((p, c) => Number(p) + Number(c.total_tax), 0).toFixed(2);
