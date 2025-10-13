@@ -15,9 +15,11 @@ use Exception;
 use Modules\Purchase\Models\{
     SupportDocument
 };
+use Modules\Finance\Traits\FinanceTrait;
 
 class SupportDocumentHelper
 {
+    use FinanceTrait;
     const REGISTERED = 1;
     const ACCEPTED = 5;
     const REJECTED = 6;
@@ -370,6 +372,27 @@ class SupportDocumentHelper
                     return $resta;
         } else {
             return FALSE;
+        }
+    }
+    public function savePayments($supportDocument, $payments, $request = null)
+    {
+        if ((empty($payments) || count($payments) == 0) && $request && $request->payment_form_id == 1) {
+            $payments = [[
+                'date_of_payment' => $request->date_of_issue,
+                'payment_method_id' => $request->payment_method_id,
+                'payment_method_type_id' => null,
+                'payment_destination_id' => 'cash',
+                'reference' => null,
+                'payment' => $request->total,
+            ]];
+        }
+
+        foreach ($payments as $row) {
+            $record = $supportDocument->payments()->create($row);
+
+            if (isset($row['payment_destination_id'])) {
+                $this->createGlobalPayment($record, $row);
+            }
         }
     }
 }

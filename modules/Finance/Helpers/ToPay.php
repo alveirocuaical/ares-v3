@@ -118,10 +118,10 @@ class ToPay
                     $join->on('co_support_documents.id', '=', 'payments.support_document_id');
                 })
                 ->whereIn('state_document_id', [1,2,3,4,5])
-                ->where('co_type_documents.code', '11')
+                ->whereIn('co_type_documents.code', ['11', '13'])
                 ->select(DB::raw("co_support_documents.id as id, ".
                                     "DATE_FORMAT(co_support_documents.date_of_issue, '%Y-%m-%d') as date_of_issue, ".
-                                    "null as date_of_due, ".
+                                    "DATE_ADD(co_support_documents.date_of_issue, INTERVAL co_support_documents.time_days_credit DAY) as date_of_due, ".
                                     "persons.name as supplier_name, persons.id as supplier_id, co_support_documents.type_document_id, ".
                                     "CONCAT(co_support_documents.prefix,'-',co_support_documents.number) AS number_full, ".
                                     "co_support_documents.total as total, ".
@@ -141,10 +141,10 @@ class ToPay
                     $join->on('co_support_documents.id', '=', 'payments.support_document_id');
                 })
                 ->whereIn('state_document_id', [1,2,3,4,5])
-                ->where('co_type_documents.code', '11')
+                ->whereIn('co_type_documents.code', ['11', '13'])
                 ->select(DB::raw("co_support_documents.id as id, ".
                                     "DATE_FORMAT(co_support_documents.date_of_issue, '%Y-%m-%d') as date_of_issue, ".
-                                    "null as date_of_due, ".
+                                    "DATE_ADD(co_support_documents.date_of_issue, INTERVAL co_support_documents.time_days_credit DAY) as date_of_due, ".
                                     "persons.name as supplier_name, persons.id as supplier_id, null as document_type_id, ".
                                     "CONCAT(co_support_documents.prefix,'-',co_support_documents.number) AS number_full, ".
                                     "co_support_documents.total as total, ".
@@ -298,14 +298,14 @@ class ToPay
                 ->table('co_support_documents')
                 ->join('persons', 'persons.id', '=', 'co_support_documents.supplier_id')
                 ->join('co_type_documents', 'co_support_documents.type_document_id', '=', 'co_type_documents.id')
-                ->where('co_type_documents.code', '11')
+                ->whereIn('co_type_documents.code', ['11', '13'])
                 ->leftJoinSub($support_document_payments, 'payments', function ($join) {
                     $join->on('co_support_documents.id', '=', 'payments.support_document_id');
                 })
                 ->whereIn('state_type_id', [1,2,3,4,5])
                 ->select(DB::raw("co_support_documents.id as id, ".
                                     "DATE_FORMAT(co_support_documents.date_of_issue, '%Y-%m-%d') as date_of_issue, ".
-                                    "DATE_FORMAT(co_support_documents.date_of_due, '%Y-%m-%d') as date_of_due, ".
+                                    "DATE_ADD(co_support_documents.date_of_issue, INTERVAL co_support_documents.time_days_credit DAY) as date_of_due, ".
                                     "persons.name as supplier_name, persons.id as supplier_id, co_support_documents.type_document_id, ".
                                     "CONCAT(co_support_documents.prefix,'-',co_support_documents.number) AS number_full, ".
                                     "co_support_documents.total as total, ".
