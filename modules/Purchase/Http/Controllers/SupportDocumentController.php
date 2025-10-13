@@ -102,7 +102,23 @@ class SupportDocumentController extends Controller
     public function tables()
     {
         $suppliers = $this->generalTable('suppliers');
-        $resolutions = TypeDocument::select('id','prefix', 'resolution_number', 'code')->where('code', TypeDocument::DSNOF_CODE)->get();
+        
+        $establishment_id = auth()->user()->establishment_id;
+        
+        $resolutions = TypeDocument::select('id','prefix', 'resolution_number', 'code', 'show_in_establishments', 'establishment_ids')
+            ->where('code', TypeDocument::DSNOF_CODE)
+            ->where(function($query) use ($establishment_id) {
+                $query->where('show_in_establishments', 'all')
+                    ->orWhere(function($subQuery) use ($establishment_id) {
+                        $subQuery->where('show_in_establishments', 'custom');
+                        
+                        if ($establishment_id) {
+                            $subQuery->whereJsonContains('establishment_ids', $establishment_id);
+                        }
+                    });
+            })
+            ->get();
+            
         $payment_methods = PaymentMethod::get();
         $payment_forms = PaymentForm::get();
         $currencies = Currency::get();
