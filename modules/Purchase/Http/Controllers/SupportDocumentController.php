@@ -187,6 +187,9 @@ class SupportDocumentController extends Controller
                     $document->items()->create($row); 
                 }
 
+                // Guardar pagos automáticamente si es al contado
+                $helper->savePayments($document, [], $request);
+
                 // enviar documento a la api
                 $send_to_api = $helper->sendToApi($document, $inputs);
 
