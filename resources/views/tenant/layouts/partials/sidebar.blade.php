@@ -1093,7 +1093,43 @@
                     sidebarLeft.scrollTop = initialPosition;
                 }
             }
-            
+            // Enable tap toggle for the configuration menu on touch devices
+            document.addEventListener('DOMContentLoaded', function () {
+                var toggle = document.getElementById('configMenuToggle');
+                var menu = document.getElementById('configDropdownMenu');
+                if (!toggle || !menu) {
+                    return;
+                }
+
+                var hasTouchSupport = ('ontouchstart' in window) ||
+                    (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) ||
+                    (navigator.msMaxTouchPoints && navigator.msMaxTouchPoints > 0);
+
+                if (!hasTouchSupport) {
+                    return;
+                }
+
+                var closeMenu = function () {
+                    if (toggle.getAttribute('aria-expanded') === 'true') {
+                        toggle.setAttribute('aria-expanded', 'false');
+                    }
+                };
+
+                toggle.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    var isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+                    toggle.setAttribute('aria-expanded', isExpanded ? 'false' : 'true');
+                });
+
+                document.addEventListener('click', function (event) {
+                    if (toggle.contains(event.target) || menu.contains(event.target)) {
+                        return;
+                    }
+                    closeMenu();
+                });
+
+                window.addEventListener('resize', closeMenu);
+            });
         </script>
     </div>
     @php
@@ -1107,8 +1143,7 @@
     @if(in_array('configuration', $vc_modules))
     <div id="sticky-config" class="sidebar-config dropup">
         <a href="#" id="configMenuToggle"
-           class="config-btn d-flex align-items-center justify-content-between"
-           data-toggle="dropdown" aria-expanded="{{ $isConfigRoute ? 'true' : 'false' }}">
+           class="config-btn d-flex align-items-center justify-content-between" aria-expanded="{{ $isConfigRoute ? 'true' : 'false' }}">
             <span class="d-inline-flex align-items-center span-link">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-settings mr-1">
                     <circle cx="12" cy="12" r="3"></circle>
