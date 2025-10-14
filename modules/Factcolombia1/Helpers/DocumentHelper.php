@@ -211,7 +211,7 @@ class DocumentHelper
                 'date_of_payment' => $request->date_issue,
                 'payment_method_id' => $request->payment_method_id,
                 'payment_method_type_id' => null,
-                'payment_destination_id' => 'cash',
+                'payment_destination_id' => $request->payment_destination_id ?? 'cash',
                 'reference' => null,
                 'change' => null,
                 'payment' => $request->total,

@@ -108,6 +108,15 @@
                                         v-text="errors.currency_id[0]"></small>
                                 </div>
                             </div>
+                            <div class="col-lg-4 pb-2" v-if="advanced_configuration.enable_seller_views">
+                                <div class="form-group" :class="{ 'has-danger': errors.seller_id }">
+                                    <label class="control-label">Vendedor</label>
+                                    <el-select v-model="form.seller_id" filterable remote reserve-keyword placeholder="Seleccione un vendedor" :remote-method="searchRemoteSellers" :loading="loading_sellers">
+                                        <el-option v-for="seller in sellers" :key="seller.id" :label="seller.full_name" :value="seller.id"></el-option>
+                                    </el-select>
+                                    <small class="form-control-feedback" v-if="errors.seller_id" v-text="errors.seller_id[0]"></small>
+                                </div>
+                            </div>
                             <div class="col-lg-2">
                                 <div class="form-group" :class="{ 'has-danger': errors.payment_form_id }">
                                     <label class="control-label">Forma de pago</label>
@@ -119,15 +128,6 @@
                                         v-text="errors.payment_form_id[0]"></small>
                                 </div>
                             </div>
-                            <div class="col-lg-4 pb-2" v-if="advanced_configuration.enable_seller_views">
-                                <div class="form-group" :class="{ 'has-danger': errors.seller_id }">
-                                    <label class="control-label">Vendedor</label>
-                                    <el-select v-model="form.seller_id" filterable remote reserve-keyword placeholder="Seleccione un vendedor" :remote-method="searchRemoteSellers" :loading="loading_sellers">
-                                        <el-option v-for="seller in sellers" :key="seller.id" :label="seller.full_name" :value="seller.id"></el-option>
-                                    </el-select>
-                                    <small class="form-control-feedback" v-if="errors.seller_id" v-text="errors.seller_id[0]"></small>
-                                </div>
-                            </div>
                             <template v-if="is_edit">
                                 <div class="col-lg-2">
                                     <div class="form-group">
@@ -136,7 +136,19 @@
                                     </div>
                                 </div>
                             </template>
-                            <div class="col-lg-4">
+                            <div class="col-lg-3" v-if="form.payment_form_id == 1">
+                                <div class="form-group" :class="{ 'has-danger': errors.payment_destination_id }">
+                                    <label class="control-label">Destino de pago</label>
+                                    <el-select v-model="form.payment_destination_id" filterable>
+                                        <el-option label="Caja" value="cash"></el-option>
+                                        <el-option v-for="account in bank_accounts" :key="account.id" :value="account.id"
+                                            :label="account.description"></el-option>
+                                    </el-select>
+                                    <small class="form-control-feedback" v-if="errors.payment_destination_id"
+                                        v-text="errors.payment_destination_id[0]"></small>
+                                </div>
+                            </div>
+                            <div class="col-lg-3" v-if="form.payment_form_id == 1">
                                 <div class="form-group" :class="{ 'has-danger': errors.payment_method_id }">
                                     <label class="control-label">Medio de pago</label>
                                     <el-select v-model="form.payment_method_id" filterable>
@@ -538,6 +550,7 @@ export default {
             sellers: [],
             loading_sellers: false,
             seller_search_timeout: null,
+            bank_accounts: [],
         }
     },
     //filtro de separadores de mil
@@ -576,6 +589,7 @@ export default {
                 this.form.currency_id = (this.currencies.length > 0) ? 170 : null;
                 this.form.type_invoice_id = (this.type_invoices.length > 0) ? this.type_invoices[0].id : null;
                 //his.form.payment_form_id = (this.payment_forms.length > 0)?this.payment_forms[0].id:null;
+                this.form.payment_destination_id = 'cash';
                 this.form.payment_method_id = 10;//(this.payment_methods.length > 0)?this.payment_methods[0].id:null;
                 this.resolutions = response.data.resolutions
                 //ordenar resolicones por cristian
@@ -731,11 +745,14 @@ export default {
                 this.form.date_expiration = this.form.date_issue
                 this.form.time_days_credit = 0
             }
-            else
-                if (this.form.time_days_credit == 0)
-                    this.form.payment_form_id = 1
-                else
-                    this.form.payment_form_id = 2
+            // Actualizar forma de pago automáticamente
+            if (this.form.time_days_credit == 0) {
+                this.form.payment_form_id = 1; // Contado
+                this.changePaymentForm(); // Aplicar lógica de contado
+            } else {
+                this.form.payment_form_id = 2; // Crédito
+                this.changePaymentForm(); // Aplicar lógica de crédito
+            }
         },
         async fetchCorrelative() {
             const typeService = 1; // supongo que es el Id del tipo de documento que para este caso es 1 factura de venta
@@ -762,6 +779,15 @@ export default {
                 this.form.type_document_id = resol.id;
                 this.currentPrefix = resol.prefix; // Actualizar el prefijo en data
                 this.fetchCorrelative(); // Llama al método para obtener el correlativo
+            }
+        },
+        changePaymentForm() {
+            if (this.form.payment_form_id == 1) {
+                this.form.payment_destination_id = 'cash';
+                this.form.payment_method_id = 10;
+            } else {
+                this.form.payment_destination_id = null;
+                this.form.payment_method_id = 10;
             }
         },
         ratePrefix(tax = null) {
@@ -932,8 +958,9 @@ export default {
                         : "1"),
                 time_days_credit: this.invoice ? this.invoice.time_days_credit : 0,
                 service_invoice: {},
-                payment_form_id: this.invoice ? this.invoice.payment_form_id : null,
-                payment_method_id: this.invoice ? this.invoice.payment_method_id : null,
+                payment_form_id: 1,
+                payment_destination_id: 'cash',
+                payment_method_id: 10,
                 resolution_id: null,
                 prefix: this.invoice ? this.invoice.prefix : null,
                 resolution_number: null,
@@ -1303,6 +1330,10 @@ export default {
             }
             if (!this.form.customer_id) {
                 return this.$message.error('Debe seleccionar un cliente')
+            }
+            if (this.form.payment_form_id == 1) {
+                this.form.payment_destination_id = this.form.payment_destination_id || 'cash';
+                this.form.payment_method_id = this.form.payment_method_id || 10;
             }
             //validacion de format_print
             if (!this.form.format_print) {
