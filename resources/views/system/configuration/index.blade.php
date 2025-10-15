@@ -2,7 +2,7 @@
 
 @section('content')
 
-    <div class="row pb-2" style="overflow-x: auto; height: 100%">
+    <div class="row pb-2">
         <!--<div class="col-lg-6 col-md-12 pt-2 pt-md-0">
             <system-companies-form></system-companies-form>
         </div> -->

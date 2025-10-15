@@ -2168,21 +2168,13 @@ html.sidebar-light:not(.dark) .style-switcher:before{
 }
 /* inicio */
 #configMenuToggle {
-    pointer-events: auto;       /* Permite eventos de hover */
-    cursor: default;            /* Cambia el cursor para indicar que no es clickeable */
-}
-
-#configMenuToggle {
-    /* Bloqueamos solo el clic, pero no el hover */
+    pointer-events: auto;
+    cursor: pointer;
     -webkit-touch-callout: none;
     user-select: none;
 }
-
-#configMenuToggle {
-    /* Prevenimos clics con un pequeño hack */
-}
-#configMenuToggle:active {
-    pointer-events: none; /* Ignora el clic pero el hover sigue funcionando */
+#configMenuToggle:focus {
+    outline: none;
 }
 #sticky-config.sidebar-config{
     position: sticky;
@@ -2248,13 +2240,14 @@ html.no-overflowscrolling .nano {
     display: none;
 }
 #sticky-config .config-btn:hover + .dropdown-menu-sidebar,
+#sticky-config .config-btn[aria-expanded="true"] + .dropdown-menu-sidebar,
 #sticky-config .dropdown-menu-sidebar:hover {
     display: block;
 }
 
-/* Rotar caret si el mouse está sobre el botón o sobre el menú */
+/* Rotar caret si el mouse está sobre el botón o cuando está expandido */
 #sticky-config .config-btn:hover .custom-caret,
-#sticky-config .dropdown-menu-sidebar:hover ~ .config-btn .custom-caret {
+#sticky-config .config-btn[aria-expanded="true"] .custom-caret {
     transform: rotate(180deg);
 }
 /* fin */
@@ -2496,6 +2489,16 @@ a.nav-link{
 }
 .sidebar-system{
     margin: 15px 0 15px 15px;
+}
+.sidebar-system .nano{
+    height: 100% !important;
+}
+.sidebar-system .nano-content {
+    overflow-y: auto !important;
+    max-height: 100%;
+}
+html.sidebar-left-big-icons .sidebar-left.sidebar-system .nano > .nano-content{
+    overflow: auto !important;
 }
 .inner-wrapper-system #main-wrapper {
     padding: 15px;

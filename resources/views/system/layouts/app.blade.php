@@ -69,6 +69,15 @@
         ul.nav-main > li.nav-active > a {
             box-shadow: 2px 0 0 #0088CC inset;
         }
+
+        /* Scroll vertical para el contenido principal */
+        #main-wrapper {
+            overflow-y: auto;
+        }
+        .inner-wrapper-system #main-wrapper{
+            padding: 0 15px 15px 15px;
+            margin-top: 15px;
+        }
     </style>
 </head>
 <body class="pr-0">
