@@ -228,19 +228,26 @@ class CashController extends Controller
                     $query->where('electronic', $electronic_type);
                 }
             })->get();
-        // Calcular $cashEgress solo para documentos filtrados
-        $cashEgress = $filtered_documents->sum(function ($cashDocument) {
+
+        $valid_documents = $filtered_documents->filter(function($doc){
+            return $doc->document_pos && $doc->document_pos->state_type_id !== '11';
+        });
+
+        $annulled_documents = $filtered_documents->filter(function($doc){
+            return $doc->document_pos && $doc->document_pos->state_type_id === '11';
+        });
+
+        $cashEgress = $valid_documents->sum(function ($cashDocument) {
             return $cashDocument->expense_payment ? $cashDocument->expense_payment->payment : 0;
         });
 
-        // Filtrar expense_payments según el tipo
-        $expensePayments = $filtered_documents->filter(function ($doc) {
+        $expensePayments = $valid_documents->filter(function ($doc) {
             return !is_null($doc->expense_payment_id);
         })->map->expense_payment;
 
         $methods_payment = collect();
         
-        foreach ($filtered_documents as $cash_document) {
+        foreach ($valid_documents as $cash_document) {
             if ($cash_document->document_pos && $cash_document->document_pos->payments) {
                 foreach ($cash_document->document_pos->payments as $payment) {
                     $method_key = null;
@@ -290,7 +297,6 @@ class CashController extends Controller
         }
         $resolutions_maquinas = $query->get();
 
-        // Determinar si es reporte resumido
         $is_resumido = $electronic_type === 'resumido';
 
         set_time_limit(0);
@@ -305,7 +311,9 @@ class CashController extends Controller
             "expensePayments",
             "electronic_type",
             "is_resumido",
-            "filtered_documents"
+            "filtered_documents",
+            "valid_documents",
+            "annulled_documents"
         ));
 
         $filename = "Reporte_POS - {$cash->user->name} - {$cash->date_opening} {$cash->time_opening}";
@@ -334,13 +342,25 @@ class CashController extends Controller
                 }
             })->get();
 
-        $cashEgress = $filtered_documents->sum(function ($cashDocument) {
+        $valid_documents = $filtered_documents->filter(function($doc){
+            return $doc->document_pos && $doc->document_pos->state_type_id !== '11';
+        });
+
+        $annulled_documents = $filtered_documents->filter(function($doc){
+            return $doc->document_pos && $doc->document_pos->state_type_id === '11';
+        });
+
+        $cashEgress = $valid_documents->sum(function ($cashDocument) {
             return $cashDocument->expense_payment ? $cashDocument->expense_payment->payment : 0;
         });
 
+        $expensePayments = $valid_documents->filter(function ($doc) {
+            return !is_null($doc->expense_payment_id);
+        })->map->expense_payment;
+
         $methods_payment = collect();
         
-        foreach ($filtered_documents as $cash_document) {
+        foreach ($valid_documents as $cash_document) {
             if ($cash_document->document_pos && $cash_document->document_pos->payments) {
                 foreach ($cash_document->document_pos->payments as $payment) {
                     $method_key = null;
@@ -376,7 +396,6 @@ class CashController extends Controller
             }
         }
 
-        // Solo mantener métodos que tengan transacciones (sum > 0)
         $methods_payment = $methods_payment->filter(function($method) {
             return $method->sum > 0;
         })->values();
@@ -404,7 +423,8 @@ class CashController extends Controller
             "only_head",
             "is_resumido",
             "filtered_documents",
-            "electronic_type"
+            "valid_documents",
+            "annulled_documents"
         ))->setPaper(array(0,0,227,1000));
         $filename = "Reporte_POS - {$cash->user->name} - {$cash->date_opening} {$cash->time_opening}";
 
