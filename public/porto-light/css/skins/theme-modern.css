@@ -1713,7 +1713,14 @@ a.ws-flotante {
 .pos.payment-active .page-header {
     display: none !important;
 }
-
+.alert-warning{
+    color: var(--warning) !important;
+    background-color: #ffddce !important;
+    border-color: #dfb29f !important;
+}
+.text-alert-dismissible{
+    color: var(--warning) !important;
+}
 @media only screen and (min-width: 768px) {
     html.fixed .pos.payment-active .inner-wrapper,
     html.fixed .pos-payment .inner-wrapper,
@@ -2069,7 +2076,7 @@ ul.nav.list-config li:hover {
     font-size: 13px !important;
     color: var(--black-dark) !important;
 }
-.user-profile-li .profile-info span.role{
+.profile-info span.role{
     font-size: 12px !important;
     color: var(--black-accent) !important;
 }
@@ -2767,7 +2774,7 @@ html.dark .userbox .dropdown-menu .divider,
 html.header-dark .userbox .dropdown-menu .divider {
     background-color: var(--black-border-dark);
 }
-html.dark .user-profile-li .profile-info span.name {
+html.dark .profile-info span.name {
     color: var(--black-light) !important;
 }
 html.dark .dropdown-menu-desktop {
