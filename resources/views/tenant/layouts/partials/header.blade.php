@@ -113,8 +113,12 @@
                         $initials = mb_strtoupper(mb_substr($names[0], 0, 1) . mb_substr($names[1], 0, 1));
                     }
                 @endphp
-                <div class="name-initials-container" data-lock-name="{{ $vc_user->email }}" data-lock-email="{{ $vc_user->email }}">
+                <div class="name-initials-container mr-2">
                     <span class="name-initials">{{ $initials }}</span>
+                </div>                
+                <div class="profile-info" data-lock-name="{{ $vc_user->email }}" data-lock-email="{{ $vc_user->email }}">
+                    <span class="name">{{ $vc_user->name }}</span>
+                    <span class="role">{{ $vc_user->email }}</span>
                 </div>
                 <i class="fa custom-caret"></i>
             </a>
