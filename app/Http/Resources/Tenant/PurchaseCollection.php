@@ -68,6 +68,7 @@ class PurchaseCollection extends ResourceCollection
                     ];
                 }),
                 'affected_document' => $row->affected_document,
+                'taxes' => $row->taxes,
             ];
         });
     }

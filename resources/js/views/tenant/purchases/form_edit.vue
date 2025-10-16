@@ -171,6 +171,7 @@
                         <div class="col-lg-12 col-md-6 d-flex align-items-end mt-4">
                             <div class="form-group">
                                 <button type="button" class="btn waves-effect waves-light btn-primary" @click.prevent="showDialogAddItem = true">+ Agregar Producto</button>
+                                <button type="button" class="btn waves-effect waves-light btn-primary" @click.prevent="dialogRetention = !dialogRetention">+ Agregar retención</button>
                             </div>
                         </div>
                     </div>
@@ -242,18 +243,13 @@
                                 </tr>
 
                                 <template v-for="(tax, index) in form.taxes">
-                                    <tr v-if="((tax.is_retention) && (tax.apply))" :key="index">
-
+                                    <tr v-if="((tax.is_retention) && (tax.retention > 0))" :key="index">
                                         <td>{{tax.name}}(-)</td>
                                         <td>:</td>
-                                        <!-- <td class="text-right">
-                                            {{ratePrefix()}} {{Number(tax.retention).toFixed(2)}}
-                                        </td> -->
                                         <td class="text-right" width=35%>
-                                            <el-input v-model="tax.retention" readonly >
+                                            <el-input :value="tax.retention" readonly>
                                                 <span slot="prefix" class="c-m-top">{{ ratePrefix() }}</span>
                                                 <i slot="suffix" class="el-input__icon el-icon-delete pointer"  @click="clickRemoveRetention(index)"></i>
-                                                <!-- <el-button slot="suffix" icon="el-icon-delete" @click="clickRemoveRetention(index)"></el-button> -->
                                             </el-input>
                                         </td>
                                     </tr>
@@ -319,7 +315,23 @@
             </form>
             </div>            
         </div>
-
+        <el-dialog
+            title="Retención"
+            :visible.sync="dialogRetention"
+            width="600px">
+            <el-select v-model="retention_selected" placeholder="Select">
+                <el-option
+                    v-for="(item, index) in retention_taxes"
+                    :key="index"
+                    :label="item.name+' '+item.rate+'%'"
+                    :value="item.id">
+                </el-option>
+            </el-select>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="dialogRetention = false">Cancel</el-button>
+                <el-button type="primary" @click="validateRetention">Confirm</el-button>
+            </span>
+        </el-dialog>
         <purchase-form-item :showDialog.sync="showDialogAddItem"
                            :currency-type-id-active="form.currency_type_id"
                            :exchange-rate-sale="form.exchange_rate_sale"
@@ -393,7 +405,10 @@
                 loading_search: false,
                 currency_type: {},
                 taxes:  [],
-                purchaseNewId: null
+                purchaseNewId: null,
+                retention_selected: null,
+                dialogRetention: false,
+                retention_taxes: [],
             }
         },
         async created() {
@@ -433,17 +448,20 @@
             await this.filterCustomers()
             await this.changeHasPayment()
             await this.changeHasClient()
+            await this.retentiontaxes()
         },
         methods: {
 
             setDataTotals() {
+                let val = this.form;
 
-                // console.log(val)
-                let val = this.form
-                val.taxes = JSON.parse(JSON.stringify(this.taxes));
+                // Reiniciar los totales de los impuestos antes de recalcular
+                val.taxes.forEach(tax => {
+                    tax.total = Number(0).toFixed(2);
+                });
 
                 val.items.forEach(item => {
-                    item.tax = this.taxes.find(tax => tax.id == item.tax_id);
+                    item.tax = val.taxes.find(tax => tax.id == item.tax_id);
 
                     if (
                         item.discount == null ||
@@ -458,14 +476,12 @@
                         let tax = val.taxes.find(tax => tax.id == item.tax.id);
 
                         if (item.tax.is_fixed_value)
-
                             item.total_tax = (
                                 item.tax.rate * item.quantity -
                                 (item.discount < item.unit_price * item.quantity ? item.discount : 0)
                             ).toFixed(2);
 
                         if (item.tax.is_percentage)
-
                             item.total_tax = (
                                 (item.unit_price * item.quantity -
                                 (item.discount < item.unit_price * item.quantity
@@ -489,7 +505,6 @@
                         "total",
                         (Number(item.subtotal) - Number(item.discount)).toFixed(2)
                     );
-
                 });
 
                 val.subtotal = val.items
@@ -498,17 +513,17 @@
                         0
                     )
                     .toFixed(2);
-                    val.sale = val.items
+                val.sale = val.items
                     .reduce(
                         (p, c) =>
                         Number(p) + Number(c.unit_price * c.quantity) - Number(c.discount),
                         0
                     )
                     .toFixed(2);
-                    val.total_discount = val.items
+                val.total_discount = val.items
                     .reduce((p, c) => Number(p) + Number(c.discount), 0)
                     .toFixed(2);
-                    val.total_tax = val.items
+                val.total_tax = val.items
                     .reduce((p, c) => Number(p) + Number(c.total_tax), 0)
                     .toFixed(2);
 
@@ -516,47 +531,14 @@
                     .reduce((p, c) => Number(p) + Number(c.total), 0)
                     .toFixed(2);
 
-                let totalRetentionBase = Number(0);
-
-                // this.taxes.forEach(tax => {
+                // RESTAR RETENCIONES AL TOTAL
                 val.taxes.forEach(tax => {
-                    if (tax.is_retention && tax.in_base && tax.apply) {
-                        tax.retention = (
-                        Number(val.sale) *
-                        (tax.rate / tax.conversion)
-                        ).toFixed(2);
-
-                        totalRetentionBase =
-                        Number(totalRetentionBase) + Number(tax.retention);
-
-                        if (Number(totalRetentionBase) >= Number(val.sale))
-                        this.$set(tax, "retention", Number(0).toFixed(2));
-
-                        total -= Number(tax.retention).toFixed(2);
-                    }
-
-                    if (
-                        tax.is_retention &&
-                        !tax.in_base &&
-                        tax.in_tax != null &&
-                        tax.apply
-                    ) {
-                        let row = val.taxes.find(row => row.id == tax.in_tax);
-
-                        tax.retention = Number(
-                        Number(row.total) * (tax.rate / tax.conversion)
-                        ).toFixed(2);
-
-                        if (Number(tax.retention) > Number(row.total))
-                        this.$set(tax, "retention", Number(0).toFixed(2));
-
-                        row.retention = Number(tax.retention).toFixed(2);
-                        total -= Number(tax.retention).toFixed(2);
+                    if (tax.is_retention && tax.retention > 0) {
+                        total = (Number(total) - Number(tax.retention)).toFixed(2);
                     }
                 });
 
-                val.total = Number(total).toFixed(2)
-
+                val.total = Number(total).toFixed(2);
             },
             ratePrefix(tax = null) {
                 if ((tax != null) && (!tax.is_fixed_value)) return null;
@@ -725,6 +707,9 @@
                     this.form.purchase_order_id = dato.purchase_order_id
                     this.form.customer_id = dato.customer_id
 
+                    // ASIGNAR LOS IMPUESTOS Y RETENCIONES DEL REGISTRO
+                    this.form.taxes = dato.taxes || JSON.parse(JSON.stringify(this.taxes));
+
                     if(this.form.customer_id){
                         this.searchRemotePersons(dato.customer_number)
                     }
@@ -735,8 +720,6 @@
                     this.changeDocumentType()
                     // this.changePaymentMethodType()
                     this.calculateTotal()
-
-                   // this.calculateTotal()
                 })
             },
             getPayments(payments){
@@ -956,6 +939,30 @@
                     this.filterSuppliers()
 
                 })
+            },
+            // Retention Taxes
+            retentiontaxes() {
+                this.retention_taxes = this.taxes.filter(tax => tax.is_retention);
+            },
+            validateRetention() {
+                var current_tax = this.form.taxes.find(tax => tax.id === this.retention_selected);
+                current_tax.retention = (Number(current_tax.in_tax ? this.form.total : this.form.sale) * (current_tax.rate / current_tax.conversion)).toFixed(2);
+
+                var totalRetentionBase = 0;
+                totalRetentionBase += Number(current_tax.retention);
+
+                if (Number(totalRetentionBase) >= Number(this.form.total)) {
+                    current_tax.retention = Number(0).toFixed(2);
+                }
+
+                this.form.total -= Number(current_tax.retention).toFixed(2);
+                this.dialogRetention = false;
+                this.retention_selected = null;
+            },
+            clickRemoveRetention(index) {
+                let tax = this.form.taxes[index];
+                tax.retention = 0;
+                this.calculateTotal();
             },
         }
     }
