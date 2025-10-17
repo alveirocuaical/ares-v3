@@ -1420,7 +1420,9 @@ class DocumentController extends Controller
                 $note_service['establishment_address'] = $sucursal->address;
             if($sucursal->telephone != '-')
                 $note_service['establishment_phone'] = $sucursal->telephone;
-            $note_service['establishment_email'] = $sucursal->email;
+            if (empty($note_service['customer']['email']) || !filter_var($note_service['customer']['email'], FILTER_VALIDATE_EMAIL)) {
+                $note_service['customer']['email'] = $datoscompany->email;
+            }
             $note_service['customer']['dv'] = $this->validarDigVerifDIAN($note_service['customer']['identification_number']);
             $note_service['foot_note'] = "Modo de operación: Software Propio - by ".env('APP_NAME', 'FACTURADOR');
 
@@ -1449,7 +1451,7 @@ class DocumentController extends Controller
             //\Log::debug($correlative_api);
             //\Log::debug($data_document);
             //            return $data_document;
-            \Log::debug($response);
+            //Log::debug($response);
             //return "";
 
             $response_model = json_decode($response);
