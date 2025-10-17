@@ -35,7 +35,10 @@ class ReportBankBookController extends Controller
         $end_date = date("Y-m-t", strtotime($start_date));
 
         // Buscar la cuenta bancaria y su cuenta contable asociada
-        $bank_account = BankAccount::with('chart_of_account')->find($bank_account_id);
+        $bank_account = null;
+        if ($bank_account_id !== 'cash') {
+            $bank_account = BankAccount::with('chart_of_account')->find($bank_account_id);
+        }
 
         // Si se filtra por auxiliar, buscar la cuenta contable
         $chart_account = null;
@@ -44,12 +47,19 @@ class ReportBankBookController extends Controller
         }
 
         // 1. Sumar asientos de saldo inicial (prefijo id 11)
-        $si_query = JournalEntryDetail::where(function($q) use ($bank_account, $chart_account) {
-                if ($bank_account && $bank_account->chart_of_account_id) {
-                    $q->where('chart_of_account_id', $bank_account->chart_of_account_id);
-                }
-                if ($chart_account) {
-                    $q->where('chart_of_account_id', $chart_account->id);
+        $si_query = JournalEntryDetail::where(function($q) use ($bank_account, $chart_account, $bank_account_id) {
+                if ($bank_account_id === 'cash') {
+                    // Solo caja
+                    if ($chart_account) {
+                        $q->where('chart_of_account_id', $chart_account->id);
+                    }
+                } else {
+                    if ($bank_account && $bank_account->chart_of_account_id) {
+                        $q->where('chart_of_account_id', $bank_account->chart_of_account_id);
+                    }
+                    if ($chart_account) {
+                        $q->where('chart_of_account_id', $chart_account->id);
+                    }
                 }
             })
             ->whereHas('journalEntry', function($q) {
@@ -61,18 +71,24 @@ class ReportBankBookController extends Controller
         $saldo_inicial = $si_query->sum('debit') - $si_query->sum('credit');
 
         // 2. Sumar movimientos anteriores al mes (excepto saldo inicial)
-        $saldo_query = JournalEntryDetail::where(function($q) use ($bank_account, $chart_account) {
-                if ($bank_account && $bank_account->chart_of_account_id) {
-                    $q->where('chart_of_account_id', $bank_account->chart_of_account_id);
-                }
-                if ($chart_account) {
-                    $q->where('chart_of_account_id', $chart_account->id);
+        $saldo_query = JournalEntryDetail::where(function($q) use ($bank_account, $chart_account, $bank_account_id) {
+                if ($bank_account_id === 'cash') {
+                    if ($chart_account) {
+                        $q->where('chart_of_account_id', $chart_account->id);
+                    }
+                } else {
+                    if ($bank_account && $bank_account->chart_of_account_id) {
+                        $q->where('chart_of_account_id', $bank_account->chart_of_account_id);
+                    }
+                    if ($chart_account) {
+                        $q->where('chart_of_account_id', $chart_account->id);
+                    }
                 }
             })
             ->whereHas('journalEntry', function($q) use ($start_date) {
                 $q->where('date', '<', $start_date)
                 ->where('status', 'posted')
-                ->where('journal_prefix_id', '!=', 11); // Excluir saldo inicial
+                ->where('journal_prefix_id', '!=', 11);
             })
             ->get();
 
@@ -83,14 +99,20 @@ class ReportBankBookController extends Controller
             ->whereHas('journalEntry', function($q) use ($start_date, $end_date) {
                 $q->whereBetween('date', [$start_date, $end_date])
                 ->where('status', 'posted')
-                ->where('journal_prefix_id', '!=', 11); // Excluir saldo inicial
+                ->where('journal_prefix_id', '!=', 11);
             });
 
-        if ($bank_account && $bank_account->chart_of_account_id) {
-            $query->where('chart_of_account_id', $bank_account->chart_of_account_id);
-        }
-        if ($chart_account) {
-            $query->where('chart_of_account_id', $chart_account->id);
+        if ($bank_account_id === 'cash') {
+            if ($chart_account) {
+                $query->where('chart_of_account_id', $chart_account->id);
+            }
+        } else {
+            if ($bank_account && $bank_account->chart_of_account_id) {
+                $query->where('chart_of_account_id', $bank_account->chart_of_account_id);
+            }
+            if ($chart_account) {
+                $query->where('chart_of_account_id', $chart_account->id);
+            }
         }
 
         $details = $query->orderBy('id')->get();

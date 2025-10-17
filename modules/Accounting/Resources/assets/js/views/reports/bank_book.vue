@@ -25,8 +25,13 @@
                     </div>
                     <div class="col-md-5 pb-1">
                         <div class="form-group">
-                            <label>Cuenta Bancaria</label>
+                            <label>Cuenta Bancaria / Caja</label>
                             <el-select v-model="form.bank_account_id" placeholder="Seleccione" @change="onBankAccountChange">
+                                <el-option
+                                    key="cash"
+                                    label="Caja"
+                                    :value="'cash'">
+                                </el-option>
                                 <el-option
                                     v-for="account in bankAccounts"
                                     :key="account.id"
@@ -74,8 +79,12 @@ export default {
             this.bankAccounts = response.data;
         },
         onBankAccountChange(accountId) {
-            const selected = this.bankAccounts.find(acc => acc.id === accountId)
-            this.form.auxiliar = selected && selected.chart_of_account ? selected.chart_of_account.code : ''
+            if (accountId === 'cash') {
+                this.form.auxiliar = '110505'
+            } else {
+                const selected = this.bankAccounts.find(acc => acc.id === accountId)
+                this.form.auxiliar = selected && selected.chart_of_account ? selected.chart_of_account.code : ''
+            }
         },
         clickDownload(type) {
             const params = { ...this.form, type }

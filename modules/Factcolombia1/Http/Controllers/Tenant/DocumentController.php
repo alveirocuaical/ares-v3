@@ -1473,7 +1473,7 @@ class DocumentController extends Controller
             //\Log::debug($correlative_api);
             //\Log::debug($data_document);
             //            return $data_document;
-            \Log::debug($response);
+            // \Log::debug($response);
             //return "";
 
             $response_model = json_decode($response);

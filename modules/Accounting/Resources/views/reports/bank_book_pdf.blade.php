@@ -1,3 +1,4 @@
+<!-- filepath: c:\laragon\www\facturadorpro2\modules\Accounting\Resources\views\reports\bank_book_Pdf.blade.php -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -8,23 +9,52 @@
         html { font-family: sans-serif; font-size: 9px; }
         table { width: 100%; border-collapse: collapse; font-size: 8px; }
         th, td { border: 1px solid #333; padding: 3px; text-align: center; }
-        .header { font-size: 12px; font-weight: bold; background: #ffe600; }
-        .subtitle { background: #ffe600; }
+        .header-main {
+            font-size: 16px;
+            font-weight: bold;
+            background: #00ff62;
+            color: #222;
+            text-align: left;
+            padding: 8px 0;
+        }
+        .header-sub {
+            font-size: 12px;
+            font-weight: bold;
+            background: #cde9cb;
+            color: #333;
+            text-align: left;
+            padding: 4px 0;
+        }
+        .header-table td {
+            border: none;
+            padding: 2px 8px;
+        }
+        .subtitle {
+            background: #00ff62;
+        }
         .notes { font-size: 8px; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <table>
+    <table class="header-table" style="margin-bottom: 10px;">
         <tr>
-            <td colspan="9" class="header">{{ $company->name ?? '' }}</td>
-            <td colspan="2" class="header">LIBRO DE BANCOS</td>
+            <td colspan="4" class="header-main">
+                {{ $company->name ?? '' }}
+            </td>
+            <td colspan="4" class="header-main" style="text-align:right;">
+                LIBRO DE BANCOS
+            </td>
         </tr>
         <tr>
-            <td colspan="11" class="subtitle">
-                NIT: {{ $company->number ?? '' }}<br>
-                PERIODO: {{ $filters['month'] ?? '' }}<br>
-                CTA: {{ $filters['bank_account']->description ?? '' }}<br>
-                AUXILIAR: {{ $filters['auxiliar'] ?? '' }}
+            <td colspan="8" class="header-sub">
+                <strong>NIT:</strong> {{ $company->number ?? '' }}<br>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="8" class="header-sub">
+                <strong>PERIODO:</strong> {{ $filters['month'] ?? '' }} &nbsp; 
+                <strong>CTA:</strong> {{ $filters['bank_account']->description ?? '' }} &nbsp; 
+                <strong>AUXILIAR:</strong> {{ $filters['auxiliar'] ?? '' }}
             </td>
         </tr>
     </table>
@@ -61,7 +91,33 @@
                     <td>
                         {{ $entry->journal_prefix->prefix ?? '' }}-{{ $entry->number ?? '' }}
                     </td>
-                    <td>{{ $entry->transfer_type ?? '' }}</td>
+                    <td>
+                        @php
+                            $payment_name = '';
+                            // Detectar si es asiento de devolución
+                            $is_refund = false;
+                            if($entry->description && (stripos($entry->description, 'devolución') !== false || stripos($entry->description, 'nota de crédito') !== false)) {
+                                $is_refund = true;
+                            }
+                            if($entry->document && $entry->document->payments && $entry->document->payments->count()) {
+                                $payment = $entry->document->payments->first();
+                                if($payment) $payment_name = $payment->payment_method_name;
+                            }
+                            elseif($entry->purchase && $entry->purchase->payments && $entry->purchase->payments->count()) {
+                                $payment = $entry->purchase->payments->first();
+                                if($payment) $payment_name = $payment->payment_method_name;
+                            }
+                            elseif($entry->document_pos && $entry->document_pos->payments && $entry->document_pos->payments->count()) {
+                                $payment = $entry->document_pos->payments->first();
+                                if($payment) $payment_name = $payment->payment_method_name;
+                            }
+                            elseif($entry->support_document && $entry->support_document->payments && $entry->support_document->payments->count()) {
+                                $payment = $entry->support_document->payments->first();
+                                if($payment) $payment_name = $payment->payment_method_name;
+                            }
+                        @endphp
+                        {{ $is_refund ? 'DEVOLUCIÓN' : ($payment_name ?: 'TRANSFERENCIA') }}
+                    </td>
                     <td>{{ $entry->description ?? '' }}</td>
                     <td>
                         @if($debit > 0)
@@ -83,17 +139,5 @@
             </tr>
         </tbody>
     </table>
-
-    <div class="notes">
-        <strong>NOTAS O SIGNIFICADOS</strong><br>
-        1. FECHA: Fecha de elaboración del documento<br>
-        2. DOCUMENTO: Número de ingreso o egreso<br>
-        3. TRANSFERENCIA: Si es cheque, transferencia, traslado<br>
-        4. NOMBRE: Comprobante de ingreso o egreso<br>
-        5. TIPO: CI (Ingreso), CE (Egreso)<br>
-        6. DÉBITO: Ingresos por clientes u otros conceptos<br>
-        7. CRÉDITO: Egresos a proveedores, servicios, etc.<br>
-        8. SALDO: Saldo anterior + débitos - créditos
-    </div>
 </body>
 </html>
