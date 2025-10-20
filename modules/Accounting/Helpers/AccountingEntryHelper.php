@@ -32,6 +32,8 @@ class AccountingEntryHelper
                 'debit' => $movement['debit'],
                 'credit' => $movement['credit'],
                 'third_party_id' => $movement['third_party_id'] ?? null,
+                'payment_method_name' => $movement['payment_method_name'] ?? null,
+                'bank_account_id' => $movement['bank_account_id'] ?? null,
             ]);
 
             if ($movement['affects_balance'] ?? false) {
@@ -59,6 +61,7 @@ class AccountingEntryHelper
 
             // Obtener el tercer implicado si viene en taxConfig
             $thirdPartyId = $taxConfig['third_party_id'] ?? null;
+            $payment_method_name = $taxConfig['payment_method_name'] ?? null; // <-- nuevo
 
             // Impuestos normales
             if (floatval($tax->total) > 0 && isset($taxConfig['tax_field'])) {
@@ -71,6 +74,7 @@ class AccountingEntryHelper
                             'debit' => $taxConfig['tax_debit'] ? $tax->total : 0,
                             'credit' => $taxConfig['tax_credit'] ? $tax->total : 0,
                             'third_party_id' => $thirdPartyId ?? null,
+                            'payment_method_name' => $payment_method_name, // <-- aquí
                         ]);
                     }
                 }
@@ -87,6 +91,7 @@ class AccountingEntryHelper
                             'debit' => $taxConfig['retention_debit'] ? $tax->retention : 0,
                             'credit' => $taxConfig['retention_credit'] ? $tax->retention : 0,
                             'third_party_id' => $thirdPartyId ?? null,
+                            'payment_method_name' => $payment_method_name, // <-- aquí
                         ]);
                     }
                 }

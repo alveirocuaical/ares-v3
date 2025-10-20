@@ -313,6 +313,11 @@ class PurchaseController extends Controller
             );
             $thirdPartyId = $thirdParty->id;
         }
+        // ¿Es crédito?
+        $is_credit = $document->date_of_issue != $document->date_of_due;
+
+        // Aquí el ajuste solicitado:
+        $payment_method_name = $is_credit ? 'A crédito' : 'Contado';
 
         AccountingEntryHelper::registerEntry([
             'prefix_id' => 2,
@@ -325,6 +330,7 @@ class PurchaseController extends Controller
                     'credit' => 0,
                     'affects_balance' => true,
                     'third_party_id' => $thirdPartyId,
+                    // 'payment_method_name' => $payment_method_name,
                 ],
                 [
                     'account_id' => $accountIdLiability->id,
@@ -332,6 +338,7 @@ class PurchaseController extends Controller
                     'credit' => $document->total,
                     'affects_balance' => true,
                     'third_party_id' => $thirdPartyId,
+                    // 'payment_method_name' => $payment_method_name,
                 ],
             ],
             'taxes' => $document->taxes ?? [],
@@ -342,6 +349,7 @@ class PurchaseController extends Controller
                 'retention_debit' => false,
                 'retention_credit' => true,
                 'third_party_id' => $thirdPartyId,
+                // 'payment_method_name' => $payment_method_name,
             ],
         ]);
     }
@@ -375,6 +383,8 @@ class PurchaseController extends Controller
             $thirdPartyId = $thirdParty->id;
         }
 
+        $payment_method_name = 'Devolución';
+
         AccountingEntryHelper::registerEntry([
             'prefix_id' => 2,
             'description' => $document_type->description . ' #' . $document->series . '-' . $document->number,
@@ -386,6 +396,7 @@ class PurchaseController extends Controller
                     'credit' => $document->sale,
                     'affects_balance' => true,
                     'third_party_id' => $thirdPartyId,
+                    // 'payment_method_name' => $payment_method_name,
                 ],
                 [
                     'account_id' => $accountIdLiability->id,
@@ -393,6 +404,7 @@ class PurchaseController extends Controller
                     'credit' => 0,
                     'affects_balance' => true,
                     'third_party_id' => $thirdPartyId,
+                    // 'payment_method_name' => $payment_method_name,
                 ],
             ],
             'taxes' => $document->taxes ?? [],
@@ -403,6 +415,7 @@ class PurchaseController extends Controller
                 'retention_debit' => true,
                 'retention_credit' => false,
                 'third_party_id' => $thirdPartyId,
+                // 'payment_method_name' => $payment_method_name,
             ],
         ]);
     }

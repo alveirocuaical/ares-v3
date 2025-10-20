@@ -256,6 +256,15 @@ class SupportDocumentController extends Controller
             $thirdPartyId = $thirdParty->id;
         }
 
+        // Obtener método de pago del primer pago
+        $payment_method_name = null;
+        if ($document->payments && $document->payments->count() > 0) {
+            $payment = $document->payments->first();
+            if (method_exists($payment, 'getPaymentMethodNameAttribute')) {
+                $payment_method_name = $payment->payment_method_name;
+            }
+        }
+
         AccountingEntryHelper::registerEntry([
             'prefix_id' => 2,
             'description' => $description . ' #' . $document->prefix . '-' . $document->number,
@@ -267,6 +276,7 @@ class SupportDocumentController extends Controller
                     'credit' => 0,
                     'affects_balance' => true,
                     'third_party_id' => $thirdPartyId,
+                    // 'payment_method_name' => $payment_method_name,
                 ],
                 [
                     'account_id' => $accountIdLiability->id,
@@ -274,6 +284,7 @@ class SupportDocumentController extends Controller
                     'credit' => $document->total,
                     'affects_balance' => true,
                     'third_party_id' => $thirdPartyId,
+                    // 'payment_method_name' => $payment_method_name,
                 ],
             ],
             'taxes' => is_array($document->taxes) ? $document->taxes : (is_object($document->taxes) ? (array)$document->taxes : []),
@@ -284,6 +295,7 @@ class SupportDocumentController extends Controller
                 'retention_debit' => false,
                 'retention_credit' => true,
                 'third_party_id' => $thirdPartyId,
+                // 'payment_method_name' => $payment_method_name,
             ],
         ]);
     }

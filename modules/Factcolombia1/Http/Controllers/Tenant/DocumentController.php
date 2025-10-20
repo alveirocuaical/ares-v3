@@ -1182,6 +1182,9 @@ class DocumentController extends Controller
                 $thirdPartyId = $thirdParty->id;
             }
 
+            // Obtener método de pago si es al contado
+            $payment_method_name = !$is_credit ? 'Contado' : null;
+
             AccountingEntryHelper::registerEntry([
                 'prefix_id' => 1,
                 'description' => $document_type->name . ' #' . $document->prefix . '-' . $document->number,
@@ -1193,6 +1196,7 @@ class DocumentController extends Controller
                         'credit' => 0,
                         'affects_balance' => true,
                         'third_party_id' => $thirdPartyId,
+                        'payment_method_name' => $payment_method_name,
                     ],
                     [
                         'account_id' => $accountIdIncome->id,
@@ -1200,6 +1204,7 @@ class DocumentController extends Controller
                         'credit' => $document->sale,
                         'affects_balance' => true,
                         'third_party_id' => $thirdPartyId, //Caso a investigar si es correcto!!
+                        // 'payment_method_name' => $payment_method_name,
                     ],
                 ],
                 'taxes' => $document->taxes ?? [],
@@ -1210,6 +1215,7 @@ class DocumentController extends Controller
                     'retention_debit' => true,
                     'retention_credit' => false,
                     'third_party_id' => $thirdPartyId,
+                    // 'payment_method_name' => $payment_method_name,
                 ],
             ]);
         } catch (\Exception $e) {
@@ -1768,8 +1774,35 @@ class DocumentController extends Controller
         $config = AccountingChartAccountConfiguration::first();
         $accountReceivable = ChartOfAccount::where('code', $config->customer_receivable_account)->first();
 
+        // 3. Configuración de cuentas
+        $config = AccountingChartAccountConfiguration::first();
+        $accountReceivable = ChartOfAccount::where('code', $config->customer_receivable_account)->first();
+
+        // 4. Obtener el cliente y el tercero
+        $person = Person::find($invoice->customer_id);
+        $thirdPartyId = null;
+        $documentType = null;
+        if ($person && $person->identity_document_type_id) {
+            $typeDoc = TypeIdentityDocument::find($person->identity_document_type_id);
+            $documentType = $typeDoc ? $typeDoc->code : null;
+        }
+        if ($person) {
+            $thirdParty = ThirdParty::updateOrCreate(
+                ['document' => $person->number, 'type' => $person->type],
+                [
+                    'name' => $person->name,
+                    'email' => $person->email,
+                    'address' => $person->address,
+                    'phone' => $person->telephone,
+                    'document_type' => $documentType,
+                ]
+            );
+            $thirdPartyId = $thirdParty->id;
+        }
+
         foreach ($payments as $payment) {
             $accountDestinationID = null;
+            $payment_method_name = 'Devolución'; // <-- aquí
             if ($payment->global_payment) {
                 if ($payment->global_payment->destination_type === BankAccount::class) {
                     $bankAccount = BankAccount::find($payment->global_payment->destination_id);
@@ -1791,14 +1824,16 @@ class DocumentController extends Controller
                         'debit' => 0,
                         'credit' => $payment->payment, // Sale el dinero
                         'affects_balance' => true,
-                        'third_party_id' => $invoice->customer_id,
+                        'third_party_id' => $thirdPartyId,
+                        'payment_method_name' => $payment_method_name,
                     ],
                     [
                         'account_id' => $accountReceivable->id,
                         'debit' => $payment->payment, // Se reduce la cuenta por cobrar
                         'credit' => 0,
                         'affects_balance' => true,
-                        'third_party_id' => $invoice->customer_id,
+                        'third_party_id' => $thirdPartyId,
+                        // 'payment_method_name' => $payment_method_name,
                     ],
                 ],
             ]);

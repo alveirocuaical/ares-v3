@@ -103,15 +103,15 @@ class ReportBankBookController extends Controller
             });
 
         if ($bank_account_id === 'cash') {
-            if ($chart_account) {
-                $query->where('chart_of_account_id', $chart_account->id);
-            }
+            // Solo caja: auxiliar 110505
+            $query->whereHas('chartOfAccount', function($q) {
+                $q->where('code', '110505');
+            });
         } else {
+            // Solo banco: auxiliar del banco y bank_account_id igual al seleccionado
             if ($bank_account && $bank_account->chart_of_account_id) {
-                $query->where('chart_of_account_id', $bank_account->chart_of_account_id);
-            }
-            if ($chart_account) {
-                $query->where('chart_of_account_id', $chart_account->id);
+                $query->where('chart_of_account_id', $bank_account->chart_of_account_id)
+                    ->where('bank_account_id', $bank_account->id);
             }
         }
 

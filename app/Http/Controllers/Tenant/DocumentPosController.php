@@ -681,6 +681,8 @@ class DocumentPosController extends Controller
             $thirdPartyId = $thirdParty->id;
         }
 
+        $payment_method_name = 'Contado';
+
         AccountingEntryHelper::registerEntry([
             'prefix_id' => 3, // Puedes ajustar el prefijo según tu configuración
             'description' => $document_type->description . ' #' . $document->series . '-' . $document->number,
@@ -692,6 +694,7 @@ class DocumentPosController extends Controller
                     'credit' => 0,
                     'affects_balance' => true,
                     'third_party_id' => $thirdPartyId,
+                    'payment_method_name' => $payment_method_name, // <-- aquí
                 ],
                 [
                     'account_id' => $accountIdIncome->id,
@@ -699,6 +702,7 @@ class DocumentPosController extends Controller
                     'credit' => $document->sale,
                     'affects_balance' => true,
                     'third_party_id' => $thirdPartyId,
+                    // 'payment_method_name' => $payment_method_name, // <-- aquí
                 ],
             ],
             'taxes' => $document->taxes ?? [],
@@ -709,6 +713,7 @@ class DocumentPosController extends Controller
                 'retention_debit' => true,
                 'retention_credit' => false,
                 'third_party_id' => $thirdPartyId,
+                // 'payment_method_name' => $payment_method_name,
             ],
         ]);
     }

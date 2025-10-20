@@ -65,7 +65,7 @@
                 <th>FECHA</th>
                 <th>DOCUMENTO</th>
                 <th>TRANSFERENCIA</th>
-                <th>NOMBRE</th>
+                <th>CONCEPTO</th>
                 <th>TIPO</th>
                 <th>DÉBITO</th>
                 <th>CRÉDITO</th>

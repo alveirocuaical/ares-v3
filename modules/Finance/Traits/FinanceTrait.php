@@ -143,13 +143,17 @@ trait FinanceTrait
         $destinationId = $destination['destination_id'];
 
         // movimiento de destino (caja/banco)
+        $accountDestinationID = null;
+        $bank_account_id = null;
         if ($destinationType === Cash::class) {
             $accountDestinationID = $accountCash->id;
+            $bank_account_id = null;
         } elseif ($destinationType === BankAccount::class) {
             $bank = BankAccount::find($destinationId);
             $accountDestinationID = $bank && $bank->chart_of_account_id
                 ? $bank->chart_of_account_id
                 : $accountBank->id;
+            $bank_account_id = $bank ? $bank->id : null;
         }
         // Obtener el cliente como tercer implicado
         $thirdPartyId = null;
@@ -191,6 +195,12 @@ trait FinanceTrait
         // Detectar tipo de modelo y configurar el asiento
         $typeConfig = $this->getPaymentTypeConfig($model, $accountReceivable, $accountPayable);
 
+        // Obtener el método de pago si existe
+        $payment_method_name = null;
+        if (method_exists($model, 'getPaymentMethodNameAttribute')) {
+            $payment_method_name = $model->payment_method_name;
+        }
+
         // Armar movimientos
         $movements = [
             [
@@ -199,6 +209,8 @@ trait FinanceTrait
                 'credit' => $typeConfig['credit'],
                 'affects_balance' => true,
                 'third_party_id' => $thirdPartyId, 
+                'payment_method_name' => $payment_method_name, // <-- aquí
+                'bank_account_id' => $bank_account_id, 
             ],
             [
                 'account_id' => $typeConfig['counter_account_id'],
@@ -206,6 +218,7 @@ trait FinanceTrait
                 'credit' => $typeConfig['counter_credit'],
                 'affects_balance' => false,
                 'third_party_id' => $thirdPartyId, 
+                // 'payment_method_name' => $payment_method_name, // <-- aquí
             ],
         ];
 
