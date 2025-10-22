@@ -29,6 +29,11 @@
                     <el-input v-model="form.description"></el-input>
                 </div>
 
+                <div class="mb-2">
+                    <el-checkbox v-model="showBankColumn">Mostrar columna Banco</el-checkbox>
+                    <el-checkbox v-model="showPaymentMethodColumn">Mostrar columna Método de Pago</el-checkbox>
+                </div>
+
                 <div>
                     <h4>Detalles del Asiento</h4>
                     <el-table :data="form.details" border show-summary :summary-method="getSummaries">
@@ -71,6 +76,21 @@
                                         :label="item.name"
                                         :value="item.id"
                                     ></el-option>
+                                </el-select>
+                            </template>
+                        </el-table-column>
+
+                        <el-table-column v-if="showBankColumn" prop="bank_account_id" label="Banco">
+                            <template slot-scope="{ row }">
+                                <el-select v-model="row.bank_account_id" placeholder="Banco" clearable filterable>
+                                    <el-option v-for="bank in banks" :key="bank.id" :label="bank.description + ' - ' + bank.number" :value="bank.id"></el-option>
+                                </el-select>
+                            </template>
+                        </el-table-column>
+                        <el-table-column v-if="showPaymentMethodColumn" prop="payment_method_name" label="Método de Pago">
+                            <template slot-scope="{ row }">
+                                <el-select v-model="row.payment_method_name" placeholder="Método de Pago" clearable filterable>
+                                    <el-option v-for="method in paymentMethods" :key="method.id" :label="method.name" :value="method.name"></el-option>
                                 </el-select>
                             </template>
                         </el-table-column>
@@ -140,12 +160,18 @@ export default {
             loadingAccounts: false,
             thirdParties: [],
             loadingThirdParties: false,
+            banks: [],
+            paymentMethods: [],
+            showBankColumn: false,
+            showPaymentMethodColumn: false,
         };
     },
     created() {
         this.initForm();
         // this.loadPrefixes();
         this.loadAccounts();
+        this.loadBanks();
+        this.loadPaymentMethods();
     },
     computed: {
         filteredJournalPrefixes() {
@@ -163,6 +189,14 @@ export default {
                 description: "",
                 details: [],
             };
+        },
+        async loadBanks() {
+            await this.$http.get('/accounting/bank-book/records')
+                .then(response => this.banks = response.data);
+        },
+        async loadPaymentMethods() {
+            await this.$http.get('/accounting/payment-methods') // Ajusta el endpoint si es diferente
+                .then(response => this.paymentMethods = response.data);
         },
         async onThirdPartyTypeChange(row) {
             row.third_party_id = null;
@@ -195,7 +229,7 @@ export default {
                 .finally(() => this.loadingAccounts = false);
         },
         addDetail() {
-            this.form.details.push({ chart_of_account_id: null, debit: 0, credit: 0, third_party_type: null, third_party_id: null, thirdParties: [], loadingThirdParties: false });
+            this.form.details.push({ chart_of_account_id: null, debit: 0, credit: 0, third_party_type: null, third_party_id: null, thirdParties: [], loadingThirdParties: false , bank_account_id: null, payment_method_name: null });
         },
         removeDetail(index) {
             this.form.details.splice(index, 1);
@@ -279,6 +313,10 @@ export default {
             for (const [index, detail] of this.form.details.entries()) {
                 if (!detail.chart_of_account_id) {
                     this.$message.error(`La cuenta contable es requerida en la línea ${index + 1}.`);
+                    return;
+                }
+                if (!detail.third_party_id) {
+                    this.$message.error(`El tercer implicado es obligatorio en la línea ${index + 1}.`);
                     return;
                 }
 

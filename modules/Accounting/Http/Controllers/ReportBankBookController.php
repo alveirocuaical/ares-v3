@@ -25,12 +25,10 @@ class ReportBankBookController extends Controller
      */
     public function export(Request $request)
     {
-        // Filtros
         $month = $request->input('month'); // formato yyyy-MM
         $bank_account_id = $request->input('bank_account_id');
         $auxiliar = $request->input('auxiliar');
 
-        // Fechas del mes
         $start_date = $month . '-01';
         $end_date = date("Y-m-t", strtotime($start_date));
 
@@ -46,60 +44,37 @@ class ReportBankBookController extends Controller
             $chart_account = ChartOfAccount::where('code', $auxiliar)->first();
         }
 
-        // 1. Sumar asientos de saldo inicial (prefijo id 11)
-        $si_query = JournalEntryDetail::where(function($q) use ($bank_account, $chart_account, $bank_account_id) {
-                if ($bank_account_id === 'cash') {
-                    // Solo caja
-                    if ($chart_account) {
-                        $q->where('chart_of_account_id', $chart_account->id);
-                    }
-                } else {
-                    if ($bank_account && $bank_account->chart_of_account_id) {
-                        $q->where('chart_of_account_id', $bank_account->chart_of_account_id);
-                    }
-                    if ($chart_account) {
-                        $q->where('chart_of_account_id', $chart_account->id);
-                    }
-                }
-            })
-            ->whereHas('journalEntry', function($q) {
-                $q->where('journal_prefix_id', 11)
-                ->where('status', 'posted');
-            })
-            ->get();
+        // Calcular saldo inicial como la suma de todos los movimientos hasta el último día del mes anterior
+        $prev_end = date("Y-m-t", strtotime('-1 month', strtotime($start_date)));
 
-        $saldo_inicial = $si_query->sum('debit') - $si_query->sum('credit');
+        if ($bank_account_id === 'cash') {
+            // Solo caja: auxiliar 110505
+            $saldo_inicial_query = JournalEntryDetail::whereHas('chartOfAccount', function($q) {
+                    $q->where('code', '110505');
+                })
+                ->whereHas('journalEntry', function($q) use ($prev_end) {
+                    $q->where('date', '<=', $prev_end)
+                    ->where('status', 'posted');
+                })
+                ->get();
+        } else {
+            // Solo banco: auxiliar del banco y bank_account_id igual al seleccionado
+            $saldo_inicial_query = JournalEntryDetail::where('chart_of_account_id', $bank_account->chart_of_account_id)
+                ->where('bank_account_id', $bank_account->id)
+                ->whereHas('journalEntry', function($q) use ($prev_end) {
+                    $q->where('date', '<=', $prev_end)
+                    ->where('status', 'posted');
+                })
+                ->get();
+        }
 
-        // 2. Sumar movimientos anteriores al mes (excepto saldo inicial)
-        $saldo_query = JournalEntryDetail::where(function($q) use ($bank_account, $chart_account, $bank_account_id) {
-                if ($bank_account_id === 'cash') {
-                    if ($chart_account) {
-                        $q->where('chart_of_account_id', $chart_account->id);
-                    }
-                } else {
-                    if ($bank_account && $bank_account->chart_of_account_id) {
-                        $q->where('chart_of_account_id', $bank_account->chart_of_account_id);
-                    }
-                    if ($chart_account) {
-                        $q->where('chart_of_account_id', $chart_account->id);
-                    }
-                }
-            })
-            ->whereHas('journalEntry', function($q) use ($start_date) {
-                $q->where('date', '<', $start_date)
-                ->where('status', 'posted')
-                ->where('journal_prefix_id', '!=', 11);
-            })
-            ->get();
+        $saldo_inicial = $saldo_inicial_query->sum('debit') - $saldo_inicial_query->sum('credit');
 
-        $saldo_inicial += $saldo_query->sum('debit') - $saldo_query->sum('credit');
-
-        // Filtrar detalles de asientos por cuenta bancaria y auxiliar (excluyendo saldo inicial)
+        // 2. Filtrar detalles de asientos por cuenta bancaria/caja y auxiliar (solo del mes actual)
         $query = JournalEntryDetail::with(['journalEntry', 'chartOfAccount'])
             ->whereHas('journalEntry', function($q) use ($start_date, $end_date) {
                 $q->whereBetween('date', [$start_date, $end_date])
-                ->where('status', 'posted')
-                ->where('journal_prefix_id', '!=', 11);
+                ->where('status', 'posted');
             });
 
         if ($bank_account_id === 'cash') {
@@ -109,15 +84,13 @@ class ReportBankBookController extends Controller
             });
         } else {
             // Solo banco: auxiliar del banco y bank_account_id igual al seleccionado
-            if ($bank_account && $bank_account->chart_of_account_id) {
-                $query->where('chart_of_account_id', $bank_account->chart_of_account_id)
-                    ->where('bank_account_id', $bank_account->id);
-            }
+            $query->where('chart_of_account_id', $bank_account->chart_of_account_id)
+                ->where('bank_account_id', $bank_account->id);
         }
 
         $details = $query->orderBy('id')->get();
 
-        // Calcular saldo final
+        // Calcular saldo final del mes actual
         $saldo_final = $saldo_inicial;
         foreach ($details as $detail) {
             $saldo_final += $detail->debit - $detail->credit;
@@ -151,5 +124,117 @@ class ReportBankBookController extends Controller
             ->get();
 
         return response()->json($bankAccounts);
+    }
+
+    public function preview(Request $request)
+    {
+        $month = $request->input('month'); // formato yyyy-MM
+        $bank_account_id = $request->input('bank_account_id');
+        $auxiliar = $request->input('auxiliar');
+        $page = (int)$request->input('page', 1);
+        $perPage = (int)$request->input('per_page', 10);
+
+        $start_date = $month . '-01';
+        $end_date = date("Y-m-t", strtotime($start_date));
+
+        // Buscar la cuenta bancaria y su cuenta contable asociada
+        $bank_account = null;
+        if ($bank_account_id !== 'cash') {
+            $bank_account = BankAccount::with('chart_of_account')->find($bank_account_id);
+        }
+
+        // Calcular saldo inicial como la suma de todos los movimientos hasta el último día del mes anterior
+        $prev_end = date("Y-m-t", strtotime('-1 month', strtotime($start_date)));
+
+        if ($bank_account_id === 'cash') {
+            $saldo_inicial_query = JournalEntryDetail::whereHas('chartOfAccount', function($q) {
+                    $q->where('code', '110505');
+                })
+                ->whereHas('journalEntry', function($q) use ($prev_end) {
+                    $q->where('date', '<=', $prev_end)
+                    ->where('status', 'posted');
+                });
+        } else {
+            $saldo_inicial_query = JournalEntryDetail::where('chart_of_account_id', $bank_account->chart_of_account_id)
+                ->where('bank_account_id', $bank_account->id)
+                ->whereHas('journalEntry', function($q) use ($prev_end) {
+                    $q->where('date', '<=', $prev_end)
+                    ->where('status', 'posted');
+                });
+        }
+
+        $saldo_inicial = $saldo_inicial_query->sum('debit') - $saldo_inicial_query->sum('credit');
+
+        // Movimientos del mes actual
+        $query = JournalEntryDetail::with(['journalEntry', 'chartOfAccount'])
+            ->whereHas('journalEntry', function($q) use ($start_date, $end_date) {
+                $q->whereBetween('date', [$start_date, $end_date])
+                ->where('status', 'posted');
+            });
+
+        if ($bank_account_id === 'cash') {
+            $query->whereHas('chartOfAccount', function($q) {
+                $q->where('code', '110505');
+            });
+        } else {
+            $query->where('chart_of_account_id', $bank_account->chart_of_account_id)
+                ->where('bank_account_id', $bank_account->id);
+        }
+
+        $total = $query->count();
+        $details = $query->orderBy('id')->skip(($page - 1) * $perPage)->take($perPage)->get();
+
+        // Construir la respuesta para la tabla de vista previa
+        $preview = [];
+        $saldo = $saldo_inicial + $query->orderBy('id')->take(($page - 1) * $perPage)->get()->sum(function($d) {
+            return $d->debit - $d->credit;
+        });
+
+        foreach ($details as $detail) {
+            $entry = $detail->journalEntry;
+            $debit = $detail->debit ?? 0;
+            $credit = $detail->credit ?? 0;
+            $saldo += $debit - $credit;
+
+            $type = '-';
+            if ($debit > 0) $type = 'CI';
+            if ($credit > 0) $type = 'CE';
+
+            $document = $entry && $entry->journal_prefix ? ($entry->journal_prefix->prefix ?? '') . '-' . ($entry->number ?? '') : '';
+            $payment_method = $detail->payment_method_name ?? 'TRANSFERENCIA';
+
+            $is_refund = false;
+            if ($entry && $entry->description && (stripos($entry->description, 'devolución') !== false || stripos($entry->description, 'nota de crédito') !== false)) {
+                $is_refund = true;
+            }
+            if ($is_refund) $payment_method = 'DEVOLUCIÓN';
+
+            $preview[] = [
+                'date' => $entry->date ?? '',
+                'document' => $document,
+                'payment_method' => $payment_method,
+                'description' => $entry->description ?? '',
+                'type' => $type,
+                'debit' => number_format($debit, 2, ',', '.'),
+                'credit' => number_format($credit, 2, ',', '.'),
+                'balance' => number_format($saldo, 2, ',', '.'),
+            ];
+        }
+
+        $saldo_final = $saldo_inicial + $query->get()->sum(function($d) {
+            return $d->debit - $d->credit;
+        });
+
+        return response()->json([
+            'preview' => $preview,
+            'saldo_inicial' => number_format($saldo_inicial, 2, ',', '.'),
+            'saldo_final' => number_format($saldo_final, 2, ',', '.'),
+            'pagination' => [
+                'total' => $total,
+                'per_page' => $perPage,
+                'current_page' => $page,
+                'last_page' => ceil($total / $perPage),
+            ]
+        ]);
     }
 }

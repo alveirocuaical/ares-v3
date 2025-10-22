@@ -49,6 +49,10 @@ if($hostname) {
             // Terceros
             Route::get('journal/thirds/third-parties', 'ThirdPartyController@index');
 
+            //Records
+            Route::get('/bank-book/records', 'JournalEntryController@bankAccounts');
+            Route::get('/payment-methods', 'JournalEntryController@paymentMethods');
+
             // CRUD para Detalles de Asientos Contables
             Route::apiResource('journal/entry-details', 'JournalEntryDetailController');
             Route::get('journal/entries/{id}/records-detail', 'JournalEntryDetailController@recordsDetail');
@@ -70,7 +74,18 @@ if($hostname) {
             Route::get('/bank-book', 'ReportBankBookController@index')->name('tenant.accounting.report.bank-book');
             Route::get('/bank-book/records', 'ReportBankBookController@records');
             Route::get('/bank-book/export', 'ReportBankBookController@export');
+            Route::get('/bank-book/preview', 'ReportBankBookController@preview');
+
+            // Reporte de Conciliacion Bancaria
+            Route::get('/bank-reconciliation', 'ReportBankReconciliationController@index')->name('tenant.accounting.report.bank-reconciliation');
+            Route::get('/bank-reconciliation/records', 'ReportBankReconciliationController@records');
+            Route::get('/bank-reconciliation/export', 'ReportBankReconciliationController@export');
             
+            // Reporte de Terceros
+            Route::get('/third-report', 'ReportThirdController@index')->name('tenant.accounting.report.third-report');
+            Route::get('/third-report/records', 'ReportThirdController@records');
+            Route::get('/third-report/export', 'ReportThirdController@export');
+            Route::get('/third-report/export-all', 'ReportThirdController@exportAllThirds');
 
             Route::prefix('clasification-sale')->group(function () {
                 Route::get('records', 'ChartAccountSaleConfigurationController@records');

@@ -16,6 +16,8 @@ use Modules\Accounting\Http\Resources\JournalEntryDetailResource;
 use Modules\Factcolombia1\Models\Tenant\TypeIdentityDocument;
 use Modules\Factcolombia1\Models\TenantService\PayrollTypeDocumentIdentification;
 use Modules\Factcolombia1\Models\SystemService\TypeDocumentIdentification;
+use App\Models\Tenant\BankAccount;
+use Modules\Factcolombia1\Models\Tenant\PaymentMethod;
 
 /*
  * Class JournalEntryController
@@ -163,6 +165,8 @@ class JournalEntryController extends Controller
                 'debit' => $detail['debit'],
                 'credit' => $detail['credit'],
                 'third_party_id' => $thirdPartyId,
+                'bank_account_id' => $detail['bank_account_id'] ?? null,
+                'payment_method_name' => $detail['payment_method_name'] ?? null,
             ]);
         }
 
@@ -354,5 +358,23 @@ class JournalEntryController extends Controller
         $journalEntry = JournalEntry::with('journal_prefix', 'details')->findOrFail($id);
         $pdf = PDF::loadView('accounting::pdf.journal_entry', compact('journalEntry'));
         return $pdf->stream("asiento_contable.pdf");
+    }
+
+    public function bankAccounts()
+    {
+        // Devuelve solo bancos activos
+        $bankAccounts = BankAccount::where('status', 1)
+            ->with('bank')
+            ->get();
+
+        return response()->json($bankAccounts);
+    }
+
+    public function paymentMethods()
+    {
+        // Devuelve todos los métodos de pago
+        $methods = PaymentMethod::all();
+
+        return response()->json($methods);
     }
 }
