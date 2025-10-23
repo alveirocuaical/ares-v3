@@ -41,7 +41,9 @@ class ReportTaxController extends Controller
             ])
             ->filterByEstablishment($establishment_id)
             ->get();
-
+foreach ($documents as $doc) {
+    \Log::info('Documento completo: '.json_encode($doc));
+}
         $documents->pluck('taxes')->each(function($taxes) use($taxesAll) {
             collect($taxes)->each(function($tax) use($taxesAll) {
                 $taxesAll->push($tax);
