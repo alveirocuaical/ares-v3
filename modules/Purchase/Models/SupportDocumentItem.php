@@ -32,6 +32,7 @@ class SupportDocumentItem extends ModelTenant
         'total',
         'type_generation_transmition_id',
         'start_date',
+        'chart_of_account_code',
 
     ];
 

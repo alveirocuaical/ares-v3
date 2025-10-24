@@ -315,4 +315,47 @@ class ChartOfAccountController extends Controller
             'data' => $account
         ], 200);
     }
+
+    public function recordsByGroups(Request $request)
+    {
+        $perPage = $request->input('per_page', 20);
+        $page = $request->input('page', 1);
+        $value = $request->input('value', '');
+
+        $query = ChartOfAccount::with('parent')
+            ->where(function($q) {
+                $q->where('code', 'like', '14%')
+                ->orWhere('code', 'like', '51%');
+            });
+
+        if (!empty($value)) {
+            $query->where(function($q) use ($value) {
+                $q->where('code', 'like', "%$value%")
+                ->orWhere('name', 'like', "%$value%");
+            });
+        }
+
+        $query->orderBy('code', 'asc');
+
+        $entries = $query->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json([
+            "data" => $entries->items(),
+            "links" => [
+                "first" => $entries->url(1),
+                "last" => $entries->url($entries->lastPage()),
+                "prev" => $entries->previousPageUrl(),
+                "next" => $entries->nextPageUrl(),
+            ],
+            "meta" => [
+                "current_page" => $entries->currentPage(),
+                "from" => $entries->firstItem(),
+                "last_page" => $entries->lastPage(),
+                "path" => request()->url(),
+                "per_page" => (string) $entries->perPage(),
+                "to" => $entries->lastItem(),
+                "total" => $entries->total(),
+            ]
+        ]);
+    }
 }

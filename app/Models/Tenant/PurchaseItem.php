@@ -54,6 +54,7 @@ class PurchaseItem extends ModelTenant
         'total_tax',
         'subtotal',
         'discount',
+        'chart_of_account_code',
     ];
 
     protected $casts = [

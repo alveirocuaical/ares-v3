@@ -142,26 +142,57 @@ class SupportDocumentAdjustNoteController extends Controller
             $thirdPartyId = $thirdParty->id;
         }
 
+        // Agrupar subtotales por cuenta contable
+        $accounts = [];
+        foreach ($document->items as $item) {
+            $account = null;
+            if (!empty($item->chart_of_account_code)) {
+                $account = ChartOfAccount::where('code', $item->chart_of_account_code)->first();
+            }
+            if (!$account) {
+                $account = $accountIdInventory;
+            }
+            if (!$account) continue;
+
+            // Sumar solo el valor neto (sin impuestos)
+            $valor_neto = floatval($item->unit_price) * floatval($item->quantity) - floatval($item->discount ?? 0);
+            if (!isset($accounts[$account->id])) {
+                $accounts[$account->id] = [
+                    'account' => $account,
+                    'subtotal' => 0,
+                ];
+            }
+            $accounts[$account->id]['subtotal'] += $valor_neto;
+        }
+
+        // Construir movimientos para el asiento contable
+        $movements = [];
+        foreach ($accounts as $acc) {
+            $movements[] = [
+                'account_id' => $acc['account']->id,
+                'debit' => $acc['subtotal'],
+                'credit' => 0,
+                'affects_balance' => true,
+                'third_party_id' => $thirdPartyId,
+                'description' => $acc['account']->code . ' - ' . $acc['account']->name,
+            ];
+        }
+
+        // Movimiento de la cuenta por pagar a proveedores
+        $movements[] = [
+            'account_id' => $accountIdLiability->id,
+            'debit' => 0,
+            'credit' => $document->total,
+            'affects_balance' => true,
+            'third_party_id' => $thirdPartyId,
+            'description' => $accountIdLiability->code . ' - ' . $accountIdLiability->name,
+        ];
+
         AccountingEntryHelper::registerEntry([
             'prefix_id' => 2,
             'description' => $description . ' #' . $document->prefix . '-' . $document->number,
             'support_document_id' => $document->id,
-            'movements' => [
-                [
-                    'account_id' => $accountIdInventory->id,
-                    'debit' => $document->sale,
-                    'credit' => 0,
-                    'affects_balance' => true,
-                    'third_party_id' => $thirdPartyId,
-                ],
-                [
-                    'account_id' => $accountIdLiability->id,
-                    'debit' => 0,
-                    'credit' => $document->total,
-                    'affects_balance' => true,
-                    'third_party_id' => $thirdPartyId,
-                ],
-            ],
+            'movements' => $movements,
             'taxes' => is_array($document->taxes) ? $document->taxes : (is_object($document->taxes) ? (array)$document->taxes : []),
             'tax_config' => [
                 'tax_field' => 'chart_account_purchase',
