@@ -60,7 +60,7 @@
                                                 Pasar a Habilitación
                                             </el-button>
                                             <el-button :loading="loadingPayrollP" class="submit mb-2" type="primary"
-                                                @click="showProductionOptions('payrollP')">
+                                                @click="validateProduction('payrollP')">
                                                 Pasar a Producción
                                             </el-button>
                                         </div>
