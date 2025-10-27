@@ -89,7 +89,7 @@
                     </el-autocomplete>
                 </template>
                 <template v-else>
-                    <el-input v-show="place  == 'prod' || place == 'cat2'" placeholder="Buscar productos" size="medium" v-model="input_item" @change="searchItemsBarcode" autofocus class="m-bottom">
+                    <el-input v-show="place  == 'prod' || place == 'cat2'" placeholder="Buscar productos" size="medium" v-model="input_item" @input="onBarcodeInput" autofocus class="m-bottom">
                         <el-button slot="append" icon="el-icon-plus" @click.prevent="showDialogNewItem = true"></el-button>
                     </el-input>
                 </template>
@@ -821,6 +821,7 @@ export default {
             resource: "pos",
             recordId: null,
             input_item: "",
+            barcodeSearchTimeout: null,
             items: [],
             all_items: [],
             customers: [],
@@ -940,6 +941,12 @@ export default {
         }
     },
     methods: {
+        onBarcodeInput() {
+            clearTimeout(this.barcodeSearchTimeout);
+            this.barcodeSearchTimeout = setTimeout(() => {
+                this.searchItemsBarcode();
+            }, 400);
+        },
         async onBarcodeChange() {
             if (this.search_item_by_barcode) {
                 // Forzar búsqueda antes de intentar agregar
@@ -1997,39 +2004,23 @@ export default {
 
         },
         async searchItemsBarcode() { 
-
-            // console.log(query)
-            // console.log("in:" + this.input_item)
-
-            if (this.input_item.length > 1) {
-
+            if (this.input_item && this.input_item.length > 1) {
                 this.loading = true;
-                let parameters = `input_item=${this.input_item}&barcode_only=1`;
-
+                let parameters = `input_item=${encodeURIComponent(this.input_item)}`;
                 await this.$http.get(`/${this.resource}/search_items?${parameters}`)
                     .then(response => {
-
                         this.items = response.data.data;
-
                         this.pagination = response.data.meta;
-                        this.pagination.per_page = parseInt(
-                            response.data.meta.per_page
-                        );
-
-                        this.enabledSearchItemsBarcode()
+                        this.pagination.per_page = parseInt(response.data.meta.per_page);
+                        this.enabledSearchItemsBarcode();
                         this.loading = false;
                         if (this.items.length == 0) {
                             this.filterItems();
                         }
-
                     });
-
             } else {
-
                 await this.filterItems();
-
             }
-
         },
         enabledSearchItemsBarcode() {
 
