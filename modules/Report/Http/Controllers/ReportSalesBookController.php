@@ -67,6 +67,7 @@ class ReportSalesBookController extends Controller
 
         switch ($type) {
             case 'excel':
+                $report_data['is_excel'] = true;
                 return (new SaleBookExport)
                     ->records($report_data)
                     ->download('Reporte_Libro_Ventas_'.date('YmdHis').'.xlsx');

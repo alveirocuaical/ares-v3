@@ -40,9 +40,9 @@
 
         @if($records->count() > 0)
             @if($filters->summary_sales_book)
-                @include('report::co-sales-book.partials.summary')
+                @include('report::co-sales-book.partials.summary', ['is_excel' => true])
             @else
-                @include('report::co-sales-book.partials.general')
+                @include('report::co-sales-book.partials.general', ['is_excel' => true])
             @endif
         @else
             <p><strong>No se encontraron registros.</strong></p>

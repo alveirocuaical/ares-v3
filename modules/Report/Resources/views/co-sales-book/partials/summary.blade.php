@@ -65,35 +65,61 @@
                 <td class="celda">{{ $first_row['type_document_name'] }} <br/> {{ $record['prefix'] }}-{{$record['last_document']->number}}</td>
 
                 {{-- TOTALES --}}
-                <td class="celda text-right-td">{{ NumberLetter::numberFormat($net_total, 2, '.', '') }}</td>
-                <td class="celda text-right-td">{{ NumberLetter::numberFormat($total, 2, '.', '') }}</td>
-                <td class="celda text-right-td">{{ NumberLetter::numberFormat($total_exempt, 2, '.', '') }}</td>
+                <td class="celda text-right-td">
+                    @if(!empty($is_excel))
+                        {{ $net_total }}
+                    @else
+                        {{ NumberLetter::numberFormat($net_total, 2, '.', '') }}
+                    @endif
+                </td>
+                <td class="celda text-right-td">
+                    @if(!empty($is_excel))
+                        {{ $total }}
+                    @else
+                        {{ NumberLetter::numberFormat($total, 2, '.', '') }}
+                    @endif
+                </td>
+                <td class="celda text-right-td">
+                    @if(!empty($is_excel))
+                        {{ $total_exempt }}
+                    @else
+                        {{ NumberLetter::numberFormat($total_exempt, 2, '.', '') }}
+                    @endif
+                </td>
                 
                 {{-- IMPUESTOS --}}
                 @foreach($taxes as &$tax)
                     @php
                         $sum_taxable_amount = 0;
                         $sum_tax_amount = 0;
-
                         foreach ($ordered_documents as $document)
                         {
                             $row = $document->getDataReportSalesBook();
                             $item_values = $document->getItemValuesByTax($tax->id);
                             $is_credit_note = stripos($row['type_document_name'], 'crédit') !== false || 
                                             ($document instanceof \App\Models\Tenant\DocumentPos && isset($row['state_type_id']) && $row['state_type_id'] === '11');
-                            
                             $multiplier = $is_credit_note ? -1 : 1;
-                            
                             $sum_taxable_amount += floatval(str_replace(',', '', $item_values['taxable_amount'])) * $multiplier;
                             $sum_tax_amount += floatval(str_replace(',', '', $item_values['tax_amount'])) * $multiplier;
                         }
-
                         $tax->global_taxable_amount += $sum_taxable_amount;
                         $tax->global_tax_amount += $sum_tax_amount;
                     @endphp
                     
-                    <td class="celda text-right-td">{{ NumberLetter::numberFormat($sum_taxable_amount, 2, '.', '') }}</td>
-                    <td class="celda text-right-td">{{ NumberLetter::numberFormat($sum_tax_amount, 2, '.', '') }}</td>
+                    <td class="celda text-right-td">
+                        @if(!empty($is_excel))
+                            {{ $sum_taxable_amount }}
+                        @else
+                            {{ NumberLetter::numberFormat($sum_taxable_amount, 2, '.', '') }}
+                        @endif
+                    </td>
+                    <td class="celda text-right-td">
+                        @if(!empty($is_excel))
+                            {{ $sum_tax_amount }}
+                        @else
+                            {{ NumberLetter::numberFormat($sum_tax_amount, 2, '.', '') }}
+                        @endif
+                    </td>
                 @endforeach
             </tr>
         @endforeach
