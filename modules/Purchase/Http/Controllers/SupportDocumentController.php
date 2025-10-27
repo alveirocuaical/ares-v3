@@ -251,7 +251,7 @@ class SupportDocumentController extends Controller
         if ($supplier) {
             $thirdParty = ThirdParty::updateOrCreate(
                 ['document' => $supplier->number, 'type' => $supplier->type],
-                ['name' => $supplier->name, 'email' => $supplier->email, 'address' => $supplier->address, 'phone' => $supplier->telephone, 'document_type' => $documentType]
+                ['name' => $supplier->name, 'email' => $supplier->email, 'address' => $supplier->address, 'phone' => $supplier->telephone, 'document_type' => $documentType, 'origin_id' => $supplier->id]
             );
             $thirdPartyId = $thirdParty->id;
         }

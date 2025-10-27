@@ -74,6 +74,10 @@
                                 @click.prevent="clickPdf(row.id)">
                                 PDF
                             </button>
+                            <button v-if="row.status === 'draft' || row.status === 'rejected'" class="btn btn-xs btn-danger"
+                                @click.prevent="deleteEntry(row.id)">
+                                Eliminar
+                            </button>
                         </td>
                     </tr>
                 </data-table>
@@ -157,7 +161,12 @@ export default {
         },
         clickPdf(recordId) {
             window.open(`/accounting/journal/entries/pdf/${recordId}`, '_blank');
-        }
+        },
+        async deleteEntry(id) {
+            this.destroy(`/${this.resource}/${id}`).then(() => {
+                this.$eventHub.$emit("reloadData");
+            });
+        },
     },
 };
 </script>

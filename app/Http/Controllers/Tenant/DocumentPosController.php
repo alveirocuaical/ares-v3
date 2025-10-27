@@ -676,6 +676,7 @@ class DocumentPosController extends Controller
                     'address' => $person->address,
                     'phone' => $person->telephone,
                     'document_type' => $documentType,
+                    'origin_id' => $person->id,
                 ]
             );
             $thirdPartyId = $thirdParty->id;

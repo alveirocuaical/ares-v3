@@ -25,4 +25,8 @@ class JournalEntryDetail extends ModelTenant
     {
         return $this->belongsTo(ThirdParty::class, 'third_party_id');
     }
+    public function bankAccount()
+    {
+        return $this->belongsTo(\App\Models\Tenant\BankAccount::class, 'bank_account_id');
+    }
 }

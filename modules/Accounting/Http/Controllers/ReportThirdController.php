@@ -6,6 +6,7 @@ use Illuminate\Routing\Controller;
 use Modules\Accounting\Models\ThirdParty;
 use Barryvdh\DomPDF\Facade as PDF;
 use Maatwebsite\Excel\Facades\Excel;
+use Modules\Accounting\Models\JournalEntryDetail;
 
 class ReportThirdController extends Controller
 {
@@ -54,31 +55,15 @@ class ReportThirdController extends Controller
         $third_id = $request->input('third_id');
         $month = $request->input('month'); // formato yyyy-MM
 
-        // Obtener el tercero
-        $third = null;
-        if(strpos($third_id, 'person_') === 0) {
-            $third = \App\Models\Tenant\Person::find(str_replace('person_', '', $third_id));
-            $third_name = $third ? $third->name : '';
-            $third_document = $third ? $third->number : '';
-        } elseif(strpos($third_id, 'worker_') === 0) {
-            $third = \Modules\Payroll\Models\Worker::find(str_replace('worker_', '', $third_id));
-            $third_name = $third ? $third->full_name : '';
-            $third_document = $third ? $third->identification_number : '';
-        } elseif(strpos($third_id, 'seller_') === 0) {
-            $third = \App\Models\Tenant\Seller::find(str_replace('seller_', '', $third_id));
-            $third_name = $third ? $third->full_name : '';
-            $third_document = $third ? $third->document_number : '';
-        } else {
-            $third = ThirdParty::find($third_id);
-            $third_name = $third ? $third->name : '';
-            $third_document = $third ? $third->document : '';
-        }
+        $third = ThirdParty::find($third_id);
+        $third_name = $third ? $third->name : '';
+        $third_document = $third ? $third->document : '';
 
         // Buscar detalles de asientos del mes y del tercero
         $start_date = $month . '-01';
         $end_date = date("Y-m-t", strtotime($start_date));
 
-        $details = \Modules\Accounting\Models\JournalEntryDetail::where('third_party_id', $third ? $third->id : null)
+        $details = JournalEntryDetail::where('third_party_id', $third ? $third->id : null)
             ->whereHas('journalEntry', function($q) use ($start_date, $end_date) {
                 $q->whereBetween('date', [$start_date, $end_date])
                 ->where('status', 'posted');

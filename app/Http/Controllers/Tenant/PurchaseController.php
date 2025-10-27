@@ -310,6 +310,7 @@ class PurchaseController extends Controller
                     'address' => $supplier->address,
                     'phone' => $supplier->telephone,
                     'document_type' => $documentType,
+                    'origin_id' => $supplier->id,
                 ]
             );
             $thirdPartyId = $thirdParty->id;
@@ -388,6 +389,7 @@ class PurchaseController extends Controller
         if(!$accountConfiguration) return;
         $accountIdInventory = ChartOfAccount::where('code',$accountConfiguration->inventory_account)->first();
         $accountIdLiability = ChartOfAccount::where('code',$accountConfiguration->supplier_payable_account)->first();
+        $accountIdCash = ChartOfAccount::where('code', '110505')->first(); // Caja general
         $document_type = DocumentType::find($document->document_type_id);
 
         // Obtener proveedor como tercer implicado
@@ -407,6 +409,7 @@ class PurchaseController extends Controller
                     'address' => $supplier->address,
                     'phone' => $supplier->telephone,
                     'document_type' => $documentType,
+                    'origin_id' => $supplier->id,
                 ]
             );
             $thirdPartyId = $thirdParty->id;
@@ -447,15 +450,22 @@ class PurchaseController extends Controller
                 'description' => $acc['account']->code . ' - ' . $acc['account']->name,
             ];
         }
+        // Determinar contado por fechas (mismo día)
+        $issueDate = $document->date_of_issue ? Carbon::parse($document->date_of_issue) : null;
+        $dueDate = $document->date_of_due ? Carbon::parse($document->date_of_due) : null;
+        $is_cash = $issueDate && $dueDate ? $issueDate->isSameDay($dueDate) : false;
+
+        // Movimiento en el debe: caja (contado) o proveedores (crédito)
+        $debitAccount = ($is_cash && $accountIdCash) ? $accountIdCash : $accountIdLiability;
 
         // Movimiento de la cuenta de proveedores en el debe (débito)
         $movements[] = [
-            'account_id' => $accountIdLiability->id,
+            'account_id' => $debitAccount->id,
             'debit' => $document->total,
             'credit' => 0,
             'affects_balance' => true,
             'third_party_id' => $thirdPartyId,
-            'description' => $accountIdLiability->code . ' - ' . $accountIdLiability->name,
+            'description' => $debitAccount->code . ' - ' . $debitAccount->name,
         ];
 
         AccountingEntryHelper::registerEntry([

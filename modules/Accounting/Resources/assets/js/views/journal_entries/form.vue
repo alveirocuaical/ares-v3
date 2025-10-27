@@ -1,6 +1,6 @@
 <template>
     <div>
-    <el-dialog :title="titleDialog" :visible="showDialog" @close="close" @open="create" width="65%">
+    <el-dialog :title="titleDialog" :visible="showDialog" @close="close" @open="create" width="65%" :close-on-click-modal="false">
         <form autocomplete="off" @submit.prevent="submit">
             <div class="form-body">
                 <div class="row">
@@ -30,14 +30,21 @@
                 </div>
 
                 <div class="mb-2">
-                    <el-checkbox v-model="showBankColumn">Mostrar columna Banco</el-checkbox>
-                    <el-checkbox v-model="showPaymentMethodColumn">Mostrar columna Método de Pago</el-checkbox>
+                    <el-checkbox v-model="showBankAndPaymentColumn">
+                        Agregar referencias de banco y método de pago
+                    </el-checkbox>
+                    <span class="text-muted ml-2">
+                        (Recomendado para el libro de bancos)
+                    </span>
                 </div>
 
                 <div>
                     <h4>Detalles del Asiento</h4>
                     <el-table :data="form.details" border show-summary :summary-method="getSummaries">
-                        <el-table-column prop="account_id" label="Cuenta Contable">
+                        <el-table-column prop="account_id" >
+                            <template slot="header">
+                                Cuenta Contable <span class="text-danger">*</span>
+                            </template>
                             <template slot-scope="{ row }">
                                 <el-select v-model="row.chart_of_account_id"
                                     placeholder="Seleccionar cuenta"
@@ -50,7 +57,10 @@
                                 </el-select>
                             </template>
                         </el-table-column>
-                        <el-table-column prop="third_party_type" label="Tipo de Tercer Implicado">
+                        <el-table-column prop="third_party_type" >
+                            <template slot="header">
+                                Tipo de Tercer Implicado <span class='text-danger'>*</span>
+                            </template>
                             <template slot-scope="{ row }">
                                 <el-select v-model="row.third_party_type" placeholder="Tipo" style="width: 100%;" @change="onThirdPartyTypeChange(row)">
                                     <el-option label="Cliente" value="customers"></el-option>
@@ -60,7 +70,10 @@
                                 </el-select>
                             </template>
                         </el-table-column>
-                        <el-table-column prop="third_party_id" label="Tercer Implicado">
+                        <el-table-column prop="third_party_id" >
+                            <template slot="header">
+                                Tercer Implicado <span class='text-danger'>*</span>
+                            </template>
                             <template slot-scope="{ row }">
                                 <el-select
                                     v-model="row.third_party_id"
@@ -80,14 +93,14 @@
                             </template>
                         </el-table-column>
 
-                        <el-table-column v-if="showBankColumn" prop="bank_account_id" label="Banco">
+                        <el-table-column v-if="showBankAndPaymentColumn" prop="bank_account_id" label="Banco/Caja">
                             <template slot-scope="{ row }">
-                                <el-select v-model="row.bank_account_id" placeholder="Banco" clearable filterable>
-                                    <el-option v-for="bank in banks" :key="bank.id" :label="bank.description + ' - ' + bank.number" :value="bank.id"></el-option>
+                                <el-select v-model="row.bank_account_id" placeholder="Banco/Caja" clearable filterable>
+                                    <el-option v-for="bank in banks" :key="bank.id" :label="bank.description + (bank.number ? ' - ' + bank.number : '')" :value="bank.id"></el-option>
                                 </el-select>
                             </template>
                         </el-table-column>
-                        <el-table-column v-if="showPaymentMethodColumn" prop="payment_method_name" label="Método de Pago">
+                        <el-table-column v-if="showBankAndPaymentColumn" prop="payment_method_name" label="Método de Pago">
                             <template slot-scope="{ row }">
                                 <el-select v-model="row.payment_method_name" placeholder="Método de Pago" clearable filterable>
                                     <el-option v-for="method in paymentMethods" :key="method.id" :label="method.name" :value="method.name"></el-option>
@@ -95,7 +108,10 @@
                             </template>
                         </el-table-column>
 
-                        <el-table-column prop="debit" label="Débito">
+                        <el-table-column prop="debit" >
+                            <template slot="header">
+                                Débito <span class='text-danger'>*</span>
+                            </template>
                             <template slot-scope="{ row }">
                                 <el-input type="number"
                                     v-model="row.debit"
@@ -105,7 +121,10 @@
                             </template>
                         </el-table-column>
 
-                        <el-table-column prop="credit" label="Crédito">
+                        <el-table-column prop="credit" >
+                            <template slot="header">
+                                Crédito <span class='text-danger'>*</span>
+                            </template>
                             <template slot-scope="{ row }">
                                 <el-input type="number"
                                     v-model="row.credit"
@@ -164,6 +183,7 @@ export default {
             paymentMethods: [],
             showBankColumn: false,
             showPaymentMethodColumn: false,
+            showBankAndPaymentColumn: false,
         };
     },
     created() {
@@ -192,7 +212,12 @@ export default {
         },
         async loadBanks() {
             await this.$http.get('/accounting/bank-book/records')
-                .then(response => this.banks = response.data);
+                .then(response => {
+                    this.banks = [
+                        { id: 'cash', description: 'Caja General', number: '' },
+                        ...response.data
+                    ];
+                });
         },
         async loadPaymentMethods() {
             await this.$http.get('/accounting/payment-methods') // Ajusta el endpoint si es diferente
@@ -240,6 +265,9 @@ export default {
                 await this.$http.get(`/${this.resource}/${this.recordId}`).then(async (response) => {
                     this.form = response.data.data;
 
+                    // Verifica si algún detalle tiene banco/caja o método de pago
+                    let hasBankOrPayment = false;
+
                     // Asegúrate de que cada detalle tenga las propiedades necesarias
                     for (const row of this.form.details) {
                         // Inicializa arrays y flags si no existen
@@ -252,12 +280,29 @@ export default {
                             await this.$http.get('/accounting/journal/thirds/third-parties', { params: { type: row.third_party_type } })
                                 .then(res => {
                                     row.thirdParties = res.data.data;
+                                    const match = row.thirdParties.find(tp => {
+                                        // El id del select es tipo_id (ej: person_5)
+                                        // row.origin_id es el id real de la tabla de origen
+                                        if (!row.origin_id) return false;
+                                        return tp.id.endsWith('_' + row.origin_id);
+                                    });
+                                    if (match) {
+                                        row.third_party_id = match.id;
+                                    } else {
+                                        row.third_party_id = null;
+                                    }
                                 })
                                 .finally(() => {
                                     row.loadingThirdParties = false;
                                 });
                         }
+                        // Detecta si hay banco/caja o método de pago
+                        if (row.bank_account_id || row.payment_method_name) {
+                            hasBankOrPayment = true;
+                        }
                     }
+                    // Activa el checkbox si corresponde
+                    this.showBankAndPaymentColumn = hasBankOrPayment;
                 });
             } else {
                 this.initForm();
@@ -319,6 +364,14 @@ export default {
                     this.$message.error(`El tercer implicado es obligatorio en la línea ${index + 1}.`);
                     return;
                 }
+                if (this.showBankAndPaymentColumn) {
+                    const bancoCaja = detail.bank_account_id;
+                    const metodoPago = detail.payment_method_name;
+                    if ((bancoCaja && !metodoPago) || (!bancoCaja && metodoPago)) {
+                        this.$message.error(`Solo si eligió un banco/caja debe agregar un método de pago en la línea ${index + 1}.`);
+                        return;
+                    }
+                }
 
                 if (Number(detail.debit) === 0 && Number(detail.credit) === 0) {
                     this.$message.error(`Al menos uno de los valores (débito o crédito) debe ser mayor a cero en la línea ${index + 1}.`);
@@ -335,6 +388,29 @@ export default {
                 return;
             }
             this.loading_submit = true;
+            // Si el checkbox está desactivado, limpia los campos de banco/caja y método de pago
+            if (!this.showBankAndPaymentColumn) {
+                this.form.details = this.form.details.map(detail => ({
+                    ...detail,
+                    bank_account_id: null,
+                    payment_method_name: null,
+                    debit: Number(detail.debit) || 0,
+                    credit: Number(detail.credit) || 0
+                }));
+            } else {
+                this.form.details = this.form.details.map(detail => {
+                    let bank_account_id = detail.bank_account_id;
+                    if (bank_account_id === 'cash') {
+                        bank_account_id = null;
+                    }
+                    return {
+                        ...detail,
+                        bank_account_id,
+                        debit: Number(detail.debit) || 0,
+                        credit: Number(detail.credit) || 0
+                    };
+                });
+            }
 
             let payload = {
                 ...this.form,

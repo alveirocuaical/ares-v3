@@ -181,7 +181,7 @@ class ChartOfAccountController extends Controller
             'name' => 'required|string|max:255',
             'type' => 'required|in:Asset,Liability,Equity,Revenue,Expense,Cost',
             'parent_id' => 'nullable',
-            'level' => 'required|integer|min:1|max:4'
+            'level' => 'required|integer|min:1|max:6'
         ]);
 
         $account->update($request->all());
