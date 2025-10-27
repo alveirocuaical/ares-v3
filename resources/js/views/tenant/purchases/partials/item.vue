@@ -127,6 +127,36 @@
                             </el-input>
                         </div>
                     </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="form-group" :class="{'has-danger': errors.chart_of_account_code}">
+                            <label class="control-label">
+                                Clasificación contable
+                                <el-tooltip placement="top">
+                                    <i class="el-icon-info" style="color:#409EFF;cursor:pointer;"></i>
+                                    <div slot="content">
+                                        Este campo es <b>opcional</b> y se recomienda solo para servicios u otros productos <b>no inventariables</b>.<br>
+                                        Si es un producto inventariable, se usará la cuenta fija <b>143505</b>.
+                                    </div>
+                                </el-tooltip>
+                            </label>
+                            <el-select
+                                v-model="form.chart_of_account_code"
+                                filterable
+                                remote
+                                reserve-keyword
+                                :remote-method="remoteSearchChartAccounts"
+                                :loading="loading_chart_accounts"
+                                placeholder="Buscar cuenta contable">
+                                <el-option
+                                    v-for="option in chartOfAccounts"
+                                    :key="option.code"
+                                    :value="option.code"
+                                    :label="`${option.code} - ${option.name}`">
+                                </el-option>
+                            </el-select>
+                            <small class="form-control-feedback" v-if="errors.chart_of_account_code" v-text="errors.chart_of_account_code[0]"></small>
+                        </div>
+                    </div>
                     <div class="col-md-12">
                         <div class="form-group">
                             <label class="control-label">Notas del ítem</label>
@@ -223,6 +253,8 @@
             return {
                 titleDialog: 'Agregar Producto o Servicio',
                 showDialogLots:false,
+                chartOfAccounts: [],
+                loading_chart_accounts: false,
                 resource: 'purchases',
                 showDialogNewItem: false,
                 errors: {},
@@ -264,10 +296,27 @@
             this.$eventHub.$on('reloadDataItems', (item_id) => {
                 this.reloadDataItems(item_id)
             })
+            this.remoteSearchChartAccounts('');
         },
         methods: {
             addRowLot(lots){
                 this.lots = lots
+            },
+            async remoteSearchChartAccounts(query) {
+                this.loading_chart_accounts = true;
+                let params = {
+                    column: 'code',
+                    value: query,
+                    per_page: 50,
+                    page: 1
+                };
+                await this.$http.get('/accounting/charts/records-by-groups', { params })
+                    .then(response => {
+                        this.chartOfAccounts = response.data.data;
+                    })
+                    .finally(() => {
+                        this.loading_chart_accounts = false;
+                    });
             },
             clickLotcode(){
                 // if(this.form.stock <= 0)
@@ -438,6 +487,7 @@
                 if(this.form.discount_type == 'percentage') {
                     this.form.discount_percentage = this.form.discount
                 }
+                this.form.chart_of_account_code = this.form.chart_of_account_code || null;
 
                 // this.initializeFields()
                 this.$emit('add', this.form)

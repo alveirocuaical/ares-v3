@@ -16,9 +16,14 @@ class JournalEntryDetailResource extends JsonResource
             'debit' => $this->debit,
             'credit' => $this->credit,
             'third_party_name' => optional($this->thirdParty)->name,
+            'origin_id' => optional($this->thirdParty)->origin_id,
             'third_party_type' => optional($this->thirdParty)->type,
             'third_party_id' => $this->getThirdPartyFrontendId(),
             'chart_of_account_id' => $this->chart_of_account_id,
+            'bank_account_id' => $this->bank_account_id,                 // <-- Agrega esto
+            'bank_account_name' => optional($this->bankAccount)->description,
+            'bank_account_number' => optional($this->bankAccount)->number,
+            'payment_method_name' => $this->payment_method_name,         // <-- Y esto
         ];
     }
     private function getThirdPartyFrontendId()

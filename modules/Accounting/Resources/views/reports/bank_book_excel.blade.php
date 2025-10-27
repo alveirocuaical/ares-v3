@@ -3,15 +3,11 @@
     use Modules\Factcolombia1\Models\Tenant\Company as CoCompany;
     use App\Models\Tenant\BankAccount;
 
-    // Cargar empresa activa si no está definida
     $company = CoCompany::active();
-
-    // Cargar banco/caja seleccionado si es solo un ID
     $bank_account = $filters['bank_account'] ?? null;
     if (is_numeric($bank_account)) {
         $bank_account = BankAccount::find($bank_account);
     }
-
     $auxiliar = $filters['auxiliar'] ?? '';
     $periodo = $filters['month'] ?? '';
 @endphp
@@ -23,11 +19,11 @@
         html { font-family: Arial, sans-serif; font-size: 10px; }
         .header-table { width: 100%; margin-bottom: 10px; }
         .header-table td { vertical-align: top; border: none; }
-        .company-title { font-size: 16px; font-weight: bold; color: #222; }
-        .company-info { font-size: 10px; color: #444; line-height: 1.5; }
-        .bank-info { font-size: 11px; color: #222; font-weight: bold; }
-        .report-title { font-size: 15px; font-weight: bold; color: #0066cc; text-align: right; }
-        .subtitle { font-size: 12px; font-weight: bold; color: #333; background: #e6f2ff; padding: 4px 0; }
+        .company-title { font-size: 20px; font-weight: bold; color: #222; }
+        .company-info { font-size: 11px; color: #444; line-height: 1.5; }
+        .bank-info { font-size: 12px; color: #222; font-weight: bold; }
+        .report-title { font-size: 18px; font-weight: bold; color: #0066cc; text-align: right; }
+        .subtitle { font-size: 13px; font-weight: bold; color: #333; background: #e6f2ff; padding: 4px 0; }
         table { width: 100%; border-collapse: collapse; font-size: 9px; }
         th, td { border: 1px solid #333; padding: 4px; text-align: center; }
         th { background: #e6f2ff; color: #222; }
@@ -36,59 +32,31 @@
         .text-left { text-align: left; }
         .amount { font-family: "Courier New", monospace; }
         .total-row { background: #f2f2f2; font-weight: bold; }
+        .company-cell { width: 52%; }
+        .report-cell { width: 48%; }
     </style>
 </head>
 <body>
     <table class="header-table">
         <tr>
-            <td style="width: 100%; vertical-align: top;">
-                <table style="width: 100%; border: none;">
-                    <tr>
-                        <td><Strong>Nombre :</Strong></td>
-                        <td>{{ $company->name ?? '' }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>NIT      :</strong></td>
-                        <td>{{ $company->identification_number ?? $company->number ?? '' }}{{ $company->dv ? '-'.$company->dv : '' }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Dirección:</strong></td>
-                        <td>{{ $company->address ?? '' }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Teléfono:</strong></td>
-                        <td>{{ $company->phone ?? $company->telephone ?? '' }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Email:</strong></td>
-                        <td>{{ $company->email ?? '' }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Régimen:</strong></td>
-                        <td>{{ optional($company->type_regime)->name ?? '' }}</td>
-                    </tr>
-                </table>
+            <td class="company-cell">
+                <div class="company-title">{{ $company->name ?? '' }}</div>
+                <div class="company-info">
+                    <div><strong>NIT:</strong> {{ $company->identification_number ?? $company->number ?? '' }}{{ $company->dv ? '-'.$company->dv : '' }}</div>
+                    <div><strong>Dirección:</strong> {{ $company->address ?? '' }}</div>
+                    <div><strong>Teléfono:</strong> {{ $company->phone ?? $company->telephone ?? '' }}</div>
+                    <div><strong>Email:</strong> {{ $company->email ?? '' }}</div>
+                    <div><strong>Régimen:</strong> {{ optional($company->type_regime)->name ?? '' }}</div>
+                </div>
             </td>
-            <td style="width: 100%; vertical-align: top;">
+            <td class="report-cell">
                 <div class="report-title">LIBRO DE BANCOS</div>
-                <table style="width: 100%; border: none;">
-                    <tr>
-                        <td><strong>Banco:</strong></td>
-                        <td>{{ $bank_account->description ?? 'Caja General' }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>N° Cuenta:</strong></td>
-                        <td>{{ $bank_account->number ?? '-' }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Auxiliar:</strong></td>
-                        <td>{{ $auxiliar }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Periodo:</strong></td>
-                        <td>{{ $periodo }}</td>
-                    </tr>
-                </table>
+                <div class="bank-info">
+                    <div><strong>Banco:</strong> {{ $bank_account->description ?? 'Caja General' }}</div>
+                    <div><strong>N° Cuenta:</strong> {{ $bank_account->number ?? '-' }}</div>
+                    <div><strong>Auxiliar:</strong> {{ $auxiliar }}</div>
+                    <div><strong>Periodo:</strong> {{ $periodo }}</div>
+                </div>
             </td>
         </tr>
     </table>
@@ -160,7 +128,7 @@
                         @endphp
                         {{ $is_refund ? 'DEVOLUCIÓN' : ($payment_name ?: 'TRANSFERENCIA') }}
                     </td>
-                    <td>{{ $entry->description ?? '' }}</td>
+                    <td class="text-left">{{ $entry->description ?? '' }}</td>
                     <td>
                         @if($debit > 0)
                             CI

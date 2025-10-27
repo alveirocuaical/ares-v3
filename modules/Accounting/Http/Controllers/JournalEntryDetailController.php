@@ -60,5 +60,9 @@ class JournalEntryDetailController extends Controller
             'data' => JournalEntryDetailResource::collection($entry)
         ]);
     }
+    public function bankAccount()
+    {
+        return $this->belongsTo(\App\Models\Tenant\BankAccount::class, 'bank_account_id');
+    }
 
 }

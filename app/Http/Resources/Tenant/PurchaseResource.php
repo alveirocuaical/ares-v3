@@ -82,6 +82,7 @@ class PurchaseResource extends JsonResource
                 'discount' => $row->discount,
 
                 'warehouse' => ($row->warehouse) ? $row->warehouse :  self::getWarehouse($row->purchase->establishment_id),
+                'chart_of_account_code' => $row->chart_of_account_code,
             ];
         });
 

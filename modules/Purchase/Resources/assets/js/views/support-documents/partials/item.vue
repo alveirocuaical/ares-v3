@@ -118,6 +118,37 @@
                         </div>
                     </template>
 
+                    <div class="col-md-4 col-sm-6">
+                        <div class="form-group" :class="{'has-danger': errors.chart_of_account_code}">
+                            <label class="control-label">
+                                Clasificación contable
+                                <el-tooltip placement="top">
+                                    <i class="el-icon-info" style="color:#409EFF;cursor:pointer;"></i>
+                                    <div slot="content">
+                                        Este campo es <b>opcional</b> y se recomienda solo para servicios u otros productos <b>no inventariables</b>.<br>
+                                        Si es un producto inventariable, se usará la cuenta fija <b>143505</b>.
+                                    </div>
+                                </el-tooltip>
+                            </label>
+                            <el-select
+                                v-model="form.chart_of_account_code"
+                                filterable
+                                remote
+                                reserve-keyword
+                                :remote-method="remoteSearchChartAccounts"
+                                :loading="loading_chart_accounts"
+                                placeholder="Buscar cuenta contable">
+                                <el-option
+                                    v-for="option in chartOfAccounts"
+                                    :key="option.code"
+                                    :value="option.code"
+                                    :label="`${option.code} - ${option.name}`">
+                                </el-option>
+                            </el-select>
+                            <small class="form-control-feedback" v-if="errors.chart_of_account_code" v-text="errors.chart_of_account_code[0]"></small>
+                        </div>
+                    </div>
+
                 </div>
             </div>
             <div class="form-actions text-right mt-2">
@@ -173,6 +204,8 @@
                 showListStock:false,
                 taxes:[],
                 type_generation_transmitions:[],
+                chartOfAccounts: [],
+                loading_chart_accounts: false,
             }
         },
         computed: {
@@ -184,8 +217,25 @@
             this.events()
             this.initForm()
             this.getTables()
+            this.remoteSearchChartAccounts('');
         },
         methods: {
+            async remoteSearchChartAccounts(query) {
+                this.loading_chart_accounts = true;
+                let params = {
+                    column: 'code',
+                    value: query,
+                    per_page: 50,
+                    page: 1
+                };
+                await this.$http.get('/accounting/charts/records-by-groups', { params })
+                    .then(response => {
+                        this.chartOfAccounts = response.data.data;
+                    })
+                    .finally(() => {
+                        this.loading_chart_accounts = false;
+                    });
+            },
             changeStartDate()
             {
                 if(this.form.type_generation_transmition_id == 1)
@@ -368,6 +418,7 @@
 
                 this.form.IdLoteSelected = IdLoteSelected
                 this.form.unit_price = this.form.price
+                this.form.chart_of_account_code = this.form.chart_of_account_code || null;
 
                 this.$emit('add', this.form);
 

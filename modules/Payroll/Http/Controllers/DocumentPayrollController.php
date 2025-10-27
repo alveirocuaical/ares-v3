@@ -370,7 +370,7 @@ class DocumentPayrollController extends Controller
             if ($worker) {
                 $thirdParty = ThirdParty::updateOrCreate(
                     ['document' => $worker->identification_number, 'type' => 'employee'],
-                    ['name' => $worker->full_name, 'email' => $worker->email, 'address' => $worker->address, 'phone' => $worker->cellphone, 'document_type' => $documentType]
+                    ['name' => $worker->full_name, 'email' => $worker->email, 'address' => $worker->address, 'phone' => $worker->cellphone, 'document_type' => $documentType, 'origin_id' => $worker->id]
                 );
                 $thirdPartyId = $thirdParty->id;
             }
