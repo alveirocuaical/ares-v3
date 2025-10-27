@@ -25,9 +25,23 @@ use Illuminate\Support\Facades\Log;
 class WorkersImport implements ToModel, WithHeadingRow
 {
     protected $total = 0;
+    protected $errors = [];
 
     public function model(array $row)
     {
+        $codigoTipoEmpleadoRaw = $row['codigo_tipo_empleado'] ?? '';
+        $codigoTipoEmpleado = preg_replace('/["\'\s\r\n]+/', '', $codigoTipoEmpleadoRaw);
+        preg_match('/\d+/', $codigoTipoEmpleado, $matches);
+        $codigoTipoEmpleadoNum = isset($matches[0]) ? (int)$matches[0] : null;
+
+        if (empty($codigoTipoEmpleadoNum)) {
+            $this->errors[] = [
+                'fila' => $row['__row'] ?? null,
+                'motivo' => 'codigo_tipo_empleado vacío o inválido'
+            ];
+            return null;
+        }
+
         if (!isset($row['nro_identificacion']) || empty($row['nro_identificacion'])) {
             // Puedes registrar el error o simplemente saltar la fila
             return null;
@@ -36,14 +50,14 @@ class WorkersImport implements ToModel, WithHeadingRow
                             ->orWhere('identification_number', $row['nro_identificacion'])
                             ->first();
         if ($existingUser) {
-            Log::warning('Importacion de Emplados | empleado :' . $existingUser->name . $existingUser->surname  . ' con codigo:' . $existingUser->code . ' y numero de identificacion:' . $existingUser->identification_number . ' ya se encuentra registrado.');
+            \Log::warning('Importacion de Emplados | empleado :' . $existingUser->name . $existingUser->surname  . ' con codigo:' . $existingUser->code . ' y numero de identificacion:' . $existingUser->identification_number . ' ya se encuentra registrado.');
             return null;
         }
 
         $this->total++;
         $tipo_identificacion_id = PayrollTypeDocumentIdentification::where('code', 'LIKE', $row['codigo_tipo_identificacion'].'%')->value('id');
         $municipalidad_id = Municipality::where('code', 'LIKE', $row['codigo_municipalidad'].'%')->value('id');
-        $tipo_empleado_id = TypeWorker::where('code', 'LIKE', $row['codigo_tipo_empleado'].'%')->value('id');
+        $tipo_empleado_id = TypeWorker::where('code', 'LIKE', $codigoTipoEmpleadoNum.'%')->value('id');
         $subtipo_empleado_id = SubTypeWorker::where('code', 'LIKE', $row['codigo_subtipo_empleado'].'%')->value('id');
         $tipo_contrato_id = TypeContract::where('code', 'LIKE', $row['codigo_tipo_contrato'].'%')->value('id');
         $frecuencia_pago_id = PayrollPeriod::where('code', 'LIKE', $row['codigo_frecuencia_pago'].'%')->value('id');
@@ -83,6 +97,9 @@ class WorkersImport implements ToModel, WithHeadingRow
 
     public function getData()
     {
-        return ['total' => $this->total];
+        return [
+            'total' => $this->total,
+            'errores' => $this->errors
+        ];
     }
 }
