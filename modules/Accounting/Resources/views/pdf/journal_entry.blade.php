@@ -76,6 +76,12 @@
         <span class="info-value">{{ $journalEntry->description }}</span>
     </div>
 
+    @php
+        $showBankOrPayment = $details->some(function($d) {
+            return $d->bank_account_id || $d->payment_method_name;
+        });
+    @endphp
+
     <table class="details">
         <thead>
             <tr>
@@ -83,6 +89,9 @@
                 <th style="width: 22%;">Nombre de cuenta</th>
                 <th style="width: 34%;">Tercer Implicado</th>
                 <th style="width: 10%;">Tipo</th>
+                @if($showBankOrPayment)
+                    <th style="width: 18%;">Banco/Caja y Método de Pago</th>
+                @endif
                 <th class="text-right" style="width: 11%;">Debe</th>
                 <th class="text-right" style="width: 11%;">Haber</th>
             </tr>
@@ -147,12 +156,33 @@
                             -
                         @endif
                     </td>
+                    @if($showBankOrPayment)
+                        <td>
+                            @if($detail->bankAccount)
+                                <div>
+                                    <strong>Banco:</strong> {{ $detail->bankAccount->description }}@if($detail->bankAccount->number) - {{ $detail->bankAccount->number }}@endif
+                                </div>
+                            @elseif($detail->payment_method_name)
+                                <div>
+                                    <strong>Caja</strong>
+                                </div>
+                            @endif
+                            @if($detail->payment_method_name)
+                                <div>
+                                    <strong>Método:</strong> {{ $detail->payment_method_name }}
+                                </div>
+                            @endif
+                            @if(!$detail->bankAccount && !$detail->payment_method_name)
+                                -
+                            @endif
+                        </td>
+                    @endif
                     <td class="text-right amount">{{ number_format($detail->debit, 2, ',', '.') }}</td>
                     <td class="text-right amount">{{ number_format($detail->credit, 2, ',', '.') }}</td>
                 </tr>
             @endforeach
             <tr class="total-row">
-                <td colspan="4" class="text-right">Total</td>
+                <td colspan="{{ $showBankOrPayment ? 5 : 4 }}" class="text-right">Total</td>
                 <td class="text-right total-amount">{{ number_format($details->sum('debit'), 2, ',', '.') }}</td>
                 <td class="text-right total-amount">{{ number_format($details->sum('credit'), 2, ',', '.') }}</td>
             </tr>

@@ -169,7 +169,7 @@ trait FinanceTrait
                 if ($person) {
                     $thirdParty = ThirdParty::updateOrCreate(
                         ['document' => $person->number, 'type' => $person->type],
-                        ['name' => $person->name, 'email' => $person->email, 'address' => $person->address, 'phone' => $person->telephone, 'document_type' => $documentType]
+                        ['name' => $person->name, 'email' => $person->email, 'address' => $person->address, 'phone' => $person->telephone, 'document_type' => $documentType, 'origin_id' => $person->id]
                     );
                     $thirdPartyId = $thirdParty->id;
                 }
@@ -185,7 +185,7 @@ trait FinanceTrait
                 if ($person) {
                     $thirdParty = ThirdParty::updateOrCreate(
                         ['document' => $person->number, 'type' => $person->type],
-                        ['name' => $person->name, 'email' => $person->email, 'address' => $person->address, 'phone' => $person->telephone, 'document_type' => $documentType]
+                        ['name' => $person->name, 'email' => $person->email, 'address' => $person->address, 'phone' => $person->telephone, 'document_type' => $documentType, 'origin_id' => $person->id]
                     );
                     $thirdPartyId = $thirdParty->id;
                 }

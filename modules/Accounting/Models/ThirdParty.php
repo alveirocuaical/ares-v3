@@ -19,6 +19,7 @@ class ThirdParty extends ModelTenant
         'address',
         'phone',
         'email',
+        'origin_id',      // id de origen (por ejemplo, cliente o proveedor)
     ];
 
     // Relación con los detalles de asientos contables

@@ -288,15 +288,16 @@ class PurchaseController extends Controller
     {
         $accountConfiguration = AccountingChartAccountConfiguration::first();
         if(!$accountConfiguration) return;
-        $accountIdInventory = ChartOfAccount::where('code',$accountConfiguration->inventory_account)->first();
-        $accountIdLiability = ChartOfAccount::where('code',$accountConfiguration->supplier_payable_account)->first();
+
+        $accountIdLiability = ChartOfAccount::where('code', $accountConfiguration->supplier_payable_account)->first();
+        $accountIdCash = ChartOfAccount::where('code', '110505')->first(); // Caja general
         $document_type = DocumentType::find($document->document_type_id);
 
         // Obtener proveedor como tercer implicado
         $supplier = Person::find($document->supplier_id);
         $thirdPartyId = null;
         $documentType = null;
-        if ($supplier->identity_document_type_id) {
+        if ($supplier && $supplier->identity_document_type_id) {
             $typeDoc = TypeIdentityDocument::find($supplier->identity_document_type_id);
             $documentType = $typeDoc ? $typeDoc->code : null;
         }
@@ -309,38 +310,67 @@ class PurchaseController extends Controller
                     'address' => $supplier->address,
                     'phone' => $supplier->telephone,
                     'document_type' => $documentType,
+                    'origin_id' => $supplier->id,
                 ]
             );
             $thirdPartyId = $thirdParty->id;
         }
-        // ¿Es crédito?
-        $is_credit = $document->date_of_issue != $document->date_of_due;
 
-        // Aquí el ajuste solicitado:
-        $payment_method_name = $is_credit ? 'A crédito' : 'Contado';
+        // Agrupar subtotales por cuenta contable
+        $accounts = [];
+        foreach ($document->items as $item) {
+            // Buscar la cuenta contable asignada al producto
+            $account = null;
+            if (!empty($item->chart_of_account_code)) {
+                $account = ChartOfAccount::where('code', $item->chart_of_account_code)->first();
+            }
+            // Si no tiene cuenta asignada, usar la predeterminada
+            if (!$account) {
+                $account = ChartOfAccount::where('code', $accountConfiguration->inventory_account)->first();
+            }
+            if (!$account) continue;
+
+            // Sumar solo el valor neto (sin impuestos)
+            $valor_neto = floatval($item->unit_price) * floatval($item->quantity) - floatval($item->discount ?? 0);
+            if (!isset($accounts[$account->id])) {
+                $accounts[$account->id] = [
+                    'account' => $account,
+                    'subtotal' => 0,
+                ];
+            }
+            $accounts[$account->id]['subtotal'] += $valor_neto;
+        }
+
+        // Construir movimientos para el asiento contable
+        $movements = [];
+        foreach ($accounts as $acc) {
+            $movements[] = [
+                'account_id' => $acc['account']->id,
+                'debit' => $acc['subtotal'],
+                'credit' => 0,
+                'affects_balance' => true,
+                'third_party_id' => $thirdPartyId,
+                'description' => $acc['account']->code . ' - ' . $acc['account']->name,
+            ];
+        }
+
+        $is_cash = ($document->date_of_issue == $document->date_of_due);
+
+        // Movimiento de la cuenta por pagar a proveedores o caja
+        $movements[] = [
+            'account_id' => $is_cash ? $accountIdCash->id : $accountIdLiability->id,
+            'debit' => 0,
+            'credit' => $document->total,
+            'affects_balance' => true,
+            'third_party_id' => $thirdPartyId,
+            'description' => ($is_cash ? $accountIdCash->code . ' - ' . $accountIdCash->name : $accountIdLiability->code . ' - ' . $accountIdLiability->name),
+        ];
 
         AccountingEntryHelper::registerEntry([
             'prefix_id' => 2,
             'description' => $document_type->description . ' #' . $document->series . '-' . $document->number,
             'purchase_id' => $document->id,
-            'movements' => [
-                [
-                    'account_id' => $accountIdInventory->id,
-                    'debit' => $document->sale,
-                    'credit' => 0,
-                    'affects_balance' => true,
-                    'third_party_id' => $thirdPartyId,
-                    // 'payment_method_name' => $payment_method_name,
-                ],
-                [
-                    'account_id' => $accountIdLiability->id,
-                    'debit' => 0,
-                    'credit' => $document->total,
-                    'affects_balance' => true,
-                    'third_party_id' => $thirdPartyId,
-                    // 'payment_method_name' => $payment_method_name,
-                ],
-            ],
+            'movements' => $movements,
             'taxes' => $document->taxes ?? [],
             'tax_config' => [
                 'tax_field' => 'chart_account_purchase',
@@ -349,7 +379,6 @@ class PurchaseController extends Controller
                 'retention_debit' => false,
                 'retention_credit' => true,
                 'third_party_id' => $thirdPartyId,
-                // 'payment_method_name' => $payment_method_name,
             ],
         ]);
     }
@@ -357,8 +386,10 @@ class PurchaseController extends Controller
     private function registerAccountingCreditNotePurchase($document)
     {
         $accountConfiguration = AccountingChartAccountConfiguration::first();
+        if(!$accountConfiguration) return;
         $accountIdInventory = ChartOfAccount::where('code',$accountConfiguration->inventory_account)->first();
         $accountIdLiability = ChartOfAccount::where('code',$accountConfiguration->supplier_payable_account)->first();
+        $accountIdCash = ChartOfAccount::where('code', '110505')->first(); // Caja general
         $document_type = DocumentType::find($document->document_type_id);
 
         // Obtener proveedor como tercer implicado
@@ -378,35 +409,70 @@ class PurchaseController extends Controller
                     'address' => $supplier->address,
                     'phone' => $supplier->telephone,
                     'document_type' => $documentType,
+                    'origin_id' => $supplier->id,
                 ]
             );
             $thirdPartyId = $thirdParty->id;
         }
 
-        $payment_method_name = 'Devolución';
+        // Agrupar valores por cuenta contable (igual que en compras, pero para crédito)
+        $accounts = [];
+        foreach ($document->items as $item) {
+            $account = null;
+            if (!empty($item->chart_of_account_code)) {
+                $account = ChartOfAccount::where('code', $item->chart_of_account_code)->first();
+            }
+            if (!$account) {
+                $account = ChartOfAccount::where('code', $accountConfiguration->inventory_account)->first();
+            }
+            if (!$account) continue;
+
+            // Valor neto devuelto (sin impuestos)
+            $valor_neto = floatval($item->unit_price) * floatval($item->quantity) - floatval($item->discount ?? 0);
+            if (!isset($accounts[$account->id])) {
+                $accounts[$account->id] = [
+                    'account' => $account, // <-- AGREGA ESTO
+                    'subtotal' => 0,
+                ];
+            }
+            $accounts[$account->id]['subtotal'] += $valor_neto;
+        }
+
+        // Movimientos: cada cuenta contable en el haber (crédito)
+        $movements = [];
+        foreach ($accounts as $acc) {
+            $movements[] = [
+                'account_id' => $acc['account']->id,
+                'debit' => 0,
+                'credit' => $acc['subtotal'],
+                'affects_balance' => true,
+                'third_party_id' => $thirdPartyId,
+                'description' => $acc['account']->code . ' - ' . $acc['account']->name,
+            ];
+        }
+        // Determinar contado por fechas (mismo día)
+        $issueDate = $document->date_of_issue ? Carbon::parse($document->date_of_issue) : null;
+        $dueDate = $document->date_of_due ? Carbon::parse($document->date_of_due) : null;
+        $is_cash = $issueDate && $dueDate ? $issueDate->isSameDay($dueDate) : false;
+
+        // Movimiento en el debe: caja (contado) o proveedores (crédito)
+        $debitAccount = ($is_cash && $accountIdCash) ? $accountIdCash : $accountIdLiability;
+
+        // Movimiento de la cuenta de proveedores en el debe (débito)
+        $movements[] = [
+            'account_id' => $debitAccount->id,
+            'debit' => $document->total,
+            'credit' => 0,
+            'affects_balance' => true,
+            'third_party_id' => $thirdPartyId,
+            'description' => $debitAccount->code . ' - ' . $debitAccount->name,
+        ];
 
         AccountingEntryHelper::registerEntry([
             'prefix_id' => 2,
             'description' => $document_type->description . ' #' . $document->series . '-' . $document->number,
             'purchase_id' => $document->id,
-            'movements' => [
-                [
-                    'account_id' => $accountIdInventory->id,
-                    'debit' => 0,
-                    'credit' => $document->sale,
-                    'affects_balance' => true,
-                    'third_party_id' => $thirdPartyId,
-                    // 'payment_method_name' => $payment_method_name,
-                ],
-                [
-                    'account_id' => $accountIdLiability->id,
-                    'debit' => $document->total,
-                    'credit' => 0,
-                    'affects_balance' => true,
-                    'third_party_id' => $thirdPartyId,
-                    // 'payment_method_name' => $payment_method_name,
-                ],
-            ],
+            'movements' => $movements,
             'taxes' => $document->taxes ?? [],
             'tax_config' => [
                 'tax_field' => 'chart_account_return_purchase',
@@ -415,7 +481,6 @@ class PurchaseController extends Controller
                 'retention_debit' => true,
                 'retention_credit' => false,
                 'third_party_id' => $thirdPartyId,
-                // 'payment_method_name' => $payment_method_name,
             ],
         ]);
     }
