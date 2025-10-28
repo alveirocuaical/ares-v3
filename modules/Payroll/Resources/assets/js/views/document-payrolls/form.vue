@@ -26,7 +26,7 @@
                             <div class="col-md-6 pb-2">
                                 <div class="form-group" :class="{'has-danger': errors.worker_id}">
                                     <label class="control-label">
-                                        Empleados<span class="text-danger"> **</span>
+                                        Empleados<span class="text-danger"> *</span>
                                         <el-tooltip class="item" effect="dark" content="Escribir al menos 3 caracteres para buscar" placement="top-start">
                                             <i class="fa fa-info-circle"></i>
                                         </el-tooltip>
@@ -1250,7 +1250,7 @@
                                                 <span class="text-danger"> *</span>
                                             </label>
                                             <el-select v-model="form.deduction.eps_type_law_deductions_id" filterable @change="changeEpsTypeLawDeduction" :disabled="form_disabled.inputs_type_worker_sena">
-                                                <el-option v-for="option in type_law_deductions" :key="option.id" :value="option.id" :label="`${option.name} (${option.percentage}%)`"></el-option>
+                                                <el-option v-for="option in typeLawDeductionsSalud" :key="option.id" :value="option.id" :label="`${option.name} (${option.percentage}%)`"></el-option>
                                             </el-select>
                                             <small class="form-control-feedback" v-if="errors['deduction.eps_type_law_deductions_id']" v-text="errors['deduction.eps_type_law_deductions_id'][0]"></small>
                                         </div>
@@ -1269,7 +1269,7 @@
                                         <div class="form-group" :class="{'has-danger': errors['deduction.pension_type_law_deductions_id']}">
                                             <label class="control-label">Pensión - Deducciones por ley<span class="text-danger"> *</span></label>
                                             <el-select v-model="form.deduction.pension_type_law_deductions_id" filterable @change="changePensionTypeLawDeduction" :disabled="form_disabled.inputs_type_worker_sena || form_disabled.inputs_not_discount_pension">
-                                                <el-option v-for="option in type_law_deductions" :key="option.id" :value="option.id" :label="`${option.name} (${option.percentage}%)`"></el-option>
+                                                <el-option v-for="option in typeLawDeductionsPension" :key="option.id" :value="option.id" :label="`${option.name} (${option.percentage}%)`"></el-option>
                                             </el-select>
                                             <small class="form-control-feedback" v-if="errors['deduction.pension_type_law_deductions_id']" v-text="errors['deduction.pension_type_law_deductions_id'][0]"></small>
                                         </div>
@@ -1696,7 +1696,16 @@
             },
             isAdjustNote: function() {
                 return !_.isEmpty(this.affected_document_payroll_id)
-            }
+            },
+            typeLawDeductionsSalud() {
+                return this.type_law_deductions.filter(x => [1, 2, 3, 4].includes(x.id));
+            },
+            typeLawDeductionsPension() {
+                return this.type_law_deductions.filter(x => [5, 6, 7, 8].includes(x.id));
+            },
+            typeLawDeductionsSolidaridad() {
+                return this.type_law_deductions.filter(x => x.id === 9);
+            },
         },
         methods: {
             handleCheckAll(val) {
@@ -1843,26 +1852,53 @@
             },
             // Vacaciones disfrutadas
             changeCommonVacationStartEndDate(index) {
-                const start_end_date = this.form.accrued.common_vacation[index].start_end_date
-                const start_date = start_end_date[0]
-                const end_date = start_end_date[1]
-                const quantity = this.roundNumber(moment(end_date, "YYYY-MM-DD").diff(moment(start_date, "YYYY-MM-DD"), 'days', true) + 1)
-                const payment = this.roundNumber((this.form.accrued.total_base_salary / this.quantity_days_month) * quantity)
-                this.form.accrued.common_vacation[index].quantity = quantity
-                this.form.accrued.common_vacation[index].payment = payment
-                this.calculateTotal()
+                const start_end_date = this.form.accrued.common_vacation[index].start_end_date;
+                const start_date = start_end_date[0];
+                const end_date = start_end_date[1];
+                const admisionDate = moment(this.form.period.admision_date, 'YYYY-MM-DD');
+
+                if (admisionDate.isAfter(start_date)) {
+                    this.$message.warning('La fecha de inicio de vacaciones no puede ser anterior a la fecha de ingreso del empleado');
+                    this.form.accrued.common_vacation[index].start_end_date = [admisionDate.format('YYYY-MM-DD'), end_date];
+                    return;
+                }
+
+                const quantity = this.getBusinessDays(start_date, end_date);
+                const payment = this.roundNumber((this.form.accrued.total_base_salary / this.quantity_days_month) * quantity);
+                this.form.accrued.common_vacation[index].start_date = start_date;
+                this.form.accrued.common_vacation[index].end_date = end_date;
+                this.form.accrued.common_vacation[index].quantity = quantity;
+                this.form.accrued.common_vacation[index].payment = payment;
+                this.calculateTotal();
             },
             clickAddCommonVacation() {
-                const start_date = moment().format('YYYY-MM-DD')
-                const end_date = moment().add(1, 'days').format('YYYY-MM-DD')
-                const quantity = this.roundNumber(moment(end_date, "YYYY-MM-DD").diff(moment(start_date, "YYYY-MM-DD"), 'days', true) + 1)
-                const payment = this.roundNumber((this.form.accrued.total_base_salary / this.quantity_days_month) * quantity)
+                const admisionDate = moment(this.form.period.admision_date, 'YYYY-MM-DD');
+                const settlementStart = moment(this.form.period.settlement_start_date, 'YYYY-MM-DD');
+                if (
+                    admisionDate.year() === settlementStart.year() &&
+                    admisionDate.month() === settlementStart.month()
+                ) {
+                    this.$message.warning('No aplica vacaciones para empleados ingresados en el mismo mes del periodo de liquidación');
+                    return;
+                }
+
+                const start_date = moment().format('YYYY-MM-DD');
+                if (admisionDate.isAfter(start_date)) {
+                    this.$message.warning('No puede asignar vacaciones antes de la fecha de ingreso del empleado');
+                    return;
+                }
+
+                const end_date = moment().add(1, 'days').format('YYYY-MM-DD');
+                const quantity = this.getBusinessDays(start_date, end_date);
+                const payment = this.roundNumber((this.form.accrued.total_base_salary / this.quantity_days_month) * quantity);
                 this.form.accrued.common_vacation.push({
                     start_end_date: [start_date, end_date],
+                    start_date: start_date,
+                    end_date: end_date,
                     quantity: quantity,
                     payment: payment
-                })
-                this.calculateTotal()
+                });
+                this.calculateTotal();
             },
             changePaymentCommonVacation(index) {
                 this.calculateTotal()
@@ -1998,13 +2034,13 @@
 
             },
             calculateWorkedTime() {
-        if (this.form.period.admision_date) {
-            // Calcular diferencia en días entre fecha actual y fecha de admisión
-            const admisionDate = moment(this.form.period.admision_date)
-            const today = moment()
-            this.form.period.worked_time = today.diff(admisionDate, 'days')
-        }
-    },
+                if (this.form.period.admision_date) {
+                    // Calcular diferencia en días entre fecha actual y fecha de admisión
+                    const admisionDate = moment(this.form.period.admision_date)
+                    const today = moment()
+                    this.form.period.worked_time = today.diff(admisionDate, 'days')
+                }
+            },
             setInitialDataPeriod(){
 
                 let last_month = moment().subtract(1, 'months')
@@ -2208,7 +2244,7 @@
                 const start_end_date = this.form.accrued.work_disabilities[index].start_end_date
                 const start_date = start_end_date[0]
                 const end_date = start_end_date[1]
-                const quantity = this.roundNumber(moment(end_date, "YYYY-MM-DD").diff(moment(start_date, "YYYY-MM-DD"), 'days', true)+ 1)
+                const quantity = this.getBusinessDays(start_date, end_date)
                 let payment = this.getPaymentWorkDisability(
                     quantity,
                     this.form.accrued.work_disabilities[index].is_complete,
@@ -2732,6 +2768,15 @@
 
                 if(!this.form.resolution_number) return this.getErrorMessage('El número de resolución es obligatorio, debe asignarle un valor.')
 
+                const admisionDate = this.form.period.admision_date
+                const settlementEndDate = this.form.period.settlement_end_date
+                if (admisionDate && settlementEndDate) {
+                    const monthsWorked = moment(settlementEndDate).diff(moment(admisionDate), 'months', true)
+                    if (monthsWorked < 6 && this.form.accrued.service_bonus.length > 0) {
+                        return this.getErrorMessage('El empleado debe tener al menos 6 meses de antigüedad para recibir prima de servicios.')
+                    }
+                }
+
                 return {
                     success : true
                 }
@@ -2776,6 +2821,8 @@
                 });
             },
             async preeliminarView() {
+                const validateData = await this.validateData()
+                if(!validateData.success) return this.$message.error(validateData.message)
                 try {
                     if (!this.form.worker_id?.length) {
                         return this.$message.error('Debe seleccionar al menos un empleado')
@@ -2833,7 +2880,19 @@
                 } finally {
                     this.loading_preview = false;
                 }
-            }
+            },
+            getBusinessDays(start, end) {
+                let startDate = moment(start, 'YYYY-MM-DD');
+                let endDate = moment(end, 'YYYY-MM-DD');
+                let count = 0;
+                while (startDate.isSameOrBefore(endDate)) {
+                    if (startDate.isoWeekday() <= 5) {
+                        count++;
+                    }
+                    startDate.add(1, 'days');
+                }
+                return count;
+            },
         }
     }
 </script>

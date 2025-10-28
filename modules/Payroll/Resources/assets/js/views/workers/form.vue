@@ -147,7 +147,11 @@
                             <div class="col-md-3">
                                 <div class="form-group" :class="{'has-danger': errors.salary}">
                                     <label class="control-label">Salario<span class="text-danger"> *</span></label>
-                                    <el-input v-model="form.salary"></el-input>
+                                    <el-input
+                                        :value="form.salary"
+                                        @input="onSalaryInput"
+                                        @blur="onSalaryBlur"
+                                    ></el-input>
                                     <small class="form-control-feedback" v-if="errors.salary" v-text="errors.salary[0]"></small>
                                 </div>
                             </div>
@@ -363,17 +367,17 @@
                 this.titleDialog = this.recordId ? 'Editar empleado' : 'Nuevo empleado'
                 this.getRecord()
             }, 
-            getRecord(){
-
+            getRecord() {
                 if (this.recordId) {
                     this.$http.get(`/${this.resource}/record/${this.recordId}`)
                         .then(response => {
                             this.form = response.data.data
+                            if (this.form.salary) {
+                                this.form.salary = this.$options.filters.numberFormat(this.form.salary)
+                            }
                             this.changePaymentMethod()
                         })
-                
-                }else{
-
+                } else {
                     this.setInitialData()
                 }
             },
@@ -386,7 +390,41 @@
                 this.form.payment.payment_method_id = 10
                 this.changePaymentMethod()
             },
-            submit() {
+            onSalaryInput(value) {
+                let clean = (value || '').toString().replace(/[^\d.,]/g, '');
+                clean = clean.replace(/^0+(?!$)/, '');
+                this.form.salary = clean;
+            },
+            onSalaryBlur() {
+                if (this.form.salary) {
+                    this.form.salary = this.$options.filters.numberFormat(this.form.salary);
+                }
+            },
+            async submit() {
+                const minimum_salary = this.form.minimum_salary || 0;
+
+                let salary = this.form.salary;
+                if (typeof salary === 'string') {
+                    salary = salary.replace(/\./g, '');
+                    salary = salary.replace(',', '.');
+                }
+                const salaryNumber = parseFloat(salary);
+
+                const is_integral = this.form.integral_salarary;
+
+                if (salaryNumber < minimum_salary) {
+                    this.$message.error('El salario no puede ser menor al salario mínimo legal vigente.');
+                    return;
+                }
+
+                if (is_integral && salaryNumber < (minimum_salary * 13)) {
+                    this.$message.error('El salario integral debe ser igual o superior a 13 salarios mínimos legales vigentes.');
+                    return;
+                }
+
+                // Asigna el valor convertido antes de enviar
+                this.form.salary = salaryNumber;
+
                 this.loading_submit = true
                 this.$http.post(`/${this.resource}`, this.form)
                     .then(response => {

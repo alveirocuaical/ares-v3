@@ -20,7 +20,8 @@ use Modules\Factcolombia1\Models\TenantService\{
     PayrollPeriod,
     TypeContract,
     Municipality,
-    Department
+    Department,
+    AdvancedConfiguration
 };
 use Modules\Factcolombia1\Models\Tenant\{
     PaymentMethod,
@@ -83,6 +84,26 @@ class WorkerController extends Controller
 
     public function store(WorkerRequest $request)
     {
+        $advancedConfig = AdvancedConfiguration::first();
+        $minimum_salary = $advancedConfig ? $advancedConfig->minimum_salary : 0;
+
+        $salary = floatval($request->input('salary'));
+        $is_integral = $request->input('integral_salarary');
+
+        if ($salary < $minimum_salary) {
+            return [
+                'success' => false,
+                'message' => 'El salario no puede ser menor al salario mínimo legal vigente.',
+            ];
+        }
+
+        if ($is_integral && $salary < ($minimum_salary * 13)) {
+            return [
+                'success' => false,
+                'message' => 'El salario integral debe ser igual o superior a 13 salarios mínimos legales vigentes.',
+            ];
+        }
+
         $id = $request->input('id');
         $record = Worker::firstOrNew(['id' => $id]);
         $record->fill($request->all());

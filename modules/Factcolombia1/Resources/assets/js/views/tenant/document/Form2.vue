@@ -136,7 +136,7 @@
                                     </div>
                                 </div>
                             </template>
-                            <div class="col-lg-3" v-if="form.payment_form_id == 1">
+                            <div class="col-lg-3">
                                 <div class="form-group" :class="{ 'has-danger': errors.payment_destination_id }">
                                     <label class="control-label">Destino de pago</label>
                                     <el-select v-model="form.payment_destination_id" filterable>
@@ -148,7 +148,7 @@
                                         v-text="errors.payment_destination_id[0]"></small>
                                 </div>
                             </div>
-                            <div class="col-lg-3" v-if="form.payment_form_id == 1">
+                            <div class="col-lg-3">
                                 <div class="form-group" :class="{ 'has-danger': errors.payment_method_id }">
                                     <label class="control-label">Medio de pago</label>
                                     <el-select v-model="form.payment_method_id" filterable>

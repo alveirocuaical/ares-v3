@@ -31,11 +31,19 @@ export const documentPayrollMixin = {
             this.calculateTotal()
 
         },
-        setPaymentServiceBonus(index){
+        setPaymentServiceBonus(index) {
             let salario = this.form.accrued.total_base_salary || 0
             let subsidio = this.form.accrued.transportation_allowance ? this.form.accrued.transportation_allowance : 0
-            let dias = this.form.accrued.service_bonus[index].quantity || 0
-            let prima = this.roundNumber((salario + subsidio) * (dias / this.quantity_days_year))
+
+            let diasPrima = this.form.accrued.service_bonus[index].quantity || 0
+
+            if (diasPrima < 1 || diasPrima > 360) {
+                this.form.accrued.service_bonus[index].payment = 0
+                this.$message.warning('La prima de servicios debe calcularse entre 1 y 360 días.')
+                return
+            }
+
+            let prima = this.roundNumber(((salario + subsidio) * diasPrima) / 360)
             this.form.accrued.service_bonus[index].payment = prima
         },
         clickCancelServiceBonus(index){
@@ -160,20 +168,25 @@ export const documentPayrollMixin = {
             this.form.accrued.paid_vacation.splice(index, 1)
             this.calculateTotal()
         },
-        changePaidVacationStartEndDate(index){
-            
-            const start_end_date = this.form.accrued.paid_vacation[index].start_end_date
-            const start_date = start_end_date[0]
-            const end_date = start_end_date[1]
+        changePaidVacationStartEndDate(index) {
+            const start_end_date = this.form.accrued.paid_vacation[index].start_end_date;
+            const start_date = start_end_date[0];
+            const end_date = start_end_date[1];
+            const admisionDate = moment(this.form.period.admision_date, 'YYYY-MM-DD');
 
-            this.form.accrued.paid_vacation[index].start_date = start_date
-            this.form.accrued.paid_vacation[index].end_date = end_date
+            if (admisionDate.isAfter(start_date)) {
+                this.$message.warning('La fecha de inicio de vacaciones no puede ser anterior a la fecha de ingreso del empleado');
+                this.form.accrued.paid_vacation[index].start_end_date = [admisionDate.format('YYYY-MM-DD'), end_date];
+                return;
+            }
 
-            this.form.accrued.paid_vacation[index].quantity = this.roundNumber(moment(end_date, "YYYY-MM-DD").diff(moment(start_date, "YYYY-MM-DD"), 'days', true))
+            const quantity = this.getBusinessDays(start_date, end_date);
 
-        },
-        changePaymentPaidVacation(index){
-            this.calculateTotal()
+            const payment = this.roundNumber((this.form.accrued.total_base_salary / this.quantity_days_month) * quantity);
+
+            this.form.accrued.paid_vacation[index].quantity = quantity;
+            this.form.accrued.paid_vacation[index].payment = payment;
+            this.calculateTotal();
         },
         // vacaciones compensadas
 

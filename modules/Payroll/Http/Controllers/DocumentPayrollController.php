@@ -522,6 +522,7 @@ class DocumentPayrollController extends Controller
     public function preeliminarview(Request $request)
     {
         try {
+            
             // Validación básica
             if (empty($request->worker_id)) {
                 throw new Exception('Debe seleccionar un trabajador para la vista previa');
