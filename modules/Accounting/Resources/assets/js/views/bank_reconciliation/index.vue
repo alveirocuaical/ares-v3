@@ -5,7 +5,7 @@
                 <span>Conciliaciones Bancarias</span>
             </h2>
             <div class="right-wrapper pull-right">
-                <button class="btn btn-custom btn-sm mt-2 mr-2" @click="showDialog = true">
+                <button class="btn btn-custom btn-sm mt-2 mr-2" @click="openDialog">
                     <i class="fa fa-plus-circle"></i> Crear conciliación bancaria
                 </button>
             </div>
@@ -77,15 +77,21 @@
                 </data-table>
             </div>
         </div>
+        <bank-reconciliation-form
+            :showDialog.sync="showDialog"
+            :bankAccounts="bankAccounts"
+            @save="handleSave"
+        ></bank-reconciliation-form>
     </div>
 </template>
 
 <script>
+import BankReconciliationForm from "./form.vue";
 import DataTable from "../components/DataTable.vue";
 import moment from "moment";
 
 export default {
-    components: { DataTable },
+    components: { DataTable, BankReconciliationForm },
     data() {
         return {
             resource: "accounting/bank-reconciliation",
@@ -95,6 +101,7 @@ export default {
                 bank_account_id: null,
             },
             bankAccounts: [],
+            showDialog: false,
         };
     },
     computed: {
@@ -120,6 +127,15 @@ export default {
         }
     },
     methods: {
+        openDialog() {
+            this.showDialog = true;
+        },
+        handleSave(form) {
+            // Aquí iría la lógica para guardar en backend.
+            // Por ahora solo cierra el modal y refresca la tabla.
+            this.showDialog = false;
+            this.getRecords();
+        },
         async getBankAccounts() {
             const res = await this.$http.get('/accounting/bank-reconciliation/bank-accounts');
             this.bankAccounts = res.data;
