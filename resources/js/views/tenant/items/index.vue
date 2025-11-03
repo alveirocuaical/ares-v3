@@ -371,14 +371,14 @@
                     this.$eventHub.$emit('reloadData')
                 )
             },
-            // clickBarcode(row) {
+            clickBarcode(row) {
 
-            //     if(!row.internal_id){
-            //         return this.$message.error('Para generar el código de barras debe registrar el código interno.')
-            //     }
+                if(!row.internal_id){
+                    return this.$message.error('Para generar el código de barras debe registrar el código interno.')
+                }
 
-            //     window.open(`/${this.resource}/barcode/${row.id}`)
-            // },
+                window.open(`/${this.resource}/barcode/${row.id}`)
+            },
             clickDeleteAll(){
 
                 this.destroyAll(`/${this.resource}/delete/all`).then(() =>
