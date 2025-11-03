@@ -755,36 +755,6 @@ class DocumentPosController extends Controller
         if(!$config){
             throw new Exception('Resolución no establecida en Caja actual.');
         }
-        $number = null;
-        //verificar si existe un documento con el mismo número y serie
-        $config_pos = ConfigurationPos::first();
-        if ($config_pos && $config_pos->generated) {
-            // Verificar si ese número ya fue usado y enviado exitosamente
-            $existing_doc = DocumentPos::where('prefix', $config->prefix)
-                                    ->where('number', $config_pos->generated + 1)
-                                    ->first();
-
-            if (!$existing_doc) {
-                // Si no existe documento con ese número, lo usamos
-                $number = $config_pos->generated + 1;
-            }
-        }
-
-        // Si no se pudo usar el número de ConfigurationPos, buscamos el último documento
-        if (!$number) {
-            $document = DocumentPos::select('id', 'number')
-                                ->where('prefix', $config->prefix)
-                                ->orderBy('id', 'desc')
-                                ->first();
-
-            $number_by_documents = ($document) ? (int)$document->number + 1 : 1;
-
-            if($number_by_documents < $config['generated']) {
-                $number = $config['generated'];
-            } else {
-                $number = ($document) ? (int)$document->number + 1 : 1;
-            }
-        }
 
         // Normaliza $inputs a array
         if ($inputs instanceof Request) {
@@ -794,6 +764,8 @@ class DocumentPosController extends Controller
         } else {
             $inputsArr = $inputs;
         }
+
+        $isSincronize = isset($inputsArr['sincronize']) && $inputsArr['sincronize'] === true;
 
         // allowance_charges puede venir de diferentes formas
         $allowanceCharges = [];
@@ -807,24 +779,68 @@ class DocumentPosController extends Controller
             return isset($charge['amount']) ? (float) $charge['amount'] : 0;
         });
 
-        $values = [
-            //'automatic_date_of_issue' => $automatic_date_of_issue,
-            'user_id' => auth()->id(),
-            'external_id' => Str::uuid()->toString(),
-            'customer' => Person::with('typePerson', 'typeRegime', 'identity_document_type', 'country', 'department', 'city')->findOrFail($inputsArr['customer_id']),
-            'establishment' => EstablishmentInput::set($inputsArr['establishment_id']),
-            'soap_type_id' => $this->company->soap_type_id,
-            'state_type_id' => '01',
-            'series' => $inputsArr['prefix'] ?? $config->prefix,
-            'resolution_number' => $config->resolution_number,
-            'plate_number' => $config->plate_number,
-            'cash_type' => $config->cash_type,
-            'number' => $inputsArr['number'] ?? $number,
-            'prefix' => $inputsArr['prefix'] ?? $config->prefix,
-            'electronic' => (bool)$config->electronic,
-            'total_discount' => $total_discount,
-            'seller_id' => $inputsArr['seller_id'] ?? null,
-        ];
+        // Si viene de sincronización, respeta número y prefijo del input
+        if ($isSincronize) {
+            $values = [
+                'user_id' => auth()->id(),
+                'external_id' => Str::uuid()->toString(),
+                'customer' => Person::with('typePerson', 'typeRegime', 'identity_document_type', 'country', 'department', 'city')->findOrFail($inputsArr['customer_id']),
+                'establishment' => EstablishmentInput::set($inputsArr['establishment_id']),
+                'soap_type_id' => $this->company->soap_type_id,
+                'state_type_id' => '01',
+                'series' => $inputsArr['prefix'],
+                'resolution_number' => $config->resolution_number,
+                'plate_number' => $config->plate_number,
+                'cash_type' => $config->cash_type,
+                'number' => $inputsArr['number'],
+                'prefix' => $inputsArr['prefix'],
+                'electronic' => (bool)$config->electronic,
+                'total_discount' => $total_discount,
+                'seller_id' => $inputsArr['seller_id'] ?? null,
+            ];
+        } else {
+            // Flujo normal (local)
+            $number = null;
+            $config_pos = ConfigurationPos::first();
+            if ($config_pos && $config_pos->generated) {
+                $existing_doc = DocumentPos::where('prefix', $config->prefix)
+                                        ->where('number', $config_pos->generated + 1)
+                                        ->first();
+                if (!$existing_doc) {
+                    $number = $config_pos->generated + 1;
+                }
+            }
+            if (!$number) {
+                $document = DocumentPos::select('id', 'number')
+                                    ->where('prefix', $config->prefix)
+                                    ->orderBy('id', 'desc')
+                                    ->first();
+                $number_by_documents = ($document) ? (int)$document->number + 1 : 1;
+                if($number_by_documents < $config['generated']) {
+                    $number = $config['generated'];
+                } else {
+                    $number = ($document) ? (int)$document->number + 1 : 1;
+                }
+            }
+            $values = [
+                'user_id' => auth()->id(),
+                'external_id' => Str::uuid()->toString(),
+                'customer' => Person::with('typePerson', 'typeRegime', 'identity_document_type', 'country', 'department', 'city')->findOrFail($inputsArr['customer_id']),
+                'establishment' => EstablishmentInput::set($inputsArr['establishment_id']),
+                'soap_type_id' => $this->company->soap_type_id,
+                'state_type_id' => '01',
+                'series' => $config->prefix,
+                'resolution_number' => $config->resolution_number,
+                'plate_number' => $config->plate_number,
+                'cash_type' => $config->cash_type,
+                'number' => $number,
+                'prefix' => $config->prefix,
+                'electronic' => (bool)$config->electronic,
+                'total_discount' => $total_discount,
+                'seller_id' => $inputsArr['seller_id'] ?? null,
+            ];
+        }
+
         unset($inputsArr['series_id']);
 
         // Si $inputs es Request, mergea, si es array, array_merge
@@ -1956,7 +1972,8 @@ class DocumentPosController extends Controller
             'taxes' => $taxes,
             'xml' => $document->xml,
             'cude' => $document->cufe,
-            'request_api' => $document->request_api
+            'request_api' => $document->request_api,
+            'sincronize' => true,
         ]);
 
         try {
