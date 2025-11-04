@@ -357,10 +357,14 @@ class DocumentController extends Controller
             ));
 
             $response = curl_exec($curl);
+
+            // Obtén el error antes de cerrar el recurso
+            $curl_error = curl_error($curl);
+
             curl_close($curl);
 
             if ($response === false) {
-                \Log::error('Error al consultar la API de adquirente: '.curl_error($curl));
+                \Log::error('Error al consultar la API de adquirente: '.$curl_error);
                 return [
                     'error' => 'No se pudo conectar con el servicio de adquirentes.'
                 ];
