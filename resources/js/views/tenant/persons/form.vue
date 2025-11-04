@@ -5,12 +5,20 @@
                 <div class="row">
                     <div class="col-md-5">
                         <div class="form-group" :class="{'has-danger': errors.number}">
-                            <label class="control-label">N° Identificación <span style="color:red">*</span></label>
+                            <label class="control-label">N° Identificación (NIT)<span style="color:red">*</span></label>
                             <el-input v-model="form.number" :maxlength="maxLength" dusk="number">
                                 <el-button type="primary" slot="append" :loading="loading_search" icon="el-icon-search" @click.prevent="changeNumberIdentification">
                                 </el-button>
                             </el-input>
+                            <div v-if="isProduction" class="form-group mb-2">
+                                <el-checkbox v-model="searchByCedula">
+                                    Buscar por Cédula de Ciudadanía
+                                </el-checkbox>
+                            </div>
                             <small class="form-control-feedback" v-if="errors.number" v-text="errors.number[0]"></small>
+                            <div v-if="searchError" class="alert alert-danger mt-2">
+                                {{ searchError }}
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-2">
@@ -284,7 +292,10 @@ export default {
             departments: [],
             cities: [],
             loading_search: false,
-            showAdditionalFields: false // Checkbox state for additional fields
+            showAdditionalFields: false, // Checkbox state for additional fields
+            searchError: null,
+            searchByCedula: false,
+            isProduction: false,
         }
     },
     async created() {
@@ -299,6 +310,7 @@ export default {
                 this.type_regimes = response.data.typeRegimes;
                 this.type_obligations = response.data.typeObligations;
                 this.identity_document_types = response.data.typeIdentityDocuments;
+                this.isProduction = !!response.data.isProduction;
             });
     },
     computed: {
@@ -339,11 +351,32 @@ export default {
             if (this.form.number.length < 8) {
                 return
             }
-            await this.$http.get(`/${this.resource}/searchName/${this.form.number}`).then(response => {
+            this.searchError = null;
+            let documentTypeId = 31; // NIT por defecto
+
+            // Si está en producción, usa el checkbox para decidir entre NIT y Cédula
+            if (this.isProduction) {
+                documentTypeId = this.searchByCedula ? 13 : 31;
+            } else {
+                // Si NO está en producción, usa el select
+                documentTypeId = this.form.identity_document_type_id || 31;
+            }
+
+            await this.$http.get(`/${this.resource}/searchName/${this.form.number}/${documentTypeId}`).then(response => {
                 if (response.data.data) {
                     this.form.name = response.data.data
                 }
-            }).catch(error => {}).then(() => {});
+                if (response.data.email) {
+                    this.form.email = response.data.email
+                }
+                if (response.data.error) {
+                    this.searchError = response.data.error
+                    this.$message.error(response.data.error)
+                }
+            }).catch(error => {
+                this.searchError = 'Error al consultar el nombre y correo.'
+                console.error(error)
+            });
         },
         getDepartment(val) {
             return axios.post(`/departments/${val}`).then(response => {
