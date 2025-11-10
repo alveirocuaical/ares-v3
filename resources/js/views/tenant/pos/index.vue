@@ -644,7 +644,10 @@
 .product-pos-container {
     display: grid;
 }
-
+.product-pos-container>* {
+    max-width: 300px;
+    width: 100%;
+}
 .product-pos-container.default {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
     gap: 1rem;
