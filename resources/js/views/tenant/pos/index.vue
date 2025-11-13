@@ -82,7 +82,7 @@
                         @input="onAutocompleteInput"
                         class="m-bottom"
                         :trigger-on-focus="false"
-                        autofocus
+                        ref="inputBuscarProductos"
                         style="width: 100% !important;"
                     >
                         <el-button slot="append" icon="el-icon-plus" @click.prevent="showDialogNewItem = true"></el-button>
@@ -1135,6 +1135,12 @@ export default {
                 this.place = 'prod'
             }
 
+            this.$nextTick(() => {
+                if (this.$refs.inputBuscarProductos) {
+                    const inputEl = this.$refs.inputBuscarProductos.$el.querySelector('input');
+                    if (inputEl) inputEl.focus();
+                }
+            });
         },
         getColor(i) {
             return this.colors[(i % this.colors.length)]
