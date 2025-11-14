@@ -1148,7 +1148,7 @@ class DocumentController extends Controller
             (new DocumentHelper())->savePayments($this->document, $request->payments,$request);
 
             // Registrar asientos contables
-            $this->registerAccountingSaleEntries($this->document);
+            $this->registerAccountingSaleEntries($this->document, $request);
             // Registrar cupón
             $this->registerCustomerCoupon($this->document);
 
@@ -1226,7 +1226,7 @@ class DocumentController extends Controller
         }
     }
 
-    private function registerAccountingSaleEntries($document)
+    private function registerAccountingSaleEntries($document, $request = null)
     {
         try {
 
@@ -1248,6 +1248,17 @@ class DocumentController extends Controller
 
             $document_type = TypeDocument::find($document->type_document_id);
             $is_credit = $document->payment_form_id == 2 ? true : false;
+
+            // Obtener banco destino si aplica
+            $payment_destination = $request ? $request->payment_destination_id : null;
+            $bankAccount = null;
+            $bankChartAccount = null;
+            if (!$is_credit && $request->payment_destination_id && $request->payment_destination_id !== 'cash') {
+                $bankAccount = BankAccount::where('id', $request->payment_destination_id)->first();
+                if ($bankAccount && $bankAccount->chart_of_account_id) {
+                    $bankChartAccount = ChartOfAccount::find($bankAccount->chart_of_account_id) ?? '1110';
+                }
+            }
 
             // Crear o recuperar el tercero contable
             $person = Person::find($document->customer_id);
@@ -1315,17 +1326,24 @@ class DocumentController extends Controller
             // Construir movimientos contables
             $movements = [];
 
-            // 1️⃣ Débito: Caja o CxC (por el total)
+            // Débito: Caja o CxC (por el total)
             $movements[] = [
-                'account_id' => $is_credit ? $accountReceivableCustomer->id : $accountIdCash->id,
+                'account_id' => $is_credit
+                    ? $accountReceivableCustomer->id
+                    : (
+                        $bankChartAccount
+                            ? $bankChartAccount->id
+                            : $accountIdCash->id
+                    ),
                 'debit' => $document->total,
                 'credit' => 0,
                 'affects_balance' => true,
                 'third_party_id' => $thirdPartyId,
                 'payment_method_name' => $payment_method_name,
+                'bank_account_id' => $bankAccount ? $bankAccount->id : null,
             ];
 
-            // 2️⃣ Créditos agrupados por cuenta de ingreso
+            // Créditos agrupados por cuenta de ingreso
             foreach ($groupedAccounts as $accountCode => $amount) {
                 $account = ChartOfAccount::where('code', $accountCode)->first();
                 if (!$account) {
