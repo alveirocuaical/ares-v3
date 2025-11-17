@@ -1258,6 +1258,9 @@ class DocumentController extends Controller
                 if ($bankAccount && $bankAccount->chart_of_account_id) {
                     $bankChartAccount = ChartOfAccount::find($bankAccount->chart_of_account_id) ?? '1110';
                 }
+                if (!$bankChartAccount) {
+                    $bankChartAccount = ChartOfAccount::where('code', '1110')->first();
+                }
             }
 
             // Crear o recuperar el tercero contable
@@ -2045,6 +2048,10 @@ class DocumentController extends Controller
                     $bankAccount = BankAccount::find($payment->global_payment->destination_id);
                     $accountDestinationID = $bankAccount ? $bankAccount->chart_of_account_id : null;
                     $BankID = $bankAccount ? $bankAccount->id : null;
+                    if (!$accountDestinationID) {
+                        $accountDefaultBank = ChartOfAccount::where('code', '1110')->first();
+                        $accountDestinationID = $accountDefaultBank ? $accountDefaultBank->id : null;
+                    }
                 } elseif ($payment->global_payment->destination_type === Cash::class) {
                     $accountCash = ChartOfAccount::where('code', '110505')->first();
                     $accountDestinationID = $accountCash ? $accountCash->id : null;
