@@ -1,0 +1,29 @@
+code,name,type,level,parent_code
+7205,Gastos de personal,ProductionCost,3,72
+720503,Salario integral,ProductionCost,4,7205
+720506,Sueldos,ProductionCost,4,7205
+720512,Jornales,ProductionCost,4,7205
+720515,Horas extras y recargos,ProductionCost,4,7205
+720518,Comisiones,ProductionCost,4,7205
+720521,Viáticos,ProductionCost,4,7205
+720524,Incapacidades,ProductionCost,4,7205
+720527,Auxilio de transporte,ProductionCost,4,7205
+720530,Cesantías,ProductionCost,4,7205
+720533,Intereses sobre cesantías,ProductionCost,4,7205
+720536,Prima de servicios,ProductionCost,4,7205
+720539,Vacaciones,ProductionCost,4,7205
+720542,Primas extralegales,ProductionCost,4,7205
+720545,Auxilios,ProductionCost,4,7205
+720548,Bonificaciones,ProductionCost,4,7205
+720551,Dotación y suministro a trabajadores,ProductionCost,4,7205
+720554,Seguros,ProductionCost,4,7205
+720560,Indemnizaciones laborales,ProductionCost,4,7205
+720563,Capacitación al personal,ProductionCost,4,7205
+720566,Gastos deportivos y de recreación,ProductionCost,4,7205
+720568,Aportes a administradoras de riesgos laborales - ARL,ProductionCost,4,7205
+720569,Aportes a entidades promotoras de salud - EPS,ProductionCost,4,7205
+720570,Aportes a fondos de pensiones y/o cesantías,ProductionCost,4,7205
+720572,Aportes cajas de compensación familiar,ProductionCost,4,7205
+720575,Aportes ICBF,ProductionCost,4,7205
+720578,Aportes SENA,ProductionCost,4,7205
+720584,Gastos médicos y drogas,ProductionCost,4,7205
