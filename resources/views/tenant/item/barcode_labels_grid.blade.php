@@ -16,7 +16,7 @@
         }
         table.grid {
             border-collapse: separate;
-            border-spacing: {{ $gapX }}mm ,0.1mm {{ $gapX }}mm;
+            border-spacing: {{ $gapX }}mm {{ $gapX }}mm;
             width: auto;
             table-layout: fixed;
             border: 0.1px solid white;
@@ -53,9 +53,11 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            font-weight: bold;
         }
         .company {
             font-size: {{ 0.10 * $height }}mm;
+            font-weight: bold;
         }
         .details {
             font-size: {{ 0.08 * $height }}mm;
@@ -77,9 +79,8 @@
             flex: 0 0 auto;
         }
         .barcode img {
-            max-width: 95%;
-            max-height: 95%;
-            height: auto;
+            width: 60px;
+            height: 20px;
             display: block;
             margin: 0 auto;
             box-sizing: border-box;
@@ -116,17 +117,7 @@
 
                     {{-- Etiquetas --}}
                     @for($j = 0; $j < $etiquetasEnFila; $j++)
-                        @php
-                            // Aplica padding condicional según el índice de la etiqueta
-                            if ($j == 0) {
-                                $cellPadding = 'padding-right:20px;';
-                            } elseif ($j == 2) {
-                                $cellPadding = 'padding-left:20px;';
-                            } else {
-                                $cellPadding = '';
-                            }
-                        @endphp
-                        <td class="label-cell" style="{{ $cellPadding }}">
+                        <td class="label-cell">
                             @if($printed < $total)
                                 <div class="etiqueta-content">
                                     <div class="company">{{ strtoupper($companyName) }}</div>
