@@ -16,7 +16,7 @@
         }
         table.grid {
             border-collapse: separate;
-            border-spacing: {{ $gapX }}mm {{ $gapX }}mm;
+            border-spacing: {{ $gapX }}mm ,0.1mm {{ $gapX }}mm;
             width: auto;
             table-layout: fixed;
             border: 0.1px solid white;
@@ -53,11 +53,9 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            font-weight: bold;
         }
         .company {
             font-size: {{ 0.10 * $height }}mm;
-            font-weight: bold;
         }
         .details {
             font-size: {{ 0.08 * $height }}mm;
@@ -79,8 +77,9 @@
             flex: 0 0 auto;
         }
         .barcode img {
-            width: 60px;
-            height: 20px;
+            max-width: 95%;
+            max-height: 95%;
+            height: auto;
             display: block;
             margin: 0 auto;
             box-sizing: border-box;
@@ -117,7 +116,17 @@
 
                     {{-- Etiquetas --}}
                     @for($j = 0; $j < $etiquetasEnFila; $j++)
-                        <td class="label-cell">
+                        @php
+                            // Aplica padding condicional según el índice de la etiqueta
+                            if ($j == 0) {
+                                $cellPadding = 'padding-right:20px;';
+                            } elseif ($j == 2) {
+                                $cellPadding = 'padding-left:20px;';
+                            } else {
+                                $cellPadding = '';
+                            }
+                        @endphp
+                        <td class="label-cell" style="{{ $cellPadding }}">
                             @if($printed < $total)
                                 <div class="etiqueta-content">
                                     <div class="company">{{ strtoupper($companyName) }}</div>
@@ -139,13 +148,14 @@
                                     </div>
                                     <div class="barcode">
                                         @php
-                                            $barcodeWidth = min(3, round($width * 0.04));
-                                            $barcodeHeight = max(40, round($height * 0.7));
-                                            $colour = [0,0,0];
-                                            $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
-                                            echo '<img style="width:60px; height:20px; display:block; margin:0 auto; padding:5px;" src="data:image/png;base64,' .
-                                                base64_encode($generator->getBarcode($currentItem->internal_id, $generator::TYPE_CODE_128, 1.2, 30, $colour)) .
-                                                '">';
+                                            $generator = new \Picqer\Barcode\BarcodeGeneratorSVG();
+                                            // Usar escala y alto similares al PNG original
+                                            $barcodeSVG = $generator->getBarcode($currentItem->internal_id, $generator::TYPE_CODE_128, 1, 30);
+                                            $barcodeSVG = preg_replace('/<\?xml.*\?>/', '', $barcodeSVG);
+                                            // Limitar el tamaño del SVG con un contenedor
+                                            echo '<div style="width:100%;height:30px;display:flex;justify-content:center;align-items:center;padding:5px;">'
+                                                . str_replace('<svg', '<svg style="width:95%;height:30px;max-width:95%;max-height:30px;"', $barcodeSVG)
+                                                . '</div>';
                                         @endphp
                                     </div>
                                     <div class="code">{{ $currentItem->internal_id }}</div>
