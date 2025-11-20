@@ -23,7 +23,7 @@
                 <h3 class="my-0">Listado de cajas</h3>
             </div> -->
             <div class="card-body">
-                <data-table :resource="resource">
+                <data-table :resource="resource" :extraFilters="true">
                     <tr slot="heading">
                         <!-- <th>#</th> -->
                         <th># Referencia</th>
