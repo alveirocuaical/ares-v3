@@ -119,6 +119,7 @@
                     case 'suppliers': return 'Proveedor';
                     case 'employee': return 'Empleado';
                     case 'seller': return 'Vendedor';
+                    case 'others': return 'Otros';
                     default: return type || '-';
                 }
             },

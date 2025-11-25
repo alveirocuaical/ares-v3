@@ -135,7 +135,7 @@
                                     } elseif($tipo == 'seller' && isset($detail->thirdParty->document_type)) {
                                         $tipo_id = \Modules\Factcolombia1\Models\SystemService\TypeDocumentIdentification::where('code', $detail->thirdParty->document_type)->first();
                                         $tipo_id = $tipo_id ? $tipo_id->name : $detail->thirdParty->document_type;
-                                    } elseif(($tipo == 'customers' || $tipo == 'suppliers') && isset($detail->thirdParty->document_type)) {
+                                    } elseif(($tipo == 'customers' || $tipo == 'suppliers' || $tipo == 'others') && isset($detail->thirdParty->document_type)) {
                                         $tipo_id = \Modules\Factcolombia1\Models\Tenant\TypeIdentityDocument::where('code', $detail->thirdParty->document_type)->first();
                                         $tipo_id = $tipo_id ? $tipo_id->name : $detail->thirdParty->document_type;
                                     }

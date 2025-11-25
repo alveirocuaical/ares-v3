@@ -129,7 +129,8 @@ class PersonController extends Controller
             $person->addresses()->updateOrCreate( ['id' => $row['id']], $row);
         }
 
-        $person_type = ($person->type == 'customers') ? 'Cliente':'Proveedor';
+        //$person_type = ($person->type == 'customers') ? 'Cliente':'Proveedor';
+        $person_type = $this->getPersonTypeLabel($person->type);
 
         return [
             'success' => true,
@@ -143,7 +144,8 @@ class PersonController extends Controller
         try {
 
             $person = Person::findOrFail($id);
-            $person_type = ($person->type == 'customers') ? 'Cliente':'Proveedor';
+            //$person_type = ($person->type == 'customers') ? 'Cliente':'Proveedor';
+            $person_type = $this->getPersonTypeLabel($person->type);
             $person->delete();
 
             return [
@@ -275,7 +277,19 @@ class PersonController extends Controller
         $records = Person::where('type', $type)
                             ->get();
 
-        $name = $type == "customers" ? "Clientes":"Proveedores";
+        switch ($type) {
+            case "customers":
+                $name = "Clientes";
+                break;
+            case "suppliers":
+                $name = "Proveedores";
+                break;
+            case "others":
+                $name = "Otros";
+                break;
+            default:
+                $name = "Personas";
+        }
 
         return (new PersonExport)
                 ->records($records)
@@ -389,6 +403,8 @@ class PersonController extends Controller
         ];
     }
 
+    
+
 
     /**
      * Busqueda de registro por id
@@ -403,6 +419,26 @@ class PersonController extends Controller
                     ->get()->transform(function($row){
                         return $row->getRowSearchResource();
                     });
+    }
+
+    /**
+     * Busqueda de registro por id
+     *
+     * @param  string $type
+     * @return string
+     */
+    private function getPersonTypeLabel($type)
+    {
+        switch ($type) {
+            case 'customers':
+                return 'Cliente';
+            case 'suppliers':
+                return 'Proveedor';
+            case 'others':
+                return 'Otro';
+            default:
+                return 'Registro';
+        }
     }
 
 }

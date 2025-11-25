@@ -77,13 +77,26 @@
             }
         },
         created() {
-            this.title = (this.type === 'customers')?'Clientes':'Proveedores'
+            if (this.type === 'customers') {
+                this.title = 'Clientes'
+            } else if (this.type === 'suppliers') {
+                this.title = 'Proveedores'
+            } else if (this.type === 'others') {
+                this.title = 'Otros'
+            } else {
+                this.title = 'Personas'
+            }
         },
         computed: {
             breadcrumbUrl() {
-                return this.type === 'customers' 
-                    ? '/persons/customers' 
-                    : '/persons/suppliers';
+                if (this.type === 'customers') {
+                    return '/persons/customers'
+                } else if (this.type === 'suppliers') {
+                    return '/persons/suppliers'
+                } else if (this.type === 'others') {
+                    return '/persons/others'
+                }
+                return '/persons/customers'
             }
         },
         methods: {

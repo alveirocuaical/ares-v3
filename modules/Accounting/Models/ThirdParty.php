@@ -38,6 +38,8 @@ class ThirdParty extends ModelTenant
                 return 'Empleados';
             case 'seller':
                 return 'Vendedores';
+            case 'others':
+                return 'Otros';
             default:
                 return ucfirst($this->type);
         }
