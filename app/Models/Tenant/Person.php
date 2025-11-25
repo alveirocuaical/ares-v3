@@ -227,4 +227,22 @@ class Person extends ModelTenant
     }
 
 
+    /**
+     * 
+     * Filtros para busqueda de Otros
+     * Usado en:
+     * PersonController
+     *
+     * @param $query
+     * @param $input
+     */
+    public function scopeWhereFilterSearchOther($query, $input)
+    {
+        return $query->where('number','like', "%{$input}%")
+                    ->orWhere('name','like', "%{$input}%")
+                    ->whereType('others')
+                    ->orderBy('name');
+    }
+
+
 }

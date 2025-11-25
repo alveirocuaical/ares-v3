@@ -465,6 +465,7 @@ class JournalEntryController extends Controller
         switch ($type) {
             case 'customers':
             case 'suppliers':
+            case 'others':
                 $person = Person::find($originId);
                 return $person
                     ? ['id' => 'person_' . $person->id, 'name' => $person->name . ' (' . $person->number . ')']

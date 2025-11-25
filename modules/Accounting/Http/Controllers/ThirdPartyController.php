@@ -21,7 +21,7 @@ class ThirdPartyController extends Controller
         $results = collect();
         $total = 0;
 
-        if ($type === 'customers' || $type === 'suppliers') {
+        if ($type === 'customers' || $type === 'suppliers' || $type === 'others') {
             $query = Person::where('type', $type)
                 ->when($search, function($q) use ($search) {
                     $q->where('name', 'like', "%$search%")
@@ -102,7 +102,7 @@ class ThirdPartyController extends Controller
     public function syncFromOrigin(Request $request)
     {
         $data = $request->validate([
-            'type' => 'required|string', // customers, suppliers, employee, seller
+            'type' => 'required|string', // customers, suppliers, employee, seller, others
             'origin_id' => 'required|integer',
         ]);
 
@@ -113,6 +113,7 @@ class ThirdPartyController extends Controller
         switch ($type) {
             case 'customers':
             case 'suppliers':
+            case 'others':
                 $origin = Person::find($origin_id);
                 if (!$origin) return response()->json(['error' => 'No encontrado'], 404);
                 $name = $origin->name;
@@ -167,7 +168,7 @@ class ThirdPartyController extends Controller
         $results = collect();
 
         // Clientes y proveedores
-        $persons = Person::whereIn('type', ['customers', 'suppliers'])
+        $persons = Person::whereIn('type', ['customers', 'suppliers', 'others'])
             ->when($search, function($q) use ($search) {
                 $q->where('name', 'like', "%$search%")
                 ->orWhere('number', 'like', "%$search%");
@@ -175,9 +176,12 @@ class ThirdPartyController extends Controller
             ->limit(10)
             ->get()
             ->map(function($p) {
+                $etiqueta = $p->type === 'customers'
+                    ? 'Cliente'
+                    : ($p->type === 'suppliers' ? 'Proveedor' : 'Otro');
                 return [
                     'id' => 'person_'.$p->id,
-                    'name' => $p->number . ' - ' . $p->name . ' ('. ($p->type == 'customers' ? 'Cliente' : 'Proveedor') .')',
+                    'name' => $p->number . ' - ' . $p->name . ' ('. $etiqueta .')',
                 ];
             });
         $results = $results->merge($persons);

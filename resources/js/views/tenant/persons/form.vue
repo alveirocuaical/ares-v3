@@ -568,6 +568,9 @@ export default {
             if (this.type === 'suppliers') {
                 this.titleDialog = (this.recordId) ? 'Editar Proveedor' : 'Nuevo Proveedor'
             }
+            if (this.type === 'others') {
+                this.titleDialog = (this.recordId) ? 'Editar entidad' : 'Nueva entidad'
+            }
             if (this.recordId) {
                 this.$http.get(`/${this.resource}/record/${this.recordId}`).then(response => {
                     this.form = response.data.data;

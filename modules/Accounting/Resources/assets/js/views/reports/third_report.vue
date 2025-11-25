@@ -36,6 +36,7 @@
                 <el-option label="Proveedor" value="suppliers"></el-option>
                 <el-option label="Empleado" value="employee"></el-option>
                 <el-option label="Vendedor" value="seller"></el-option>
+                <el-option label="Otros" value="others"></el-option>
               </el-select>
             </div>
           </div>
