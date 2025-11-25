@@ -154,7 +154,7 @@
                                         </el-option>
                                     </el-select>
                                 </div>
-                                <div :class="['90','RM'].includes(form.document_type_id) && advanced_configuration.enable_seller_views ? 'col-lg-6' : 'col-lg-12'" v-show="['COT', 'RM'].includes(form.document_type_id)">
+                                <div :class="['90','RM'].includes(form.document_type_id) && advanced_configuration.enable_seller_views ? 'col-lg-6' : 'col-lg-12'" v-show="['COT', 'RM', '90'].includes(form.document_type_id)">
                                     <div class="form-group" :class="{'has-danger': errors.exchange_rate_sale}">
                                         <label class="control-label">Descripción
                                         </label>

@@ -317,6 +317,16 @@
 </table>
 <br>
 <table class="full-width">
+    @php
+        $notes = '';
+        if($is_epos && !empty($document->request_api)) {
+            $api = is_string($document->request_api) ? json_decode($document->request_api, true) : $document->request_api;
+            $notes = $api['notes'] ?? '';
+        }
+    @endphp
+    <tr>
+        <td width="100%" class="align-top">Notas: {{ $notes }}</td>
+    </tr>
     <tr>
         <td width="60%" style="vertical-align: top; font-size: 15px;">
             <strong>PAGOS:</strong>

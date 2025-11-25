@@ -319,7 +319,7 @@ class DocumentPosController extends Controller
                 'postal_zone_code' => '411001',
                 'resolution_number' => $data['resolution_number'],
                 'prefix' => $data['prefix'],
-                'notes' => null,
+                'notes' => $request->input('description', null),
                 'sendmail' => true,
                 'sendmailtome' => true,
                 'software_manufacturer' => [
