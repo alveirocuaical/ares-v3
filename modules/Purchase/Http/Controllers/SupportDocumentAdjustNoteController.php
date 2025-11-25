@@ -45,7 +45,7 @@ class SupportDocumentAdjustNoteController extends Controller
         $resolutions = TypeDocument::getResolutionsByCode(TypeDocument::DSNOF_ADJUST_NOTE_CODE);
         $currencies = $this->generalTable('currencies');
         $taxes = $this->generalTable('taxes');
-        $credit_note_concepts = NoteConcept::where('type_document_id', 3)->get(); //notas credito
+        $credit_note_concepts = NoteConcept::whereNull('type_document_id')->get();
 
         return compact('currencies', 'taxes', 'resolutions', 'credit_note_concepts');
     }
