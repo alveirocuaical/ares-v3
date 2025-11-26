@@ -410,7 +410,7 @@
                 this.initForm()
                 this.form.currency_id = (this.currencies.length > 0)?170:null
                 this.form.payment_form_id = (this.payment_forms.length > 0)?this.payment_forms[0].id:null;
-                this.form.payment_method_id = (this.payment_methods.length > 0)?this.payment_methods[0].id:null;
+                this.form.payment_method_id = (this.payment_methods.length > 0)?this.payment_methods[9].id:null;
             },
             changeDateOfIssue() {
             },

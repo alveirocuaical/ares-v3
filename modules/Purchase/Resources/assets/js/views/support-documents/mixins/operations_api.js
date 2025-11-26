@@ -113,13 +113,19 @@ export const operations_api = {
                 merchant_registration: '0000000-00',
                 type_document_identification_id: supplier.identity_document_type_id,
                 type_organization_id: supplier.type_person_id,
-                municipality_id_fact: supplier.city_id,
                 type_regime_id: supplier.type_regime_id,
                 postal_zone_code: supplier.postal_code
             }
 
-            if (supplier.type_person_id == 1)
-            {
+            if(supplier.country_id === 'CO') {
+                seller.municipality_id_fact = supplier.city_id
+            } else {
+                seller.country_code = supplier.country_code
+                seller.municipality_name = supplier.city_name
+                seller.state_name = supplier.department_name
+            }
+
+            if (supplier.type_person_id == 1) {
                 seller.dv = supplier.dv
             }
 
