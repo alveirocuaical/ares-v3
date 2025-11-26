@@ -817,7 +817,17 @@ export default {
                     delete this.form[key];
                 }
             });
+            let logoBase64 = null;
+            const logoImg = document.getElementById('logo_empresa_emisora');
+            if (logoImg && logoImg.src.startsWith('data:image')) {
+                logoBase64 = logoImg.src.split(',')[1];
+            }
+
             this.form.service_invoice = await this.createInvoiceService();
+            if (logoBase64) {
+                this.form.service_invoice.logo_empresa_emisora = logoBase64;
+            }
+
             this.loading_submit = true
             this.$http.post(`/${this.resource}/store_aiu`, this.form).then(response => {
                 if (response.data.success) {
