@@ -124,9 +124,6 @@
 
                     {{-- Etiquetas con espacios entre ellas --}}
                     @for($j = 0; $j < $etiquetasEnFila; $j++)
-                        @if($j > 0)
-                            <td class="label-gap"></td>
-                        @endif
                         <td class="label-cell">
                             @if($printed < $total)
                                 <div class="etiqueta-content">
