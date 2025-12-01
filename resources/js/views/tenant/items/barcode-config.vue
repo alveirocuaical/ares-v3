@@ -52,6 +52,13 @@
             />
             <div class="text-muted small text-center mt-1">Espacio entre etiquetas (mm)</div>
           </div>
+          <el-switch
+            v-model="codeType"
+            active-value="qr"
+            inactive-value="barcode"
+            active-text="Código QR"
+            inactive-text="Código de Barras"
+          ></el-switch>
         </div>
       </div>
       <label class="font-weight-bold mb-1">Opciones de hoja</label>
@@ -170,6 +177,7 @@ export default {
         size: 'Talla',
       },
       dialogWidth: '600px',
+      codeType: 'barcode',
     };
   },
   watch: {
@@ -277,6 +285,7 @@ export default {
         columns: this.columns,
         gapX: this.gapX,
         repeat: repeatValue,
+        codeType: this.codeType,
         ...this.fields,
       }).toString();
 
@@ -298,6 +307,7 @@ export default {
                 columns: this.columns,
                 gapX: this.gapX,
                 fields: this.fields,
+                codeType: this.codeType,
             });
         } else {
             window.open(this.getPrintUrl(), '_blank');

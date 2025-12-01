@@ -258,7 +258,7 @@
                 this.fromPurchase = true;
                 this.showBarcodeConfig = true;
             },
-            handlePrintPurchaseLabels({ width, height, pageWidth, columns, gapX, fields }) {
+            handlePrintPurchaseLabels({ width, height, pageWidth, columns, gapX, fields, codeType }) {
                 // Construye la URL y abre la impresión
                 const ids = this.barcodeItemIds;
                 const repeat = this.barcodeItemQuantities.join(',');
@@ -269,6 +269,7 @@
                     columns,
                     gapX,
                     repeat,
+                    codeType,
                     ...fields,
                 }).toString();
                 const url = `/items/barcodes?ids=${ids.join(',')}&${params}`;

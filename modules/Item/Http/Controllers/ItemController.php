@@ -17,7 +17,7 @@ use Intervention\Image\Facades\Image;
 use Illuminate\Support\Facades\View;
 use Mpdf\Mpdf;
 use Mpdf\HTMLParserMode;
-
+use App\CoreFacturalo\Helpers\QrCode\QrCodeGenerate;
 
 class ItemController extends Controller
 {
@@ -39,6 +39,10 @@ class ItemController extends Controller
         $item = Item::findOrFail($id);
         $company = Company::active();
         $companyName = $company ? $company->name : 'EMPRESA';
+
+        // Generar el código QR
+        $qrGenerator = new QrCodeGenerate();
+        $qrBase64 = $qrGenerator->displayPNGBase64($item->internal_id);
 
         // Parámetros de tamaño y campos
         $width = $request->input('width', 32); // ancho etiqueta en mm
@@ -78,6 +82,8 @@ class ItemController extends Controller
             'fields' => $fields,
             'pageWidth' => $pageWidth,
             'pageHeight' => $pageHeight,
+            'codeType' => $request->input('codeType', 'barcode'),
+            'qrBase64' => $qrBase64,
         ])->render();
 
         $mpdf = new Mpdf([
@@ -129,7 +135,7 @@ class ItemController extends Controller
         // Obtener items y keyBy id para acceso rápido (manteniendo control de existencia)
         $itemsCollection = Item::whereIn('id', $ids)->get()->keyBy(function($i){ return (string)$i->id; });
 
-        // Generar array de items repetidos respetando el orden de $ids y usando $repeatList por índice
+        $qrGenerator = new QrCodeGenerate();
         $allItems = [];
         foreach ($ids as $idx => $id) {
             if (!isset($itemsCollection[$id])) {
@@ -137,6 +143,7 @@ class ItemController extends Controller
                 continue;
             }
             $item = $itemsCollection[$id];
+            $item->qrBase64 = $qrGenerator->displayPNGBase64($item->internal_id); // Generar QR para cada ítem
             $repeat = isset($repeatList[$idx]) ? (int)$repeatList[$idx] : 1;
             // ignorar repeticiones cero o negativas
             if ($repeat <= 0) {
@@ -168,6 +175,7 @@ class ItemController extends Controller
             'fields' => $fields,
             'pageWidth' => $pageWidth,
             'pageHeight' => $pageHeight,
+            'codeType' => $request->input('codeType', 'barcode'),
         ])->render();
 
         $mpdf = new Mpdf([

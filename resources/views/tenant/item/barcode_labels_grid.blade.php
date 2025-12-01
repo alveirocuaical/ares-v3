@@ -106,6 +106,7 @@
 </head>
 <body>
     @php
+        $codeType = $codeType ?? 'barcode';
         $isMultiple = isset($items);
         $total = $repeat;
         $col = $columns;
@@ -124,50 +125,88 @@
 
                     {{-- Etiquetas con espacios entre ellas --}}
                     @for($j = 0; $j < $etiquetasEnFila; $j++)
-                        <td class="label-cell">
-                            @if($printed < $total)
-                                <div class="etiqueta-content">
-                                    <div class="company">{{ strtoupper($companyName) }}</div>
-                                    @php
-                                        // Soporte para uno o varios productos
-                                        $currentItem = $isMultiple ? $items[$printed] : $item;
-                                        $details = [];
-                                        $maxChars = 25;
-                                        if($fields['name']) $details[] = wordwrap($currentItem->name, $maxChars, "\n", true);
-                                        if($fields['brand'] && $currentItem->brand) $details[] = wordwrap($currentItem->brand->name, $maxChars, "\n", true);
-                                        if($fields['category'] && $currentItem->category) $details[] = wordwrap($currentItem->category->name, $maxChars, "\n", true);
-                                        if($fields['color'] && $currentItem->color) $details[] = wordwrap($currentItem->color->name, $maxChars, "\n", true);
-                                        if($fields['size'] && $currentItem->size) $details[] = wordwrap($currentItem->size->name, $maxChars, "\n", true);
-                                        $detailsText = implode(' | ', $details);
-                                        $len = mb_strlen($detailsText);
-                                        $fontSize = $len > 50 ? 0.06 * $height : 0.08 * $height;
-                                    @endphp
-                                    <div class="details" style="font-size: {{ $fontSize }}mm;">
-                                        {{ $detailsText }}
-                                    </div>
-                                    <div class="barcode">
+                        @if($printed < $total)
+                            @if($codeType == 'qr')
+                                <td class="label-cell" style="padding:0;">
+                                    <table style="width:100%;height:100%;border:none;">
+                                        <tr>
+                                            <td style="width:65px;vertical-align:middle;padding:0;">
+                                                <img src="data:image/png;base64,{{ $isMultiple ? $items[$printed]->qrBase64 : $item->qrBase64 }}" alt="QR" style="width:60px;height:60px;display:block;margin:auto;" />
+                                            </td>
+                                            <td style="padding-left:-10px;vertical-align:middle;">
+                                                <div class="etiqueta-content" style="align-items:flex-start;">
+                                                    <div class="company">{{ strtoupper($companyName) }}</div>
+                                                    @php
+                                                        $currentItem = $isMultiple ? $items[$printed] : $item;
+                                                        $details = [];
+                                                        $maxChars = 25;
+                                                        if($fields['name']) $details[] = wordwrap($currentItem->name, $maxChars, "\n", true);
+                                                        if($fields['brand'] && $currentItem->brand) $details[] = wordwrap($currentItem->brand->name, $maxChars, "\n", true);
+                                                        if($fields['category'] && $currentItem->category) $details[] = wordwrap($currentItem->category->name, $maxChars, "\n", true);
+                                                        if($fields['color'] && $currentItem->color) $details[] = wordwrap($currentItem->color->name, $maxChars, "\n", true);
+                                                        if($fields['size'] && $currentItem->size) $details[] = wordwrap($currentItem->size->name, $maxChars, "\n", true);
+                                                        $detailsText = implode(' | ', $details);
+                                                        $len = mb_strlen($detailsText);
+                                                        $fontSize = $len > 50 ? 0.06 * $height : 0.08 * $height;
+                                                    @endphp
+                                                    <div class="details" style="font-size: {{ $fontSize }}mm;">
+                                                        {{ $detailsText }}
+                                                    </div>
+                                                    <div class="code">{{ $currentItem->internal_id }}</div>
+                                                    @if($fields['price'])
+                                                        <div class="price">
+                                                            {{ $currentItem->currency_type ? $currentItem->currency_type->symbol : '$ ' }}
+                                                            {{ number_format($currentItem->sale_unit_price, 2) }}
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    @php $printed++; @endphp
+                                </td>
+                            @else
+                                <td class="label-cell">
+                                    <div class="etiqueta-content">
+                                        <div class="company">{{ strtoupper($companyName) }}</div>
                                         @php
-                                            $generator = new \Picqer\Barcode\BarcodeGeneratorSVG();
-                                            // Usar escala y alto similares al PNG original
-                                            $barcodeSVG = $generator->getBarcode($currentItem->internal_id, $generator::TYPE_CODE_128, 1, 30);
-                                            $barcodeSVG = preg_replace('/<\?xml.*\?>/', '', $barcodeSVG);
-                                            // Limitar el tamaño del SVG con un contenedor
-                                            echo '<div style="width:100%;height:30px;display:flex;justify-content:center;align-items:center;padding:5px;">'
-                                                . str_replace('<svg', '<svg style="width:95%;height:30px;max-width:95%;max-height:30px;"', $barcodeSVG)
-                                                . '</div>';
+                                            $currentItem = $isMultiple ? $items[$printed] : $item;
+                                            $details = [];
+                                            $maxChars = 25;
+                                            if($fields['name']) $details[] = wordwrap($currentItem->name, $maxChars, "\n", true);
+                                            if($fields['brand'] && $currentItem->brand) $details[] = wordwrap($currentItem->brand->name, $maxChars, "\n", true);
+                                            if($fields['category'] && $currentItem->category) $details[] = wordwrap($currentItem->category->name, $maxChars, "\n", true);
+                                            if($fields['color'] && $currentItem->color) $details[] = wordwrap($currentItem->color->name, $maxChars, "\n", true);
+                                            if($fields['size'] && $currentItem->size) $details[] = wordwrap($currentItem->size->name, $maxChars, "\n", true);
+                                            $detailsText = implode(' | ', $details);
+                                            $len = mb_strlen($detailsText);
+                                            $fontSize = $len > 50 ? 0.06 * $height : 0.08 * $height;
                                         @endphp
-                                    </div>
-                                    <div class="code">{{ $currentItem->internal_id }}</div>
-                                    @if($fields['price'])
-                                        <div class="price">
-                                            {{ $currentItem->currency_type ? $currentItem->currency_type->symbol : '$ ' }}
-                                            {{ number_format($currentItem->sale_unit_price, 2) }}
+                                        <div class="details" style="font-size: {{ $fontSize }}mm;">
+                                            {{ $detailsText }}
                                         </div>
-                                    @endif
-                                </div>
-                                @php $printed++; @endphp
+                                        <div class="barcode">
+                                            @php
+                                                $generator = new \Picqer\Barcode\BarcodeGeneratorSVG();
+                                                $barcodeSVG = $generator->getBarcode($currentItem->internal_id, $generator::TYPE_CODE_128, 1, 30);
+                                                $barcodeSVG = preg_replace('/<\?xml.*\?>/', '', $barcodeSVG);
+                                                echo '<div style="width:100%;height:30px;display:flex;justify-content:center;align-items:center;padding:5px;">'
+                                                    . str_replace('<svg', '<svg style="width:95%;height:30px;max-width:95%;max-height:30px;"', $barcodeSVG)
+                                                    . '</div>';
+                                            @endphp
+                                        </div>
+                                        <div class="code">{{ $currentItem->internal_id }}</div>
+                                        @if($fields['price'])
+                                            <div class="price">
+                                                {{ $currentItem->currency_type ? $currentItem->currency_type->symbol : '$ ' }}
+                                                {{ number_format($currentItem->sale_unit_price, 2) }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                    @php $printed++; @endphp
+                                </td>
                             @endif
-                        </td>
+                        @endif
                     @endfor
 
                     {{-- Celdas vacías a la derecha --}}
