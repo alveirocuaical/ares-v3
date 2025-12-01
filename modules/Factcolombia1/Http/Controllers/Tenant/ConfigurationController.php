@@ -1751,6 +1751,9 @@ class ConfigurationController extends Controller
                 $company->response_resolution = $response_resolution;
                 $company->save();
 
+                // Calcular el campo `generated` como `from - 1`
+                $generated = $request->from - 1;
+
                 TypeDocument::updateOrCreate([
                     'code' => $request->code,
                     'prefix' => $request->prefix,
@@ -1761,6 +1764,7 @@ class ConfigurationController extends Controller
                     'technical_key' => $request->technical_key,
                     'from' => $request->from,
                     'to' => $request->to,
+                    'generated' => $generated,
                     'name' => $request->name,
                     'template' => 'face_f   ',
                     'description' => $request->description

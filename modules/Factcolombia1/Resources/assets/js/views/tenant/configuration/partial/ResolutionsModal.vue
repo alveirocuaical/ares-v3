@@ -486,7 +486,7 @@ export default {
                     technical_key: selected.TechnicalKey || '',
                     from: selected.FromNumber,
                     to: selected.ToNumber,
-                    generated: '0',
+                    generated: selected.FromNumber - 1,
                     description: `Resolución ${selected.ResolutionNumber}`,
                     show_in_establishments: 'all',
                     establishment_ids: [],
