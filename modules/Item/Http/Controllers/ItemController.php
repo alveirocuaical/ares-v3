@@ -38,7 +38,12 @@ class ItemController extends Controller
     {
         $item = Item::findOrFail($id);
         $company = Company::active();
-        $companyName = $company ? $company->name : 'EMPRESA';
+        $establishment = auth()->user()->establishment;
+
+        $useEstablishmentName = filter_var($request->input('use_establishment', false), FILTER_VALIDATE_BOOLEAN);
+        $companyName = $useEstablishmentName && $establishment
+            ? $establishment->description
+            : ($company ? $company->name : 'EMPRESA');
 
         // Generar el código QR
         $qrGenerator = new QrCodeGenerate();
@@ -111,7 +116,12 @@ class ItemController extends Controller
         $ids = array_values(array_filter(array_map('trim', explode(',', $request->input('ids')))));
 
         $company = Company::active();
-        $companyName = $company ? $company->name : 'EMPRESA';
+        $establishment = auth()->user()->establishment;
+
+        $useEstablishmentName = filter_var($request->input('use_establishment', false), FILTER_VALIDATE_BOOLEAN);
+        $companyName = $useEstablishmentName && $establishment
+            ? $establishment->description
+            : ($company ? $company->name : 'EMPRESA');
 
         $width = $request->input('width', 32);
         $height = $request->input('height', 25);

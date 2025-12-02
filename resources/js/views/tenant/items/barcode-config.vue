@@ -2,21 +2,16 @@
   <el-dialog
     :visible.sync="localShow"
     :width="dialogWidth"
-    title="Configurar Etiqueta de Código de Barras"
+    title="Configurar Etiquetas"
     @close="handleClose"
     custom-class="barcode-config-dialog"
   >
     <div class="barcode-config-content">
-      <label class="font-weight-bold mb-1">Opciones de etiqueta</label>
-      <div class="form-group mb-2">
-        <div class="row align-items-center">
-          <!-- <div class="col-6 col-md-4 d-flex flex-column align-items-center justify-content-center">
-            <label class="font-weight-bold mb-1 text-center">
-              Tamaño <span class="text-muted ml-1">(mm)</span>:
-            </label>
-            <div class="text-muted small text-center mt-1">&nbsp;</div>
-          </div> -->
-          <div class="col-6 col-md-4 d-flex flex-column align-items-center">
+      <!-- Configuración de Tirilla -->
+      <div class="form-group mb-4">
+        <label class="font-weight-bold">Configuración de Tirilla</label>
+        <div class="row">
+          <div class="col-6">
             <el-input-number
               class="w-100"
               v-model="width"
@@ -26,9 +21,9 @@
               controls-position="right"
               placeholder="Ancho"
             />
-            <div class="text-muted small text-center mt-1">Ancho (mm)</div>
+            <small class="text-muted">Ancho (mm)</small>
           </div>
-          <div class="col-6 col-md-4 d-flex flex-column align-items-center">
+          <div class="col-6">
             <el-input-number
               class="w-100"
               v-model="height"
@@ -38,33 +33,43 @@
               controls-position="right"
               placeholder="Alto"
             />
-            <div class="text-muted small text-center mt-1">Alto (mm)</div>
+            <small class="text-muted">Alto (mm)</small>
           </div>
-          <div class="col-6 col-md-4 d-flex flex-column align-items-center">
+        </div>
+        <div class="row mt-3">
+          <div class="col-6">
             <el-input-number
               class="w-100"
               v-model="gapX"
               :min="0.1"
               :max="5"
-              label="Espacio horizontal"
+              label="Espaciado"
               controls-position="right"
-              placeholder="Espacio entre etiquetas (mm)"
+              placeholder="Espaciado"
             />
-            <div class="text-muted small text-center mt-1">Espacio entre etiquetas (mm)</div>
+            <small class="text-muted">Espaciado</small>
           </div>
-          <el-switch
-            v-model="codeType"
-            active-value="qr"
-            inactive-value="barcode"
-            active-text="Código QR"
-            inactive-text="Código de Barras"
-          ></el-switch>
+          <div class="col-6">
+            <el-input-number
+              class="w-100"
+              v-model="repeat"
+              :min="1"
+              :max="500"
+              label="Cantidad"
+              controls-position="right"
+              placeholder="Cantidad"
+              :disabled="useStockAsRepeat"
+            />
+            <small class="text-muted">Cantidad</small>
+          </div>
         </div>
       </div>
-      <label class="font-weight-bold mb-1">Opciones de hoja</label>
-      <div class="form-group mb-2">
-        <div class="row align-items-center">
-          <div class="col-6 col-md-4 d-flex flex-column align-items-center">
+
+      <!-- Configuración de Hoja -->
+      <div class="form-group mb-4">
+        <label class="font-weight-bold">Configuración de Hoja</label>
+        <div class="row">
+          <div class="col-6">
             <el-input-number
               class="w-100"
               v-model="pageWidth"
@@ -72,11 +77,11 @@
               :max="300"
               label="Ancho hoja"
               controls-position="right"
-              placeholder="Ancho hoja (mm)"
+              placeholder="Ancho hoja"
             />
-            <div class="text-muted small text-center mt-1">Ancho hoja (mm)</div>
+            <small class="text-muted">Ancho hoja (mm)</small>
           </div>
-          <div class="col-6 col-md-4 d-flex flex-column align-items-center">
+          <div class="col-6">
             <el-input-number
               class="w-100"
               v-model="columns"
@@ -86,50 +91,48 @@
               controls-position="right"
               placeholder="Columnas"
             />
-            <div class="text-muted small text-center mt-1">Columnas</div>
-          </div>
-          <div class="form-group mb-2" v-if="!fromPurchase">
-            <label class="font-weight-bold mb-1">Cantidad de etiquetas a imprimir:</label>
-            <el-input-number
-              class="w-100"
-              v-model="repeat"
-              :min="1"
-              :max="500"
-              label="Cantidad"
-              controls-position="right"
-              placeholder="Cantidad de etiquetas"
-              :disabled="useStockAsRepeat"
-            />
-            <el-checkbox
-              v-if="showMultiUseStock"
-              class="ml-2"
-              v-model="useStockAsRepeat"
-              @change="onUseStockAsRepeat"
-            >
-              Usar stock actual de cada producto
-            </el-checkbox>
-            <el-checkbox
-              v-else-if="showSingleUseStock"
-              class="ml-2"
-              v-model="useStockAsRepeat"
-              @change="onUseStockAsRepeat"
-            >
-              Usar stock actual ({{ singleStockLabel }})
-            </el-checkbox>
+            <small class="text-muted">Columnas</small>
           </div>
         </div>
       </div>
-      <div class="form-group mb-2">
-        <label class="font-weight-bold mb-2 d-block">Campos a mostrar:</label>
+
+      <!-- Configuraciones Adicionales -->
+      <div class="form-group mb-4">
+        <label class="font-weight-bold">Configuraciones Adicionales</label>
         <div class="row">
-          <div class="col-6 col-md-4 mb-2" v-for="(field, key) in fields" :key="key">
-            <el-checkbox v-model="fields[key]">{{ fieldLabels[key] }}</el-checkbox>
+          <div class="col-6">
+            <el-switch
+              v-model="codeType"
+              active-value="qr"
+              inactive-value="barcode"
+              active-text="QR"
+              inactive-text="Barras"
+            ></el-switch>
+          </div>
+          <div class="col-6">
+            <el-switch
+              v-model="useEstablishmentName"
+              active-text="Establecimiento"
+              inactive-text="Empresa"
+            ></el-switch>
+          </div>
+        </div>
+        <div class="row mt-3">
+          <div class="col-12">
+            <label class="font-weight-bold">Campos a Mostrar</label>
+            <div class="row">
+              <div class="col-6 col-md-4 mb-2" v-for="(field, key) in fields" :key="key">
+                <el-checkbox v-model="fields[key]">{{ fieldLabels[key] }}</el-checkbox>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      <div class="form-group mb-0 d-flex justify-content-end">
+
+      <!-- Botón de acción -->
+      <div class="form-group d-flex justify-content-end">
         <el-button type="success" @click="printLabel">
-          Imprimir / Descargar PDF
+          Imprimir
         </el-button>
       </div>
     </div>
@@ -161,7 +164,6 @@ export default {
       repeat: 15,
       useStockAsRepeat: false,
       fields: {
-        name: true,
         price: true,
         brand: true,
         category: false,
@@ -169,7 +171,6 @@ export default {
         size: false,
       },
       fieldLabels: {
-        name: 'Nombre',
         price: 'Precio',
         brand: 'Marca',
         category: 'Categoría',
@@ -178,11 +179,11 @@ export default {
       },
       dialogWidth: '600px',
       codeType: 'barcode',
+      useEstablishmentName: false,
     };
   },
   watch: {
     show(val) {
-      this.localShow = val;
       this.localShow = val;
       // Inicializar valores al abrir para evitar estados previos
       if (val) {
@@ -286,6 +287,7 @@ export default {
         gapX: this.gapX,
         repeat: repeatValue,
         codeType: this.codeType,
+        use_establishment: this.useEstablishmentName,
         ...this.fields,
       }).toString();
 
@@ -336,9 +338,6 @@ export default {
   .barcode-config-dialog .el-dialog {
     margin: 10px auto !important;
   }
-}
-h5 {
-  color: #222 !important;
 }
 .label-barcode {
   color: #222;
