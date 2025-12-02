@@ -310,6 +310,7 @@ export default {
                 gapX: this.gapX,
                 fields: this.fields,
                 codeType: this.codeType,
+                useEstablishmentName: this.useEstablishmentName,
             });
         } else {
             window.open(this.getPrintUrl(), '_blank');
