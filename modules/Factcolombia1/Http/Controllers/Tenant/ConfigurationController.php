@@ -1751,8 +1751,15 @@ class ConfigurationController extends Controller
                 $company->response_resolution = $response_resolution;
                 $company->save();
 
-                // Calcular el campo `generated` como `from - 1`
-                $generated = $request->from - 1;
+                // Verificar si la resolución ya existe
+                $existingResolution = TypeDocument::where([
+                    'code' => $request->code,
+                    'prefix' => $request->prefix,
+                    'resolution_number' => $request->resolution,
+                ])->first();
+
+                // Calcular el campo `generated` solo si es una nueva resolución
+                $generated = $existingResolution ? $existingResolution->generated : ($request->from - 1);
 
                 TypeDocument::updateOrCreate([
                     'code' => $request->code,

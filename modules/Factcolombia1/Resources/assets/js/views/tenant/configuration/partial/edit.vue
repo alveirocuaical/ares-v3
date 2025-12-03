@@ -7,7 +7,7 @@
                     <div class="col-md-12">
                         <div class="form-group" :class="{'has-danger': errors.resolution_number}">
                             <label class="control-label">Número de resolución<span class="text-danger">*</span></label>
-                            <el-input v-model="form.resolution_number" :disabled="true"></el-input>
+                            <el-input v-model="form.resolution_number" :disabled="!!record.resolution_number"></el-input>
                             <small class="form-control-feedback" v-if="errors.resolution_number" v-text="errors.resolution_number[0]"></small>
                         </div>
                     </div>
