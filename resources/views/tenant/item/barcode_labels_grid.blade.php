@@ -16,7 +16,7 @@
         }
         table.grid {
             border-collapse: separate;
-            border-spacing: {{ $gapX }}mm {{ $gapX }}mm;
+            border-spacing: 0;
             width: auto;
             table-layout: fixed;
             border: 0.1px solid white;
@@ -34,11 +34,18 @@
             box-sizing: border-box;
         }
         td.label-gap {
-            width: 4mm;
+            width: {{ $gapX }}mm;
+            height: {{ $height - 10 }}mm;
             padding: 0;
             margin: 0;
             border: none;
             background: transparent;
+            vertical-align: top;
+        }
+        tr {
+            border: 2px solid;
+            height: {{ $height - 10 }}mm;
+            line-height: 0; /* ESTO controla el espaciado vertical entre filas */
         }
         .etiqueta-content {
             width: 100%;
@@ -120,14 +127,15 @@
                     @php
                         $etiquetasRestantes = $total - $printed;
                         $etiquetasEnFila = min($col, $etiquetasRestantes);
-                        $vaciasDer = ($i == $rows - 1) ? $col - $etiquetasEnFila : 0;
                     @endphp
 
-                    {{-- Etiquetas con espacios entre ellas --}}
+                    {{-- Generar estructura: tirilla gap tirilla gap tirilla (sin gaps al final) --}}
                     @for($j = 0; $j < $etiquetasEnFila; $j++)
                         @if($printed < $total)
+                            {{-- Tirilla actual --}}
                             @if($codeType == 'qr')
                                 <td class="label-cell" style="padding:0;">
+                                    {{-- ...existing QR content... --}}
                                     <table style="width:100%;height:100%;border:none;">
                                         <tr>
                                             <td style="width:65px;vertical-align:middle;padding:0;">
@@ -163,10 +171,10 @@
                                             </td>
                                         </tr>
                                     </table>
-                                    @php $printed++; @endphp
                                 </td>
                             @else
                                 <td class="label-cell">
+                                    {{-- ...existing barcode content... --}}
                                     <div class="etiqueta-content">
                                         <div class="company">{{ strtoupper($companyName) }}</div>
                                         @php
@@ -203,15 +211,15 @@
                                             </div>
                                         @endif
                                     </div>
-                                    @php $printed++; @endphp
                                 </td>
                             @endif
-                        @endif
-                    @endfor
+                            @php $printed++; @endphp
 
-                    {{-- Celdas vacías a la derecha --}}
-                    @for($k = 0; $k < $vaciasDer; $k++)
-                        <td class="label-cell"></td>
+                            {{-- Gap solo si NO es la última tirilla de la fila --}}
+                            @if($j < $etiquetasEnFila - 1)
+                                <td class="label-gap"></td>
+                            @endif
+                        @endif
                     @endfor
 
                 </tr>
