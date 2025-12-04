@@ -3,8 +3,15 @@
 <head>
     <meta charset="utf-8">
     <title>Etiquetas</title>
+    @php
+        $fontSizeParam = isset($fontSize) ? floatval($fontSize) : 0;
+        $incrementPerUnit = 0.02; // cada unidad añade 2% (ajusta a 0.01 para 1% por unidad)
+        $scale = 1 + ($incrementPerUnit * $fontSizeParam);
+        $scale = max(0.6, min(2.0, $scale));
+    @endphp
     <style>
         html, body {
+            font-family: '{{ $fontFamily }}', Arial, Helvetica, sans-serif;
             margin: 0;
             padding: 0;
             background: #fff;
@@ -61,6 +68,7 @@
             text-align: center;
         }
         .company, .details, .code, .price {
+            font-family: '{{ $fontFamily }}', Arial, Helvetica, sans-serif;
             box-sizing: border-box;
             margin-bottom: 0.2mm;
             max-width: 100%;
@@ -70,12 +78,12 @@
             font-weight: bold;
         }
         .company {
-            font-size: {{ 0.10 * $height }}mm;
+            font-size: {{ (0.10 * $height * $scale) }}mm;
             font-weight: bold;
         }
         .details {
-            font-size: {{ 0.08 * $height }}mm;
-            max-height: {{ 0.18 * $height }}mm;
+            font-size: {{ (0.08 * $height * $scale) }}mm;
+            max-height: {{ (0.18 * $height * $scale) }}mm;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: pre-line;
@@ -100,11 +108,11 @@
             box-sizing: border-box;
         }
         .code {
-            font-size: {{ 0.08 * $height }}mm;
+            font-size: {{ (0.08 * $height * $scale) }}mm;
         }
         .price {
             font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
-            font-size: {{ 0.10 * $height }}mm;
+            font-size: {{ (0.10 * $height * $scale) }}mm;
         }
         .page-break {
             page-break-after: always;
@@ -147,7 +155,13 @@
                                                     @php
                                                         $currentItem = $isMultiple ? $items[$printed] : $item;
                                                         $details = [];
-                                                        $maxChars = 25;
+                                                        $baseMaxChars = 25; // valor por defecto
+                                                        if (isset($fontSizeParam) && $fontSizeParam > 0) {
+                                                            $maxChars = (int) round($baseMaxChars / ($scale/1.5));
+                                                        } else {
+                                                            $maxChars = $baseMaxChars;
+                                                        }
+                                                        $maxChars = max(8, min($baseMaxChars, $maxChars));
                                                         if($fields['name']) $details[] = wordwrap($currentItem->name, $maxChars, "\n", true);
                                                         if($fields['brand'] && $currentItem->brand) $details[] = wordwrap($currentItem->brand->name, $maxChars, "\n", true);
                                                         if($fields['category'] && $currentItem->category) $details[] = wordwrap($currentItem->category->name, $maxChars, "\n", true);
@@ -155,12 +169,13 @@
                                                         if($fields['size'] && $currentItem->size) $details[] = wordwrap($currentItem->size->name, $maxChars, "\n", true);
                                                         $detailsText = implode(' | ', $details);
                                                         $len = mb_strlen($detailsText);
-                                                        $fontSize = $len > 50 ? 0.06 * $height : 0.08 * $height;
+                                                        $baseFactor = $len > 50 ? 0.06 : 0.08;
+                                                        $fontSizeDetails = $baseFactor * $height * $scale;
                                                     @endphp
-                                                    <div class="details" style="font-size: {{ $fontSize }}mm;">
+                                                    <div class="details" style="font-size: {{ $fontSizeDetails }}mm;">
                                                         {{ $detailsText }}
                                                     </div>
-                                                    <div class="code">{{ $currentItem->internal_id }}</div>
+                                                    <div class="code" style="font-size: {{ (0.08 * $height * $scale) }}mm;">{{ $currentItem->internal_id }}</div>
                                                     @if($fields['price'])
                                                         <div class="price">
                                                             {{ $currentItem->currency_type ? $currentItem->currency_type->symbol : '$ ' }}
@@ -180,7 +195,13 @@
                                         @php
                                             $currentItem = $isMultiple ? $items[$printed] : $item;
                                             $details = [];
-                                            $maxChars = 25;
+                                            $baseMaxChars = 25; // valor por defecto
+                                            if (isset($fontSizeParam) && $fontSizeParam > 0) {
+                                                $maxChars = (int) round($baseMaxChars / ($scale/1.5));
+                                            } else {
+                                                $maxChars = $baseMaxChars;
+                                            }
+                                            $maxChars = max(8, min($baseMaxChars, $maxChars));
                                             if($fields['name']) $details[] = wordwrap($currentItem->name, $maxChars, "\n", true);
                                             if($fields['brand'] && $currentItem->brand) $details[] = wordwrap($currentItem->brand->name, $maxChars, "\n", true);
                                             if($fields['category'] && $currentItem->category) $details[] = wordwrap($currentItem->category->name, $maxChars, "\n", true);
@@ -188,9 +209,10 @@
                                             if($fields['size'] && $currentItem->size) $details[] = wordwrap($currentItem->size->name, $maxChars, "\n", true);
                                             $detailsText = implode(' | ', $details);
                                             $len = mb_strlen($detailsText);
-                                            $fontSize = $len > 50 ? 0.06 * $height : 0.08 * $height;
+                                            $baseFactor = $len > 50 ? 0.06 : 0.08;
+                                            $fontSizeDetails = $baseFactor * $height * $scale;
                                         @endphp
-                                        <div class="details" style="font-size: {{ $fontSize }}mm;">
+                                        <div class="details" style="font-size: {{ $fontSizeDetails }}mm;">
                                             {{ $detailsText }}
                                         </div>
                                         <div class="barcode">
@@ -203,7 +225,7 @@
                                                     . '</div>';
                                             @endphp
                                         </div>
-                                        <div class="code">{{ $currentItem->internal_id }}</div>
+                                        <div class="code" style="font-size: {{ (0.08 * $height * $scale) }}mm;">{{ $currentItem->internal_id }}</div>
                                         @if($fields['price'])
                                             <div class="price">
                                                 {{ $currentItem->currency_type ? $currentItem->currency_type->symbol : '$ ' }}

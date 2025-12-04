@@ -63,6 +63,30 @@
             <small class="text-muted">Cantidad</small>
           </div>
         </div>
+        <div class="row mt-3">
+          <div class="col-6">
+            <el-select v-model="fontFamily" placeholder="Selecciona fuente" class="w-100">
+              <el-option
+                v-for="font in fontOptions"
+                :key="font"
+                :label="font"
+                :value="font"
+              ></el-option>
+            </el-select>
+            <small class="text-muted">Tipo de letra</small>
+          </div>
+          <div class="col-6">
+            <el-input-number
+              v-model="fontSize"
+              :min="0"
+              :max="100"
+              label="Tamaño de letra"
+              controls-position="right"
+              placeholder="Tamaño de letra"
+            />
+            <small class="text-muted">Tamaño de letra (pt)</small>
+          </div>
+        </div>
       </div>
 
       <!-- Configuración de Hoja -->
@@ -180,6 +204,10 @@ export default {
       dialogWidth: '600px',
       codeType: 'barcode',
       useEstablishmentName: false,
+      fontFamily: 'DejaVu Sans',
+      fontOptions: [
+        'DejaVu Sans','Arial','Times New Roman','Courier','Comic Sans MS','Impact','Georgia','Trebuchet MS','Lucida Console','Palatino','Garamond','Brush Script MT','cursive'],
+      fontSize: 0,
     };
   },
   watch: {
@@ -288,6 +316,8 @@ export default {
         repeat: repeatValue,
         codeType: this.codeType,
         use_establishment: this.useEstablishmentName,
+        fontFamily: this.fontFamily,
+        fontSize: this.fontSize,
         ...this.fields,
       }).toString();
 
@@ -311,6 +341,8 @@ export default {
                 fields: this.fields,
                 codeType: this.codeType,
                 useEstablishmentName: this.useEstablishmentName,
+                fontFamily: this.fontFamily,
+                fontSize: this.fontSize,
             });
         } else {
             window.open(this.getPrintUrl(), '_blank');
@@ -336,7 +368,7 @@ export default {
   justify-content: flex-start;
 }
 @media (max-width: 700px) {
-  .barcode-config-dialog .el-dialog {
+  .barcode-config_dialog .el-dialog {
     margin: 10px auto !important;
   }
 }

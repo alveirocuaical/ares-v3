@@ -75,6 +75,9 @@ class ItemController extends Controller
         $labelWidth = min($width, $maxWidth);
 
 
+        $fontFamily = $request->input('fontFamily', 'DejaVu Sans');
+        $fontSize = $request->input('fontSize', 0);
+
         $html = view('tenant.item.barcode_labels_grid', [
             'width' => $labelWidth,      // puedes dejarlo si lo usas en otros lados
             'labelWidth' => $labelWidth,
@@ -89,6 +92,8 @@ class ItemController extends Controller
             'pageHeight' => $pageHeight,
             'codeType' => $request->input('codeType', 'barcode'),
             'qrBase64' => $qrBase64,
+            'fontFamily' => $fontFamily,
+            'fontSize' => $fontSize,
         ])->render();
 
         $mpdf = new Mpdf([
@@ -172,7 +177,10 @@ class ItemController extends Controller
         $total = count($allItems);
         $col = $columns;
         $rows = ceil($total / $col);
-        $pageHeight = $height + $gapX + 0.1;
+        $pageHeight = $height;
+
+        $fontFamily = $request->input('fontFamily', 'DejaVu Sans');
+        $fontSize = $request->input('fontSize', 0);
 
         $html = view('tenant.item.barcode_labels_grid', [
             'width' => $width,
@@ -186,6 +194,8 @@ class ItemController extends Controller
             'pageWidth' => $pageWidth,
             'pageHeight' => $pageHeight,
             'codeType' => $request->input('codeType', 'barcode'),
+            'fontFamily' => $fontFamily,
+            'fontSize' => $fontSize,
         ])->render();
 
         $mpdf = new Mpdf([
