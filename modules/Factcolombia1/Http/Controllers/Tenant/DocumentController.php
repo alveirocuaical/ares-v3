@@ -736,6 +736,8 @@ class DocumentController extends Controller
         // \Log::debug($invoice_json);
         // dd($request->all());
         // ini_set('memory_limit', '-1');
+        //\Log::info('Service invoice:', $request->service_invoice);
+        //\Log::info('Datos de service invoice', [$request->service_invoice]);
         DB::connection('tenant')->beginTransaction();
         try {
             if($invoice_json !== NULL)
@@ -949,6 +951,7 @@ class DocumentController extends Controller
                 $ch = curl_init("{$base_url}ubl2.1/invoice");
 
             $data_document = json_encode($service_invoice);
+            //\Log::info('Datos de service invoice', [$service_invoice]);
             // dd($data_document);
             //\Log::debug("{$base_url}ubl2.1/invoice");
             //\Log::debug($company->api_token);
@@ -1143,7 +1146,13 @@ class DocumentController extends Controller
             if ($request->has('seller_id')) {
                 $request->merge(['seller_id' => $request->seller_id]);
             }
+            // \Log::info('TAXES CALCULADOS ANTES DE GUARDAR:', $request->all());
 
+            // \Log::info('Prefix antes de guardar documento', [
+            //     'prefix' => $nextConsecutive->prefix,
+            //     'number' => $nextConsecutive->number,
+            //     'type_document_id' => $nextConsecutive->id
+            // ]);
             $this->document = DocumentHelper::createDocument($request, $nextConsecutive, $correlative_api, $this->company, $response, $response_status, $company->type_environment_id);
             (new DocumentHelper())->savePayments($this->document, $request->payments,$request);
 
@@ -1184,7 +1193,8 @@ class DocumentController extends Controller
                 $errorMessage = '';
             }
             // Devolver la respuesta con un mensaje de error más detallado
-            \Log::error($e->getTrace());
+            // \Log::error($e->getTrace());
+            \Log::error('Trace:', array_slice($e->getTrace(), 0, 10));
             return [
                 'success' => false,
                 'validation_errors' => true,
@@ -2550,6 +2560,7 @@ class DocumentController extends Controller
                     'stock' => $detail['stock'],
                     'internal_id' => $row->internal_id,
                     'description' => $row->description,
+                    'price' => $row->sale_unit_price,
                     'currency_type_id' => $row->currency_type_id,
                     'currency_type_symbol' => $row->currency_type->symbol,
                     'sale_unit_price' => round($sale_unit_price_with_tax, 2),
@@ -2560,6 +2571,7 @@ class DocumentController extends Controller
                     'calculate_quantity' => (bool) $row->calculate_quantity,
                     'has_igv' => (bool) $row->has_igv,
                     'amount_plastic_bag_taxes' => $row->amount_plastic_bag_taxes,
+                    'image' => $row->image != "imagen-no-disponible.jpg" ? url("/storage/uploads/items/" . $row->image) : url("/logo/" . $row->image),
                     'item_unit_types' => collect($row->item_unit_types)->transform(function($row) {
                         return [
                             'id' => $row->id,

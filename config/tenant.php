@@ -32,6 +32,7 @@ return [
     'select_first_document_type_03' => env('SELECT_FIRST_DOCUMENT_TYPE_03', false),
 
     'service_fact' => env('SERVICE_FACT'),
+    'socket_server' => env('SOCKET_SERVER', 'http://localhost:8070'),
     'api_token_service_fact' => env('API_TOKEN_SERVICE_FACT'),
     'show_log' => env('SHOW_LOG', false),
     'app_owner_name' => env('APP_OWNER_NAME'),

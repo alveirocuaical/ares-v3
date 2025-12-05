@@ -160,6 +160,11 @@ class DocumentPos extends ModelTenant
         return $this->belongsTo(Seller::class, 'seller_id');
     }
 
+    public function cash_documentPos()
+        {
+            return $this->hasOne(CashDocument::class, 'document_pos_id');
+        }
+
    /* public function documents()
     {
         return $this->hasMany(Document::class);

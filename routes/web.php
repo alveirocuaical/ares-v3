@@ -356,6 +356,51 @@ if ($hostname) {
             Route::get('purchases/note/{id}', 'Tenant\PurchaseController@note');
             Route::get('purchases/search-items', 'Tenant\PurchaseController@searchItems');
 
+            //Restaurant
+            Route::prefix('restaurant')->group(function() {
+
+                Route::get('/', 'Tenant\RestaurantController@index')->name('tenant.restaurant.index');
+                Route::get('/records', 'Tenant\RestaurantController@records');
+                Route::get('/columns', 'Tenant\RestaurantController@columns');
+                Route::get('items/categories', 'Tenant\RestaurantController@categories2');
+
+                Route::post('items/toggle-visible', 'Tenant\RestaurantController@toggleVisible');
+
+                Route::post('/store', 'Tenant\RestaurantController@store');
+                Route::put('/update/{id}', 'Tenant\RestaurantController@update');
+                Route::delete('/delete/{id}', 'Tenant\RestaurantController@destroy');
+
+                //configuracion
+
+                Route::get('configuration', 'Tenant\RestaurantConfigurationController@configuration')->name('tenant.restaurant_configuration.index')->middleware('redirect.module');
+                Route::get('configuration/record', 'Tenant\RestaurantConfigurationController@record')->name('tenant.restaurant.configuration.record');
+                Route::post('configuration', 'Tenant\RestaurantConfigurationController@setConfiguration')->name('tenant.restaurant.configuration.set');
+                Route::get('get-users', 'Tenant\RestaurantConfigurationController@getUsers')->name('tenant.restaurant.users.get');
+                Route::get('get-roles', 'Tenant\RestaurantConfigurationController@getRoles')->name('tenant.restaurant.roles.get');
+                Route::post('user/set-role', 'Tenant\RestaurantConfigurationController@setRole')->name('tenant.restaurant.role.set');
+                Route::post('user/delete-role', 'Tenant\RestaurantConfigurationController@deleteRole')->name('tenant.restaurant.role.delete');
+                Route::post('configuration/update-envs', 'Tenant\RestaurantConfigurationController@updateTableEnv')->name('tenant.restaurant.configuration.envs');
+                Route::get('configuration/get-envs', 'Tenant\RestaurantConfigurationController@getEnvs')->name('tenant.restaurant.configuration.getEnvs');
+                
+                Route::prefix('notes')->group(function () {
+                    Route::get('records', 'Tenant\NotesController@records');
+                    Route::post('/', 'Tenant\NotesController@store');
+                    Route::delete('{id}', 'Tenant\NotesController@destroy');
+                });
+                Route::prefix('waiter')->group(function() {
+                    Route::post('', 'Tenant\WaiterController@store');
+                    Route::get('', 'Tenant\WaiterController@records');
+                    Route::delete('{id}', 'Tenant\WaiterController@destroy');
+                });
+
+                Route::prefix('users')->group(function() {
+                    Route::post('', 'Tenant\RestaurantConfigurationController@userStore');
+                    Route::get('/record/{user}', 'Tenant\RestaurantConfigurationController@userRecord');
+                });
+            });
+
+
+
 
             // Route::get('documents/send/{document}', 'Tenant\DocumentController@send');
             // Route::get('documents/consult_cdr/{document}', 'Tenant\DocumentController@consultCdr');

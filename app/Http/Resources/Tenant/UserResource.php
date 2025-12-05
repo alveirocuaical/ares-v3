@@ -57,6 +57,8 @@ class UserResource extends JsonResource
             'modules' => $modules,
             'levels' => $levels,
             'locked' => (bool) $this->locked,
+            'restaurant_pin' => $this->restaurant_pin,
+            'restaurant_role_id' => $this->restaurant_role_id,
 
         ];
     }
