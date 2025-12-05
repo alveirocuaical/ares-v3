@@ -320,6 +320,9 @@ class CompanyController extends Controller
         $tenancy->tenant($company->hostname->website);
         DB::connection('tenant')->table('configurations')->where('id', 1)->update(['limit_users' => $company->limit_users]);
 
+        // Determinar tax_id según type_liability_id
+        $tax_id = ($request->type_liability_id == 117) ? 15 : 1;
+
         ServiceCompany::where('identification_number', $company->identification_number)->first()
             ->update(
                 [
@@ -332,6 +335,7 @@ class CompanyController extends Controller
                     'address' => $request->address,
                     'phone' => $request->phone,
                     'type_liability_id' => $request->type_liability_id,
+                    'tax_id' => $tax_id,
                     'api_token' => $response->token,
                 ]
             );
@@ -366,6 +370,7 @@ class CompanyController extends Controller
                     'address' => $request->address,
                     'phone' => $request->phone,
                     'type_liability_id' => $request->type_liability_id,
+                    'tax_id' => $tax_id,
                 ]
             );
 

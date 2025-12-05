@@ -18,6 +18,7 @@ trait CompanyTrait
 
 
     public function createSystemCompany($request, $hostname){
+        $tax_id = ($request->type_liability_id == 117) ? 15 : 1;
 
         $company = Company::create([
             'identification_number' => $request->identification_number,
@@ -37,7 +38,7 @@ trait CompanyTrait
             'identification_number' => $request->identification_number,
             'dv' => $request->dv, //por default
             'language_id' =>79,
-            'tax_id' => 1,
+            'tax_id' => $tax_id,
             'type_environment_id' =>  2,
             'type_operation_id' =>  10,
             'type_document_identification_id' => $request->type_document_identification_id,
@@ -64,6 +65,7 @@ trait CompanyTrait
         $ch = curl_init("{$base_url}ubl2.1/config/{$number}/{$dv}");
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        $tax_id = ($request->type_liability_id == 117) ? 15 : 1;
 
         $bodyContent = [
             'type_document_identification_id'=> $request->type_document_identification_id,
@@ -77,7 +79,7 @@ trait CompanyTrait
             'phone'=> $request->phone,
             'email'=> $request->email,
             'language_id'=> $request->language_id,
-            'tax_id'=> $request->tax_id,
+            'tax_id'=> $tax_id,
             'type_environment_id'=> $request->type_environment_id,
             'type_operation_id'=> $request->type_operation_id,
             'country_id'=> $request->country_id,
@@ -147,6 +149,7 @@ trait CompanyTrait
                 'ica_rate' => $request->ica_rate
             ]);
 
+        $tax_id = ($request->type_liability_id == 117) ? 15 : 1;
 
         //aqui ingreso la data por q es igual a la data q guarda la api
         DB::connection('tenant')
@@ -160,7 +163,7 @@ trait CompanyTrait
                 'identification_number' => $request->identification_number,
                 'dv' => $request->dv, //por default
                 'language_id' => 79,
-                'tax_id' => 1,
+                'tax_id' => $tax_id,
                 'type_environment_id' => 2,
                 'type_operation_id' => 10,
                 'type_document_identification_id' => $request->type_document_identification_id,
