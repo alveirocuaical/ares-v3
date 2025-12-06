@@ -468,6 +468,61 @@
                     </li>
                     @endif
 
+                    @if(in_array('restaurant', $vc_modules))
+                    <li class="nav-parent {{ in_array($path[0], ['restaurant'])?'nav-active nav-expanded':'' }}">
+                        <a class="nav-link" href="#">
+                            <span class="float-right badge badge-red badge-danger mr-3">Nuevo</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="icon icon-tabler icons-tabler-outline icon-tabler-tools-kitchen-2">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path
+                                        d="M19 3v12h-5c-.023 -3.681 .184 -7.406 5 -12zm0 12v6h-1v-3m-10 -14v17m-3 -17v3a3 3 0 1 0 6 0v-3" />
+                                </svg>
+                            <span>Restaurante</span>
+                        </a>
+                        <ul class="nav nav-children">
+                            <li class="{{ ($path[0] === 'restaurant'&& $path[1] !== 'configuration')?'nav-active':'' }}">
+                                <a class="nav-link" href="{{route('tenant.restaurant.index')}}">
+                                    Productos
+                                </a>
+                            </li>
+                            {{-- <li class="nav-parent
+                                {{ ($path[0] === '')?'nav-active nav-expanded':'' }}
+                                {{ ($path[0] === '')?'nav-active nav-expanded':'' }}
+                                ">
+                                    <a class="nav-link" href="#">
+                                        Pedidos delivery
+                                    </a>
+                                    <ul class="nav nav-children">
+
+                                        <li class="{{ ($path[0] === '' && $path[1] === 'create')?'nav-active':'' }}">
+                                            <a class="nav-link" href="{{route('tenant..create')}}">
+                                                Ver pedidos en línea
+                                            </a>
+                                        </li>
+                                        <li class="{{ (in_array($path[0], ['', '']) && $path[1] === '')?'nav-active':'' }}">
+                                            <a class="nav-link" href="{{route('tenant..index')}}">
+                                                Listado de pedidos
+                                            </a>
+                                        </li>
+                                        <li class="{{ (in_array($path[0], ['', '']) && $path[1] === '')?'nav-active':'' }}">
+                                            <a class="nav-link" href="{{route('tenant..index')}}">
+                                                Promociones(Banners)
+                                            </a>
+                                        </li>
+                                    </ul>
+                            </li> --}}
+                            <li class="{{ ($path[0] === 'restaurant' && $path[1] === 'configuration')?'nav-active':'' }}">
+                                <a class="nav-link" href="{{route('tenant.restaurant_configuration.index')}}">
+                                    Config. Mesas/Cocina
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    @endif
+
                     @if(auth()->user()->type != 'integrator')
 
                         @if(in_array('purchases', $vc_modules))

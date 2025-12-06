@@ -49,8 +49,10 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
         // 21 - RADIAN
         // 22 - Contactos
         // 23 - Producto
+        // 24 - Servicio técnico
+        // 25 - Restaurante
 
-        return [1,2,4,5,6,7,8,9,10,12,13,20,21,22,23];
+        return [1,2,4,5,6,7,8,9,10,12,13,20,21,22,23,25];
     }
 
 }

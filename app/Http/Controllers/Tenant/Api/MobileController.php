@@ -49,6 +49,7 @@ class MobileController extends Controller
         $customers = Person::whereType('customers')->orderBy('name')->take(20)->get()->transform(function($row) {
             return [
                 'id' => $row->id,
+                'dv' => $row->dv,
                 'description' => $row->number.' - '.$row->name,
                 'name' => $row->name,
                 'number' => $row->number,
@@ -98,6 +99,7 @@ class MobileController extends Controller
                             'id' => $row->id,
                             'item_id' => $row->id,
                             'name' => $row->name,
+                            'price' => $row->sale_unit_price,
                             'full_description' => $full_description,
                             'description' => $row->description,
                             'currency_type_id' => $row->currency_type_id,
@@ -113,6 +115,7 @@ class MobileController extends Controller
                             'has_igv' => (bool) $row->has_igv,
                             'is_set' => (bool) $row->is_set,
                             'aux_quantity' => 1,
+                            'image' => $row->image != "imagen-no-disponible.jpg" ? url("/storage/uploads/items/" . $row->image) : url("/logo/" . $row->image),
 
                         ];
                     });
@@ -214,7 +217,7 @@ class MobileController extends Controller
                 'email' => $row->email,
                 'telephone' => $row->telephone,
                 'country_id' => $row->country_id,
-                'district_id' => $row->district_id,
+                'district_id' => $row->district_id?? null,
                 'selected' => false
             ]
         ];

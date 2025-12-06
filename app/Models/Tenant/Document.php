@@ -484,6 +484,11 @@ class Document extends ModelTenant
         return $this->belongsTo(Seller::class, 'seller_id');
     }
 
+    public function cash_document()
+    {
+        return $this->hasOne(CashDocument::class, 'document_id');
+    }
+
     // public function getNumberFullAttribute()
     // {
     //     return $this->series.'-'.$this->number;

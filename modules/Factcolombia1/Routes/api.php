@@ -21,7 +21,10 @@ if ($currentHostname) {
         Route::middleware('auth:api')->group(function() {
             Route::prefix('co-documents')->group(function() {
                 Route::get('tables', 'Api\Tenant\DocumentController@tables');
+                Route::get('table/items', 'Api\Tenant\DocumentController@table');
                 Route::post('', 'Api\Tenant\DocumentController@store');
+                Route::post('res', 'Api\Tenant\DocumentController@storeApi');
+                Route::get('downloadFile/{filename}', 'Api\Tenant\DocumentController@downloadFile');
                 Route::get('items-search', 'Api\Tenant\DocumentController@searchItems');
                 Route::get('documents-search', 'Api\Tenant\DocumentController@searchDocuments');
                 Route::get('customer-search', 'Api\Tenant\DocumentController@searchCustomers');
