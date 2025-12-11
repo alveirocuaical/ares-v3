@@ -120,16 +120,19 @@ class CompanyController extends Controller
         $tasas_sistema = Taxsistem::all()->map(function($tax) {
             return [
                 'id' => $tax->id,
+                'code' => $tax->code,
                 'name' => $tax->name,
                 'rate' => $tax->rate,
+                'total' => 0,
+                'in_tax' => $tax->in_tax,
+                'in_base' => $tax->in_base,
+                'type_tax' => $tax->type_tax,
+                'retention' => 0,
                 'conversion' => $tax->conversion,
+                'type_tax_id' => $tax->type_tax_id,
+                'is_retention' => $tax->is_retention,
                 'is_percentage' => $tax->is_percentage,
                 'is_fixed_value' => $tax->is_fixed_value,
-                'is_retention' => $tax->is_retention,
-                'in_base' => $tax->in_base,
-                'in_tax' => $tax->in_tax,
-                'type_tax_id' => $tax->type_tax_id,
-                // otros atributos del sistema
             ];
         });
 
