@@ -32,6 +32,8 @@ if($hostname) {
             Route::post('charts/import-excel', 'ChartOfAccountController@importExcel');
             Route::post('charts/accounts-configuration', 'ChartOfAccountController@accountConfiguration');
             Route::post('charts/payroll-account-configuration', 'ChartOfAccountController@payrollAccountConfiguration');
+            Route::get('charts/special-accounts', 'ChartOfAccountController@specialAccounts');
+            Route::post('charts/special-accounts', 'ChartOfAccountController@saveSpecialAccounts');
             Route::apiResource('charts', 'ChartOfAccountController')->names([
                 'index'   => 'tenant.accounting.charts.index',
             ]);

@@ -76,6 +76,7 @@ use Modules\Accounting\Helpers\AccountingEntryHelper;
 use Modules\Accounting\Models\ChartOfAccount;
 use Modules\Accounting\Models\ThirdParty;
 use Modules\Factcolombia1\Models\Tenant\TypeIdentityDocument;
+use Modules\Accounting\Models\AccountingSpecialAccount;
 
 
 class DocumentPosController extends Controller
@@ -656,8 +657,21 @@ class DocumentPosController extends Controller
         $accountConfiguration = AccountingChartAccountConfiguration::first();
         if(!$accountConfiguration) return;
 
+        $specialAccount = AccountingSpecialAccount::first();
+        $discount_account_code = null;
+
+        if ($specialAccount && !empty($specialAccount->discount_account)) {
+            $discount_account_code = $specialAccount->discount_account;
+        } elseif (!empty($accountConfiguration->discount_account)) {
+            $discount_account_code = $accountConfiguration->discount_account;
+        }
+
         $accountIdCash = ChartOfAccount::where('code','110505')->first();
         $accountIdIncome = ChartOfAccount::where('code','413595')->first();
+        $accountIdDiscount = $discount_account_code
+        ? ChartOfAccount::where('code', $discount_account_code)->first()
+        : null;
+
         $document_type = DocumentType::find('90');
 
         // Obtener cliente como tercer implicado
@@ -685,28 +699,54 @@ class DocumentPosController extends Controller
 
         $payment_method_name = 'Contado';
 
+        $total = $document->total;
+        $venta = $document->sale;
+        $total_discount = $document->total_discount ?? 0;
+        $total_income = $total + ($total_discount > 0 ? $total_discount : 0);
+
+        $movements = [];
+
+        // Debe: Caja
+        if ($accountIdCash) {
+            $movements[] = [
+                'account_id' => $accountIdCash->id,
+                'debit' => $total,
+                'credit' => 0,
+                'affects_balance' => true,
+                'third_party_id' => $thirdPartyId,
+                'payment_method_name' => $payment_method_name,
+            ];
+        }
+
+        // Debe: Descuentos (si aplica)
+        if ($total_discount > 0 && $accountIdDiscount) {
+            $movements[] = [
+                'account_id' => $accountIdDiscount->id,
+                'debit' => $total_discount,
+                'credit' => 0,
+                'affects_balance' => true,
+                'third_party_id' => $thirdPartyId,
+                //'payment_method_name' => $payment_method_name,
+            ];
+        }
+
+        // Haber: Ventas
+        if ($accountIdIncome) {
+            $movements[] = [
+                'account_id' => $accountIdIncome->id,
+                'debit' => 0,
+                'credit' => $venta,
+                'affects_balance' => true,
+                'third_party_id' => $thirdPartyId,
+                //'payment_method_name' => $payment_method_name,
+            ];
+        }
+
         AccountingEntryHelper::registerEntry([
             'prefix_id' => 3, // Puedes ajustar el prefijo según tu configuración
             'description' => $document_type->description . ' #' . $document->series . '-' . $document->number,
             'document_pos_id' => $document->id,
-            'movements' => [
-                [
-                    'account_id' => $accountIdCash->id,
-                    'debit' => $document->total,
-                    'credit' => 0,
-                    'affects_balance' => true,
-                    'third_party_id' => $thirdPartyId,
-                    'payment_method_name' => $payment_method_name, // <-- aquí
-                ],
-                [
-                    'account_id' => $accountIdIncome->id,
-                    'debit' => 0,
-                    'credit' => $document->sale,
-                    'affects_balance' => true,
-                    'third_party_id' => $thirdPartyId,
-                    // 'payment_method_name' => $payment_method_name, // <-- aquí
-                ],
-            ],
+            'movements' => $movements,
             'taxes' => $document->taxes ?? [],
             'tax_config' => [
                 'tax_field' => 'chart_account_sale',
@@ -718,6 +758,105 @@ class DocumentPosController extends Controller
                 // 'payment_method_name' => $payment_method_name,
             ],
         ]);
+    }
+    private function registerAccountingCreditNotePosEntries($document)
+    {
+        try {
+            $accountConfiguration = AccountingChartAccountConfiguration::first();
+            if(!$accountConfiguration) return;
+
+            // Buscar cuenta de descuento especial o predeterminada
+            $specialAccount = AccountingSpecialAccount::first();
+            $discount_account_code = null;
+            if ($specialAccount && !empty($specialAccount->discount_account)) {
+                $discount_account_code = $specialAccount->discount_account;
+            } elseif (!empty($accountConfiguration->discount_account)) {
+                $discount_account_code = $accountConfiguration->discount_account;
+            }
+
+            $accountIdCash = ChartOfAccount::where('code','110505')->first();
+            $accountDefaultIncome = ChartOfAccount::where('code','417505')->first();
+            $accountIdDiscount = $discount_account_code
+                ? ChartOfAccount::where('code', $discount_account_code)->first()
+                : null;
+
+            $document_type = DocumentType::find('90');
+
+            // Obtener cliente como tercer implicado
+            $person = Person::find($document->customer_id);
+            $thirdPartyId = null;
+            if ($person) {
+                $thirdParty = ThirdParty::updateOrCreate(
+                    ['document' => $person->number, 'type' => $person->type],
+                    []
+                );
+                $thirdPartyId = $thirdParty->id;
+            }
+
+            $payment_method_name = 'Contado';
+
+            $total = $document->total;
+            $venta = $document->sale;
+            $total_discount = $document->total_discount ?? 0;
+
+            $movements = [];
+
+            // Invertir movimientos: lo que era Debe ahora es Haber y viceversa
+
+            // Haber: Caja (devolución del dinero)
+            if ($accountIdCash) {
+                $movements[] = [
+                    'account_id' => $accountIdCash->id,
+                    'debit' => 0,
+                    'credit' => $total,
+                    'affects_balance' => true,
+                    'third_party_id' => $thirdPartyId,
+                    'payment_method_name' => $payment_method_name,
+                ];
+            }
+
+            // Haber: Descuentos (si aplica)
+            if ($total_discount > 0 && $accountIdDiscount) {
+                $movements[] = [
+                    'account_id' => $accountIdDiscount->id,
+                    'debit' => 0,
+                    'credit' => $total_discount,
+                    'affects_balance' => true,
+                    'third_party_id' => $thirdPartyId,
+                ];
+            }
+
+            // Debe: Ventas (reversar ingreso)
+            if ($accountDefaultIncome) {
+                $movements[] = [
+                    'account_id' => $accountDefaultIncome->id,
+                    'debit' => $venta,
+                    'credit' => 0,
+                    'affects_balance' => true,
+                    'third_party_id' => $thirdPartyId,
+                ];
+            }
+
+            // Puedes agregar aquí movimientos para impuestos si los manejas en el asiento original
+
+            AccountingEntryHelper::registerEntry([
+                'prefix_id' => 3,
+                'description' => 'Nota de crédito POS #' . $document->series . '-' . $document->number,
+                'document_pos_id' => $document->id,
+                'movements' => $movements,
+                'taxes' => $document->taxes ?? [],
+                'tax_config' => [
+                    'tax_field' => 'chart_account_return_sale',
+                    'tax_debit' => true,
+                    'tax_credit' => false,
+                    'retention_debit' => false,
+                    'retention_credit' => true,
+                    'third_party_id' => $thirdPartyId,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error creando asiento contable de nota de crédito POS: ' . $e->getMessage());
+        }
     }
 
     public function destroy_sale_note_item($id)
@@ -1583,6 +1722,11 @@ class DocumentPosController extends Controller
                     $wr->save();
                 }
                 $this->voidedLots($item);
+            }
+            try {
+                $this->registerAccountingCreditNotePosEntries($obj);
+            } catch (\Throwable $e) {
+                \Log::error('Error al crear asiento contable de anulación POS: '.$e->getMessage());
             }
             DB::connection('tenant')->commit();
             return [
