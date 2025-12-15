@@ -62,6 +62,7 @@ class UserController extends Controller
         $user->email = $request->input('email');
         $user->establishment_id = $request->input('establishment_id');
         $user->type = $request->input('type');
+        $user->allow_cash_reports = $request->input('allow_cash_reports', false);
         if (!$id) {
             $user->api_token = str_random(50);
             $user->password = bcrypt($request->input('password'));

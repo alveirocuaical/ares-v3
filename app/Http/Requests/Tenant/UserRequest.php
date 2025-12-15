@@ -23,6 +23,9 @@ class UserRequest extends FormRequest
             'type' => [
                 'required'
             ],
+            'allow_cash_reports' => [
+                'boolean'
+            ],
             'password' => [
                 'min:6',
                 'confirmed',

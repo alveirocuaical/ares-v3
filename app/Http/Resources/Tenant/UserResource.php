@@ -54,6 +54,7 @@ class UserResource extends JsonResource
             'api_token' => $this->api_token,
             'establishment_id' => $this->establishment_id,
             'type' => $this->type,
+            'allow_cash_reports' => (bool) $this->allow_cash_reports,
             'modules' => $modules,
             'levels' => $levels,
             'locked' => (bool) $this->locked,
