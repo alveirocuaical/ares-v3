@@ -29,7 +29,7 @@
                                     <td>{{ row.date_of_payment }}</td>
                                     <!-- <td>{{ row.payment_method_type_description }}</td> -->
                                     <td>{{ row.payment_method_name || row.payment_method_type_description }}</td>
-                                    <td>{{ row.is_retention ? (row.retention_type_description || row.retention_type_id) : row.destination_description }}</td>
+                                    <td>{{ row.is_retention ? formatRetentionLabel(row) : row.destination_description }}</td>
                                     <td>{{ row.reference }}</td>
                                     <!-- <td>{{ row.filename }}</td> -->
                                     <td class="text-center">
@@ -177,7 +177,7 @@
                                     <span>{{ row.date_of_payment }}</span>
                                 </div>
                                 <div><b>Método:</b> {{ row.payment_method_name || row.payment_method_type_description }}</div>
-                                <div><b>Destino:</b> {{ row.is_retention ? (row.retention_type_description || row.retention_type_id) : row.destination_description }}</div>
+                                <div><b>Destino:</b> {{ row.is_retention ? formatRetentionLabel(row) : row.destination_description }}</div>
                                 <div><b>Referencia:</b> {{ row.reference }}</div>
                                 <div>
                                     <b>Archivo:</b>
@@ -561,6 +561,19 @@
                 }
                 // referencia por defecto ya está el subtotal
                 row.reference = this.document.subtotal || row.reference;
+            }
+            ,
+            formatRetentionLabel(row) {
+                if (!row) return '-';
+                // prefer associated retention type from local table (fetched in created)
+                const rt = this.retention_types.find(r => r.id == row.retention_type_id);
+                const name = (rt && (rt.name || rt.description)) || row.retention_type_description || row.retention_type_id || '-';
+                if (!rt) return name;
+                if (rt.is_fixed_value) return name;
+                const rate = Number(rt.rate || 0);
+                const conversion = Number(rt.conversion || 100);
+                const percent = ((rate / conversion) * 100).toFixed(2) + '%';
+                return name + ' - ' + percent;
             }
         }
     }

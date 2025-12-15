@@ -24,7 +24,15 @@
                                     <td>{{ row.date_of_payment }}</td>
                                     <td>{{ row.payment_method_name || row.payment_method_type_description || '-' }}</td>
                                     <td>{{ row.destination_description }}</td>
-                                    <td>{{ row.reference }}</td>
+                                    <td>
+                                        <template v-if="row.is_retention">
+                                            <div>{{ row.retention_type_description || '-' }}</div>
+                                            <small class="form-text text-muted">Referencia: {{ row.reference }}</small>
+                                        </template>
+                                        <template v-else>
+                                            {{ row.reference }}
+                                        </template>
+                                    </td>
                                     <td class="text-center">
                                         <button  type="button" v-if="row.filename" class="btn waves-effect waves-light btn-xs btn-primary" @click.prevent="clickDownloadFile(row.filename)">
                                             <i class="fas fa-file-download"></i>
