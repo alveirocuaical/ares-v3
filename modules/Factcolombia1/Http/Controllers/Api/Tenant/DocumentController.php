@@ -489,6 +489,7 @@ class DocumentController extends Controller
         $qr_base64 = '';
         $number = '';
         $number_to_letter = '';
+        $print_ticket = null;
         if ($document && $document->response_api) {
             $api_response = json_decode($document->response_api);
 
@@ -511,10 +512,11 @@ class DocumentController extends Controller
 
         if ($document) {
             $number = $document->prefix . $document->number;
+            $filename = 'FES-'.$document->prefix . $document->number . '.pdf';
+            $print_ticket = "/co-documents/print-ticket/{$document->id}";
             // 4. Total en letras
             //$number_to_letter = $document->number_to_letter ?? '';
         }
-
 
         // Personaliza la respuesta según lo que necesites
         return response()->json([
@@ -526,6 +528,7 @@ class DocumentController extends Controller
                 'number_to_letter' => $number_to_letter,
                 'qr_link' => $qr_link,
                 'qr_base64' => $qr_base64,
+                'print_ticket' => $print_ticket,
             ],
             'message' => $result['message'] ?? '',
             'document_id' => $result['data']['id'] ?? null,
@@ -533,6 +536,39 @@ class DocumentController extends Controller
             // Puedes agregar más parámetros personalizados aquí
             'custom_param' => 'valor personalizado'
         ]);
+    }
+
+    public function printTicket($id)
+    {
+        $document = Document::findOrFail($id);
+        $company = ServiceTenantCompany::firstOrFail();
+        $filename = 'FES-'.$document->prefix . $document->number . '.pdf';
+        $identification = $company->identification_number;
+
+        // URL de la API externa que tiene el PDF
+        $api_url = config('tenant.service_fact') . "invoice/{$identification}/{$filename}";
+
+        // Solicita el PDF a la API externa
+        $ch = curl_init($api_url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json',
+            'Accept: application/json',
+        ));
+        $pdfData = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode == 200 && $pdfData) {
+            return response($pdfData, 200)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="'.$filename.'"');
+        } else {
+            return response()->json(['error' => 'No se pudo obtener el PDF'], 404);
+        }
     }
 
     public function downloadFile($filename)

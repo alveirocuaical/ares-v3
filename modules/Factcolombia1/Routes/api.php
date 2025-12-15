@@ -24,6 +24,7 @@ if ($currentHostname) {
                 Route::get('table/items', 'Api\Tenant\DocumentController@table');
                 Route::post('', 'Api\Tenant\DocumentController@store');
                 Route::post('res', 'Api\Tenant\DocumentController@storeApi');
+                Route::get('print-ticket/{id}', 'Api\Tenant\DocumentController@printTicket');
                 Route::get('downloadFile/{filename}', 'Api\Tenant\DocumentController@downloadFile');
                 Route::get('items-search', 'Api\Tenant\DocumentController@searchItems');
                 Route::get('documents-search', 'Api\Tenant\DocumentController@searchDocuments');
