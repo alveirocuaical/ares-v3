@@ -461,7 +461,15 @@
                 });
 
                 val.items.forEach(item => {
-                    item.tax = val.taxes.find(tax => tax.id == item.tax_id);
+                    if (item.tax && !val.taxes.find(t => t.id == item.tax.id)) {
+                        const newTax = Object.assign({}, item.tax);
+                        newTax.total = Number(0).toFixed(2);
+                        val.taxes.push(newTax);
+                    }
+
+                    // Buscar el impuesto en la lista principal; si no existe, mantener el impuesto que trae el item
+                    const foundTax = val.taxes.find(tax => tax.id == item.tax_id);
+                    item.tax = foundTax || item.tax || null;
 
                     if (
                         item.discount == null ||
@@ -530,6 +538,14 @@
                 let total = val.items
                     .reduce((p, c) => Number(p) + Number(c.total), 0)
                     .toFixed(2);
+
+                // Log totales parciales calculados
+                console.log('[purchase:totals] subtotal:', val.subtotal);
+                console.log('[purchase:totals] sale:', val.sale);
+                console.log('[purchase:totals] total_discount:', val.total_discount);
+                console.log('[purchase:totals] total_tax:', val.total_tax);
+                console.log('[purchase:totals] total (before retentions):', total);
+                console.log('[purchase:totals] taxes (after):', JSON.parse(JSON.stringify(val.taxes)));
 
                 // RESTAR RETENCIONES AL TOTAL
                 val.taxes.forEach(tax => {
@@ -837,6 +853,9 @@
                 this.filterSuppliers()
             },
             addRow(row) {
+                // Log cuando se agrega un ítem desde el diálogo
+                console.log('[purchase:form] addRow received row:', JSON.parse(JSON.stringify(row)));
+                console.log('[purchase:form] current taxes list:', JSON.parse(JSON.stringify(this.taxes)));
                 this.form.items.push(row)
                 this.calculateTotal()
             },
