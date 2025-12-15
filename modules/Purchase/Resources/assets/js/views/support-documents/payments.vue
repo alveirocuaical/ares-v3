@@ -57,7 +57,8 @@
                                     </td>
                                     <td>
                                         <div class="form-group mb-0" :class="{'has-danger': row.errors.payment_destination_id}">
-                                            <el-select v-model="row.payment_destination_id" filterable :disabled="row.payment_destination_disabled">
+                                            <el-checkbox v-model="row.is_retention" @change="onRetentionChange(index)">Retención</el-checkbox>
+                                            <el-select v-model="row.payment_destination_id" filterable :disabled="row.payment_destination_disabled" v-if="!row.is_retention">
                                                 <el-option v-for="option in payment_destinations" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                             </el-select>
                                             <small class="form-control-feedback" v-if="row.errors.payment_destination_id" v-text="row.errors.payment_destination_id[0]"></small>
@@ -65,7 +66,15 @@
                                     </td>
                                     <td>
                                         <div class="form-group mb-0" :class="{'has-danger': row.errors.reference}">
-                                            <el-input v-model="row.reference"></el-input>
+                                            <template v-if="row.is_retention">
+                                                <el-select v-model="row.retention_type_id" placeholder="Tipo retención" @change="onRetentionTypeChange(index)">
+                                                    <el-option v-for="option in retention_types" :key="option.id" :value="option.id" :label="(option.name || option.description) + ' - ' + ( ((Number(option.rate || 0) / (Number(option.conversion || 100))) * 100).toFixed(2) + '%' )"></el-option>
+                                                </el-select>
+                                                <small class="form-text text-muted">Referencia: {{ support_document.subtotal | numberFormat }}</small>
+                                            </template>
+                                            <template v-else>
+                                                <el-input v-model="row.reference"></el-input>
+                                            </template>
                                             <small class="form-control-feedback" v-if="row.errors.reference" v-text="row.errors.reference[0]"></small>
                                         </div>
                                     </td>
@@ -123,7 +132,7 @@
                         </table>
                     </div>
                 </div>
-                <div class="col-md-12 text-center pt-2" v-if="showAddButton && (support_document.total_difference > 0)">
+                <div class="col-md-12 text-center pt-2" v-if="showAddButton && ( (support_document.total_difference > 0) || (retention_types.length > 0) || (applied_retention_types.length > 0) )">
                     <el-button type="primary" icon="el-icon-plus" @click="clickAddRow">Nuevo</el-button>
                 </div>
             </div>
@@ -142,6 +151,9 @@ export default {
             title: null,
             resource: 'support-document-payments',
             records: [],
+            retention_types: [],
+            applied_retention_types: [],
+            total_retention: 0,
             payment_destinations: [],
             payment_method_types: [],
             payment_methods: [],
@@ -159,6 +171,7 @@ export default {
                 this.payment_destinations = response.data.payment_destinations
                 this.payment_method_types = response.data.payment_method_types;
                 this.payment_methods = response.data.payment_methods;
+                this.retention_types = response.data.retention_types || [];
             })
     },
     methods: {
@@ -202,6 +215,19 @@ export default {
                     this.support_document = response.data;
                     this.title = 'Pagos del documento de soporte: '+this.support_document.number_full;
                 });
+            const subtotal = Number(this.support_document.subtotal || 0);
+            this.applied_retention_types = (this.support_document.taxes || []).filter(t => t.is_retention && ((parseFloat(t.retention) || 0) > 0 || t.apply === true)).map(t => {
+                const rate = Number(t.rate || 0);
+                const conversion = Number(t.conversion || 100);
+                let amount = 0;
+                if (t.is_fixed_value) {
+                    amount = rate;
+                } else {
+                    amount = subtotal * (rate / conversion);
+                }
+                return Object.assign({}, t, { amount: Number(amount.toFixed(2)), rate: rate, conversion: conversion });
+            });
+            this.total_retention = this.applied_retention_types.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
             await this.$http.get(`/${this.resource}/records/${this.recordId}`)
                 .then(response => {
                     this.records = response.data.data
@@ -219,9 +245,17 @@ export default {
                 filename: null,
                 temp_path: null,
                 payment: 0,
+                is_retention: false,
+                retention_type_id: null,
+                payment_destination_disabled: false,
                 errors: {},
                 loading: false
             });
+            const idx = this.records.length - 1;
+            if ((parseFloat(this.support_document.total_difference) || 0) <= 0 && (this.retention_types.length > 0 || this.applied_retention_types.length > 0)) {
+                this.records[idx].is_retention = true;
+                this.onRetentionChange(idx);
+            }
             this.showAddButton = false;
         },
         clickCancel(index) {
@@ -230,7 +264,7 @@ export default {
             this.fileList = []
         },
         clickSubmit(index) {
-            if(this.records[index].payment > parseFloat(this.support_document.total_difference)) {
+            if(!this.records[index].is_retention && this.records[index].payment > parseFloat(this.support_document.total_difference)) {
                 this.$message.error('El monto ingresado supera al monto pendiente de pago, verifique.');
                 return;
             }
@@ -241,6 +275,8 @@ export default {
                 payment_method_id: this.records[index].payment_method_id,
                 payment_method_type_id: this.records[index].payment_method_type_id,
                 payment_destination_id: this.records[index].payment_destination_id,
+                    is_retention: this.records[index].is_retention || false,
+                    retention_type_id: this.records[index].retention_type_id || null,
                 reference: this.records[index].reference,
                 filename: this.records[index].filename,
                 temp_path: this.records[index].temp_path,
@@ -274,6 +310,41 @@ export default {
                     this.$eventHub.$emit('reloadData')
                 }
             )
+        }
+        ,
+        getCashDestinationId() {
+            if (!this.payment_destinations || this.payment_destinations.length === 0) return null;
+            const found = this.payment_destinations.find(d => (d.description || '').toString().toLowerCase().includes('caja') || (d.name || '').toString().toLowerCase().includes('caja'));
+            return (found) ? found.id : this.payment_destinations[0].id;
+        },
+        onRetentionChange(index) {
+            const row = this.records[index];
+            if (row.is_retention) {
+                row.payment_destination_disabled = true;
+                row.payment_destination_id = this.getCashDestinationId();
+                row.reference = this.support_document.subtotal || null;
+            } else {
+                row.payment_destination_disabled = false;
+                row.retention_type_id = null;
+                row.reference = null;
+                row.payment = 0;
+            }
+        },
+        onRetentionTypeChange(index) {
+            const row = this.records[index];
+            if (!row.retention_type_id) return;
+            const rt = this.retention_types.find(r => r.id == row.retention_type_id);
+            if (!rt) return;
+            const subtotal = Number(this.support_document.subtotal || 0);
+            const rate = Number(rt.rate || 0);
+            const conversion = Number(rt.conversion || 100);
+            if (rt.is_fixed_value) {
+                row.payment = Number(rate.toFixed(2));
+            } else {
+                const calc = subtotal * (rate / conversion);
+                row.payment = Number(calc.toFixed(2));
+            }
+            row.reference = this.support_document.subtotal || row.reference;
         }
     }
 }

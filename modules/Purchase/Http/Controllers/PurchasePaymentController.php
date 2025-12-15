@@ -11,6 +11,7 @@ use Modules\Finance\Traits\FinanceTrait;
 use Modules\Finance\Traits\FilePaymentTrait; 
 use Illuminate\Support\Facades\DB;
 use Modules\Factcolombia1\Models\Tenant\PaymentMethod;
+use Modules\Factcolombia1\Models\Tenant\Tax as ModuleTax;
 
 class PurchasePaymentController extends Controller
 {
@@ -29,6 +30,7 @@ class PurchasePaymentController extends Controller
             'payment_method_types' => PaymentMethodType::all(),
             'payment_methods' => PaymentMethod::all(),
             'payment_destinations' => $this->getPaymentDestinations()
+            ,'retention_types' => ModuleTax::where('is_retention', true)->get()
         ];
     }
 
@@ -36,12 +38,21 @@ class PurchasePaymentController extends Controller
     {
         $purchase = Purchase::find($purchase_id);
 
-        $total_paid = collect($purchase->payments)->sum('payment');
+        $total_paid = collect($purchase->payments)->filter(function($p){
+            return !((bool)($p->is_retention ?? false));
+        })->sum('payment');
         $total = $purchase->total;
         $total_difference = round($total - $total_paid, 2);
 
+        $taxes = $purchase->taxes;
+        if (!is_array($taxes)) {
+            $taxes = json_decode(json_encode($taxes), true) ?: [];
+        }
+
         return [
             'number_full' => $purchase->number_full,
+            'subtotal' => $purchase->subtotal,
+            'taxes' => $taxes,
             'total_paid' => $total_paid,
             'total' => $total,
             'total_difference' => $total_difference

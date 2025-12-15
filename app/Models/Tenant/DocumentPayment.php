@@ -2,6 +2,7 @@
 
 namespace App\Models\Tenant;
 
+use Modules\Factcolombia1\Models\Tenant\Tax as ModuleTax;
 use Modules\Factcolombia1\Models\Tenant\PaymentMethod;
 use Modules\Finance\Models\GlobalPayment;
 use Modules\Finance\Models\PaymentFile;
@@ -21,10 +22,13 @@ class DocumentPayment extends ModelTenant
         'reference',
         'change',
         'payment',
+        'is_retention',
+        'retention_type_id',
     ];
 
     protected $casts = [
         'date_of_payment' => 'date',
+        'is_retention' => 'boolean',
     ];
 
     public function payment_method_type()
@@ -72,6 +76,11 @@ class DocumentPayment extends ModelTenant
     public function payment_file()
     {
         return $this->morphOne(PaymentFile::class, 'payment');
+    }
+
+    public function retention_type()
+    {
+        return $this->belongsTo(ModuleTax::class, 'retention_type_id');
     }
 
 }

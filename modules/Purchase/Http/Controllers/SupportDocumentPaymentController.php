@@ -13,6 +13,7 @@ use Modules\Finance\Traits\FinanceTrait;
 use Modules\Finance\Traits\FilePaymentTrait;
 use Illuminate\Support\Facades\DB;
 use Modules\Factcolombia1\Models\Tenant\PaymentMethod;
+use Modules\Factcolombia1\Models\Tenant\Tax as ModuleTax;
 
 class SupportDocumentPaymentController extends Controller
 {
@@ -30,18 +31,28 @@ class SupportDocumentPaymentController extends Controller
             'payment_method_types' => PaymentMethodType::all(),
             'payment_methods' => PaymentMethod::all(),
             'payment_destinations' => $this->getPaymentDestinations(),
+            'retention_types' => ModuleTax::where('is_retention', true)->get(),
         ];
     }
 
     public function support_document($support_document_id)
     {
         $doc = SupportDocument::find($support_document_id);
-        $total_paid = $doc->payments->sum('payment');
+        $total_paid = collect($doc->payments)->filter(function($p){
+            return !((bool)($p->is_retention ?? false));
+        })->sum('payment');
         $total = $doc->total;
         $total_difference = round($total - $total_paid, 2);
 
+        $taxes = $doc->taxes;
+        if (!is_array($taxes)) {
+            $taxes = json_decode(json_encode($taxes), true) ?: [];
+        }
+
         return [
             'number_full' => $doc->number_full,
+            'subtotal' => $doc->subtotal,
+            'taxes' => $taxes,
             'total_paid' => $total_paid,
             'total' => $total,
             'total_difference' => $total_difference

@@ -32,6 +32,12 @@ class DocumentPaymentRequest extends FormRequest
             'payment' => [
                 'required',
             ],
+            'is_retention' => [
+                'nullable', 'boolean'
+            ],
+            'retention_type_id' => [
+                'nullable', 'exists:tenant.co_taxes,id',
+            ],
         ];
     }
 }
