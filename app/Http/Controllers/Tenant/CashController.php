@@ -133,19 +133,47 @@ class CashController extends Controller
     public function store(CashRequest $request) {
 
         $id = $request->input('id');
+        $user_id = $request->input('user_id');
+        $cashId = 0;
+
+        if($user_id == 0){
+            $request->merge(['user_id' => auth()->user()->id]);
+        }
+
+        // Validar resolution_id
+        $resolution_id = $request->input('resolution_id');
+        if($resolution_id){
+            $resolution = ConfigurationPos::find($resolution_id);
+            if(!$resolution){
+                $first_resolution = ConfigurationPos::first();
+                if($first_resolution){
+                    $request->merge(['resolution_id' => $first_resolution->id]);
+                }
+            }
+        } else {
+            $first_resolution = ConfigurationPos::first();
+            if($first_resolution){
+                $request->merge(['resolution_id' => $first_resolution->id]);
+            }
+        }
+
         $cash = Cash::firstOrNew(['id' => $id]);
         $cash->fill($request->all());
-
+        
         if(!$id){
             $cash->date_opening = date('Y-m-d');
             $cash->time_opening = date('H:i:s');
         }
 
         $cash->save();
+        $cashId = $cash->id;
 
         return [
             'success' => true,
-            'message' => ($id)?'Caja actualizada con éxito':'Caja aperturada con éxito'
+            'message' => ($id)?'Caja actualizada con éxito':'Caja aperturada con éxito',
+            'data' => [
+                'id' => $cashId
+            ]
         ];
 
     }

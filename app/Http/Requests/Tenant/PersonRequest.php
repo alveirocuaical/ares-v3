@@ -64,7 +64,7 @@ class PersonRequest extends FormRequest
             'telephone' => [
                 'required',
                 'numeric',
-                'digits_between:7,10',
+                'digits_between:7,15',
             ],
             'code' => [
                 'required',

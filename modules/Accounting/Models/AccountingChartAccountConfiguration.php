@@ -24,6 +24,7 @@ class AccountingChartAccountConfiguration extends ModelTenant
         'adjustment_opening_balance_banks_account',
         'adjustment_opening_balance_banks_inventory',
         'payroll_account',
+        'discount_account',
     ];
 
     

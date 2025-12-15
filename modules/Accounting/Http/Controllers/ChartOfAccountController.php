@@ -13,6 +13,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\HeadingRowImport;
 use Modules\Accounting\Imports\ChartOfAccountImport;
+use Modules\Accounting\Models\AccountingSpecialAccount;
 
 /*
  * Clase ChartOfAccountController
@@ -288,6 +289,44 @@ class ChartOfAccountController extends Controller
             'chart_account_configurations' => AccountingChartAccountConfiguration::first(),
             'payroll_account_configurations' => PayrollAccountConfiguration::first(),
         ];
+    }
+
+    /**
+     * Obtener la configuración de cuentas especiales
+     */
+    public function specialAccounts()
+    {
+        $special = AccountingSpecialAccount::first();
+        return response()->json([
+            'discount_account' => $special ? $special->discount_account : null,
+        ]);
+    }
+
+    /**
+     * Guardar la configuración de cuentas especiales (por ahora solo descuentos)
+     */
+    public function saveSpecialAccounts(Request $request)
+    {
+        $request->validate([
+            'discount_account' => 'nullable',
+        ]);
+
+        $special = AccountingSpecialAccount::first();
+        if (!$special) {
+            $special = AccountingSpecialAccount::create([
+                'discount_account' => $request->discount_account,
+            ]);
+        } else {
+            $special->update([
+                'discount_account' => $request->discount_account,
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Configuración actualizada exitosamente',
+            'data' => $special,
+        ]);
     }
 
     public function accountConfiguration(Request $request)

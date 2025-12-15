@@ -107,6 +107,7 @@ class RedirectModule
             'invoicehealth'  => 'tenant.co-documents-health.create',
             'contacts'       => 'tenant.persons.index',      // Nuevo módulo Contactos
             'products'       => 'tenant.items.index',
+            'restaurant'     => 'tenant.restaurant.dashboard.index',
         ];
 
         // Busca el primer módulo activo que tenga ruta
@@ -189,6 +190,9 @@ class RedirectModule
         }
         if($path[0] == "ecommerce") {
             return "ecommerce";
+        }
+        if($path[0] == "restaurant") {
+            return "restaurant";
         }
         if($path[0] == "radian" || $path[0] == "co-radian-events") {
             return "radian";

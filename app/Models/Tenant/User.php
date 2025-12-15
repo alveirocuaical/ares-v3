@@ -21,7 +21,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'password', 'establishment_id','type','locked', 'identity_document_type_id', 'number', 'address', 'telephone'
+        'name', 'email', 'password', 'establishment_id','type','locked', 'identity_document_type_id', 'number','restaurant_role_id', 'address', 'telephone'
     ];
 
     /**
@@ -32,6 +32,11 @@ class User extends Authenticatable
     protected $hidden = [
         'remember_token',
     ];
+
+    public function restaurant_role()
+    {
+        return $this->belongsTo(RestaurantRole::class);
+    }
 
     public function modules()
     {
@@ -49,6 +54,19 @@ class User extends Authenticatable
             return true;
         }
         abort(401, 'Esta acción no está autorizada.');
+    }
+
+    public function getCollectionRestaurantData(){
+        return [
+            'id' => $this->id,
+            'email' => $this->email,
+            'name' => $this->name,
+            'restaurant_role_id' => $this->restaurant_role_id,
+            'restaurant_role_name' => $this->restaurant_role_id ? $this->restaurant_role->name : '',
+            'restaurant_role_code' => $this->restaurant_role_id ? $this->restaurant_role->code : '',
+            'locked' => (bool) $this->locked,
+            'restaurant_pin' => $this->restaurant_pin,
+        ];
     }
 
     public function hasAnyModule($modules)
@@ -184,8 +202,10 @@ class User extends Authenticatable
         // 21 - RADIAN
         // 22 - Contactos
         // 23 - Producto
+        // 24 - Servicio técnico
+        // 25 - Restaurante
 
-        return [1,2,4,5,6,7,8,9,10,12,13,20,21,22,23];
+        return [1,2,4,5,6,7,8,9,10,12,13,20,21,22,23,25];
     }
 
 

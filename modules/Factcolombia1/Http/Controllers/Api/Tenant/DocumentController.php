@@ -13,6 +13,7 @@ use Modules\Factcolombia1\Http\Resources\Tenant\ItemApiCollection;
 use App\Models\Tenant\Document;
 use App\Models\Tenant\Person;
 use App\Models\Tenant\Item;
+use Modules\Factcolombia1\Models\Tenant\Tax;
 
 use DB;
 use Modules\Document\Traits\SearchTrait;
@@ -39,6 +40,7 @@ class DocumentController extends Controller
     public function store(DocumentRequest $request)
     {
         // dd($request->all());
+        //\Log::info('Hasta aqui empieza');
         // $invoice = $request->all();
         // return (new WebDocumentController)->store($request, json_encode($request->service_invoice));
 
@@ -103,6 +105,7 @@ class DocumentController extends Controller
                     'trace' => $response_model->trace[0]
                 ];
             }
+            //\Log::info('Después de la validación de errores y código de estado');
 
             if($serviceCompany->type_environment_id == 2 && $serviceCompany->test_id != 'no_test_set_id'){
                 if(array_key_exists('urlinvoicepdf', $response_model) && array_key_exists('urlinvoicexml', $response_model))
@@ -131,6 +134,7 @@ class DocumentController extends Controller
 
             }
             else{
+                $correlative_api = $service_invoice['number'];
                 if($response_model->ResponseDian->Envelope->Body->SendBillSyncResponse->SendBillSyncResult->IsValid == "true")
                     $this->setStateDocument(1, $correlative_api);
                 else
@@ -141,10 +145,58 @@ class DocumentController extends Controller
                         $mensajeerror = $response_model->ResponseDian->Envelope->Body->SendBillSyncResponse->SendBillSyncResult->ErrorMessage->string;
                 }
             }
+            //\Log::info('aqui empieza la creación del documento en el sistema');
 
+            // 1. Obtener el cliente o crearlo si no existe
+            $customer_data = $request->customer ?? $request->service_invoice['customer'];
+            $person = Person::where('number', $customer_data['identification_number'])->first();
+            if (!$person) {
+                $person = new Person();
+                $person->type = 'customers';
+                $person->number = $customer_data['identification_number'];
+                $person->name = $customer_data['name'];
+                $person->save();
+            }
+            $resolution = TypeDocument::where('resolution_number', $service_invoice['resolution_number'])->where('prefix', $service_invoice['prefix'])->orderBy('resolution_date', 'desc')->get();
+
+            $newRequest = new Request();
+            $newRequest->type_document_id = $resolution[0]->id;
+            $newRequest->resolution_id = $resolution[0]->id;
+            $newRequest->type_invoice_id = $resolution[0]->code;
+            $newRequest->customer_id = $person->id;
+            $newRequest->currency_id = 170;
+            $newRequest->date_issue = $request->date_issue ?? $request->service_invoice['date'];
+            $newRequest->date_expiration = $service_invoice['payment_form']['payment_due_date'];
+            $newRequest->observation = $request->observation ?? $request->service_invoice['notes'] ?? '';
+            $newRequest->sale = $request->sale ?? $request->service_invoice['legal_monetary_totals']['payable_amount'];
+            $newRequest->total = $request->total ?? $request->service_invoice['legal_monetary_totals']['payable_amount'];
+            $newRequest->total_discount = $request->total_discount ?? $request->service_invoice['legal_monetary_totals']['allowance_total_amount'] ?? 0;
+            $newRequest->taxes = Tax::all();
+            $newRequest->total_tax = $request->total_tax ?? $request->service_invoice['legal_monetary_totals']['tax_inclusive_amount'] - $request->service_invoice['legal_monetary_totals']['line_extension_amount'];
+            $newRequest->subtotal = $request->subtotal ?? $request->service_invoice['legal_monetary_totals']['line_extension_amount'];
+            $newRequest->payment_form_id = $request->payment_form_id ?? $request->service_invoice['payment_form']['payment_form_id'];
+            $newRequest->payment_method_id = $request->payment_method_id ?? $request->service_invoice['payment_form']['payment_method_id'];
+            $newRequest->time_days_credit = $request->time_days_credit ?? $request->service_invoice['payment_form']['duration_measure'];
+            $newRequest->items = $request->items ?? $request->service_invoice['invoice_lines'];
+            $newRequest->number = $service_invoice['number'];
+            $newRequest->prefix = $service_invoice['prefix'];
+            $newRequest->resolution_number = $service_invoice['resolution_number'];
+            $newRequest->payments = $request->payments ?? [];
+
+            if($response_model->ResponseDian->Envelope->Body->SendBillSyncResponse->SendBillSyncResult->IsValid == 'true') {
+                $state_document_id = self::ACCEPTED;
+            } else {
+                $state_document_id = self::REJECTED;
+            }
+
+            $newRequest->merge(['state_document_id' => $state_document_id]);
+            // Si tienes otros campos, agrégalos aquí
+
+            // 3. Crear el documento en el sistema
             $prefix = (object)['prefix' => $service_invoice['prefix']];
-            $this->document = DocumentHelper::createDocument($request, $prefix, $service_invoice['number'], $this->company, $response, $response_status, $serviceCompany->type_environment_id);
-            // $payments = (new DocumentHelper())->savePayments($this->document, $request->payments); // no tiene payments el json
+            //\Log::info('Datos del documento antes de guardar', $newRequest->toArray());
+            $this->document = DocumentHelper::createDocument($newRequest, $prefix, $service_invoice['number'], $this->company, $response, $response_status, $serviceCompany->type_environment_id);
+            (new DocumentHelper())->savePayments($this->document, $newRequest->payments, $newRequest); // no tiene payments el json
         }
         catch (\Exception $e) {
 
@@ -260,12 +312,13 @@ class DocumentController extends Controller
             }
         */
         if($response_status_code == 200) {
-            return $response_model->number+1;
+            return $response_model->number;
         }
     }
 
     private function generateServiceInvoice($request)
     {
+        //\Log::info('aqui empieza la limpieza');
         $service_invoice = $request->service_invoice;
         $company = ServiceTenantCompany::first();
         $to_get_number = [
@@ -280,10 +333,20 @@ class DocumentController extends Controller
         $service_invoice['notes'] = $request->observation;
         $service_invoice['date'] = date('Y-m-d', strtotime($request->date_issue));
         $service_invoice['time'] = date('H:i:s');
-        $service_invoice['payment_form']['payment_form_id'] = $request->payment_form_id;
-        $service_invoice['payment_form']['payment_method_id'] = $request->payment_method_id;
-        $service_invoice['payment_form']['duration_measure'] = $request->time_days_credit;
-        $service_invoice['payment_form']['payment_due_date'] = $request->payment_form_id == '1' ? date('Y-m-d') : date('Y-m-d', strtotime($request->date_expiration));
+        if ($request->has('payment_form_id')) {
+            $service_invoice['payment_form']['payment_form_id'] = $request->payment_form_id;
+        }
+        if ($request->has('payment_method_id')) {
+            $service_invoice['payment_form']['payment_method_id'] = $request->payment_method_id;
+        }
+        if ($request->has('time_days_credit')) {
+            $service_invoice['payment_form']['duration_measure'] = $request->time_days_credit;
+        }
+        if ($request->has('payment_form_id')) {
+            $service_invoice['payment_form']['payment_due_date'] = $request->payment_form_id == '1'
+                ? date('Y-m-d')
+                : date('Y-m-d', strtotime($request->date_expiration));
+        }
         $service_invoice['ivaresponsable'] = $this->company->type_regime->name;
         $service_invoice['nombretipodocid'] = $this->company->type_identity_document->name;
         $service_invoice['tarifaica'] = $this->company->ica_rate;
@@ -380,5 +443,158 @@ class DocumentController extends Controller
         return [
             'error' => 'No está en ambiente de producción.'
         ];
+    }
+
+    public function setStateDocument($type_service, $DocumentNumber)
+    {
+        $company = ServiceTenantCompany::firstOrFail();
+        $base_url = config('tenant.service_fact');
+        $ch2 = curl_init("{$base_url}ubl2.1/invoice/state_document/{$type_service}/{$DocumentNumber}");
+
+        curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch2, CURLOPT_CUSTOMREQUEST, "GET");
+        curl_setopt($ch2, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch2, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_setopt($ch2, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json',
+            'Accept: application/json',
+            "Authorization: Bearer {$company->api_token}"
+        ));
+        $response_data = curl_exec($ch2);
+        $err = curl_error($ch2);
+        curl_close($ch2);
+        $response_encode = json_decode($response_data);
+        if($err){
+            return null;
+        }
+        else{
+            return $response_encode;
+        }
+    }
+
+    public function storeApi(DocumentRequest $request)
+    {
+        // Instancia el controlador Tenant
+        $tenantController = app(\Modules\Factcolombia1\Http\Controllers\Tenant\DocumentController::class);
+
+        // Llama al método store del Tenant y recibe la respuesta
+        $result = $tenantController->store($request);
+
+        // Obtener el documento recién creado
+        $document = Document::find($result['data']['id'] ?? null);
+
+        // Obtener el nombre del PDF desde response_api
+        $pdf_filename = '';
+        $qr_link = '';
+        $qr_base64 = '';
+        $number = '';
+        $number_to_letter = '';
+        $print_ticket = null;
+        if ($document && $document->response_api) {
+            $api_response = json_decode($document->response_api);
+
+            // 1. PDF
+            // if (isset($api_response->urlinvoicepdf)) {
+            //     $pdf_filename = $api_response->urlinvoicepdf;
+            // }
+
+            // 2. QR
+            // if (isset($api_response->QRStr)) {
+            //     $qr_link = $api_response->QRStr;
+
+            //     // Generar QR como imagen base64 usando mpdf/qrcode
+            //     $qrCode = new QrCode($qr_link);
+            //     $output = new Output\Png();
+            //     $qr_base64 = base64_encode($output->output($qrCode, 200, 200));
+            //     // El frontend puede usar: 'data:image/png;base64,' + qr_base64
+            // }
+        }
+
+        if ($document) {
+            $number = $document->prefix . $document->number;
+            $filename = 'FES-'.$document->prefix . $document->number . '.pdf';
+            $print_ticket = "/co-documents/print-ticket/{$document->id}";
+            // 4. Total en letras
+            //$number_to_letter = $document->number_to_letter ?? '';
+        }
+
+        // Personaliza la respuesta según lo que necesites
+        return response()->json([
+            'success' => $result['success'] ?? false,
+            'validation_errors' => $result['validation_errors'] ?? true,
+            'data' => [
+                'id' => $result['data']['id'] ?? null,
+                'number' => $number,
+                'number_to_letter' => $number_to_letter,
+                'qr_link' => $qr_link,
+                'qr_base64' => $qr_base64,
+                'print_ticket' => $print_ticket,
+            ],
+            'message' => $result['message'] ?? '',
+            'document_id' => $result['data']['id'] ?? null,
+            'pdf_filename' => $pdf_filename,
+            // Puedes agregar más parámetros personalizados aquí
+            'custom_param' => 'valor personalizado'
+        ]);
+    }
+
+    public function printTicket($id)
+    {
+        $document = Document::findOrFail($id);
+        $company = ServiceTenantCompany::firstOrFail();
+        $filename = 'FES-'.$document->prefix . $document->number . '.pdf';
+        $identification = $company->identification_number;
+
+        // URL de la API externa que tiene el PDF
+        $api_url = config('tenant.service_fact') . "invoice/{$identification}/{$filename}";
+
+        // Solicita el PDF a la API externa
+        $ch = curl_init($api_url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json',
+            'Accept: application/json',
+        ));
+        $pdfData = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode == 200 && $pdfData) {
+            return response($pdfData, 200)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="'.$filename.'"');
+        } else {
+            return response()->json(['error' => 'No se pudo obtener el PDF'], 404);
+        }
+    }
+
+    public function downloadFile($filename)
+    {
+        $company = ServiceTenantCompany::firstOrFail();
+        $base_url = config('tenant.service_fact');
+        $ch = curl_init("{$base_url}ubl2.1/download/{$company->identification_number}/{$filename}/BASE64");
+
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            "Authorization: Bearer {$company->api_token}"
+        ));
+        $response_data = curl_exec($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        if($err){
+            return response()->json(['success' => false, 'message' => $err]);
+        } else {
+            return response()->json([
+                'success' => true,
+                'filebase64' => $response_data
+            ]);
+        }
     }
 }

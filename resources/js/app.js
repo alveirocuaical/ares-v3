@@ -219,8 +219,9 @@ Vue.component('tenant-card-brands-index', require('./views/tenant/card_brands/in
 Vue.component('tenant-payment-method-index', require('./views/tenant/payment_method/index.vue'));
 Vue.component('tenant-payment-method-index', require('./views/tenant/payment_method/index.vue'));
 
-
-
+//Restaurante
+Vue.component('tenant-restaurant-index', require('./views/tenant/restaurant/index.vue'));
+Vue.component('tenant-restaurant-configuration-index', require('./views/tenant/restaurant/configuration.vue'));
 // Modules
 Vue.component('inventory-index', require('../../modules/Inventory/Resources/assets/js/inventory/index.vue'));
 Vue.component('inventory-transfers-index', require('../../modules/Inventory/Resources/assets/js/transfers/index.vue'));

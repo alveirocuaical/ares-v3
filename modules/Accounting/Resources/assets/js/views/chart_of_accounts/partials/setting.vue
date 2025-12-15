@@ -221,6 +221,28 @@
                     <el-button type="primary" @click.prevent="submit()" :loading="loading_submit" >Guardar</el-button>
                   </div>
                 </el-tab-pane>
+                <el-tab-pane label="Otras cuentas" name="special_accounts">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group" :class="{'has-danger': errors.discount_account}">
+                                <label class="control-label">Cuenta para los descuentos en ventas</label>
+                                <el-select v-model="specialForm.discount_account" filterable clearable>
+                                    <el-option
+                                        v-for="option in chart_accounts_sales"
+                                        :key="option.code"
+                                        :value="option.code"
+                                        :label="`${option.code} - ${option.name}`"
+                                    ></el-option>
+                                </el-select>
+                                <small class="form-control-feedback" v-if="errors.discount_account" v-text="errors.discount_account[0]"></small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-actions text-right pt-2">
+                        <el-button @click.prevent="close()">Cancelar</el-button>
+                        <el-button type="primary" @click.prevent="submitSpecial()" :loading="loading_submit">Guardar</el-button>
+                    </div>
+                </el-tab-pane>
             </el-tabs>
         </div>
     </el-dialog>
@@ -261,6 +283,9 @@
             severance_interest_account: null,
             // other_bonuses_account: null,
         },
+        specialForm: {
+            discount_account: null,
+        },
         payrollAccountFields: {
             net_payable_account: 'Cuenta por pagar nómina',
             salary_account: 'Cuenta de Sueldos',
@@ -281,6 +306,13 @@
         this.$eventHub.$on('reloadData', () => {
             this.loadData()
         })
+    },
+    watch: {
+        activeModule(val) {
+            if (val === 'special_accounts') {
+                this.loadSpecialAccounts();
+            }
+        }
     },
     methods: {
         initForm(){
@@ -319,6 +351,27 @@
                     this.chart_accounts_sales = response.data.chart_accounts_sales
                     this.chart_accounts_purchases = response.data.chart_accounts_purchases
                 })
+        },
+        async loadSpecialAccounts() {
+            // Supón que tienes una ruta API para obtener la configuración
+            const response = await this.$http.get('/accounting/charts/special-accounts');
+            if (response.data && response.data.discount_account) {
+                this.specialForm.discount_account = response.data.discount_account;
+            }
+        },
+        async submitSpecial() {
+            this.loading_submit = true;
+            try {
+                const response = await this.$http.post('/accounting/charts/special-accounts', this.specialForm);
+                this.$message.success('Cuenta especial actualizada');
+                this.close();
+            } catch (error) {
+                if (error.response && error.response.status === 422) {
+                    this.errors = error.response.data;
+                }
+            } finally {
+                this.loading_submit = false;
+            }
         },
         async submitPayrollConfig() {
             this.loading_submit = true;

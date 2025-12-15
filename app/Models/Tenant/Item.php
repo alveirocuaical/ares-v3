@@ -65,6 +65,7 @@ class Item extends ModelTenant
         'is_set',
         'sale_unit_price_set',
         'apply_store',
+        'apply_restaurant',
         'brand_id',
         'category_id',
         'lot_code',

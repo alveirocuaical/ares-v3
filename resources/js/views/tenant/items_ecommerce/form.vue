@@ -221,6 +221,20 @@
                                     </div>
                                 </div>
 
+                                <div class="col-md-3">
+                                    <div class="form-group" :class="{'has-danger': errors.category_id}">
+                                        <label class="control-label">Categoría</label>
+                                        <a href="#" v-if="form_category && form_category.add == false" class="control-label" @click="form_category.add = true"> [ + Nuevo]</a>
+                                        <a href="#" v-if="form_category && form_category.add == true" class="control-label" @click="saveCategory()"> [ + Guardar]</a>
+                                        <a href="#" v-if="form_category && form_category.add == true" class="control-label text-danger" @click="form_category.add = false"> [ Cancelar]</a>
+                                        <el-input v-if="form_category && form_category.add == true" v-model="form_category.name" dusk="item_code" style="margin-bottom:1.5%;"></el-input>
+                                        <el-select v-if="form_category && form_category.add == false" v-model="form.category_id" filterable clearable>
+                                            <el-option v-for="option in categories" :key="option.id" :value="option.id" :label="option.name"></el-option>
+                                        </el-select>
+                                        <small class="form-control-feedback" v-if="errors.category_id" v-text="errors.category_id[0]"></small>
+                                    </div>
+                                </div>
+
                                 <div class="short-div col-md-4">
                                     <div class="form-group" :class="{'has-danger': errors.purchase_unit_price}">
                                         <label class="control-label">Precio Unitario (Compra)</label>
@@ -300,6 +314,8 @@
         data() {
             return {
                 tags:[],
+                form_category:{ add: false, name: null, id: null },
+                categories: [],
                 warehouses: [],
                 loading_submit: false,
                 showPercentagePerception: false,
@@ -342,6 +358,7 @@
                     this.warehouses = response.data.warehouses
                     this.tags = response.data.tags
                     this.attribute_types = response.data.attribute_types
+                    this.categories = response.data.categories
 
                     // this.form.sale_affectation_igv_type_id = (this.affectation_igv_types.length > 0)?this.affectation_igv_types[0].id:null
                     // this.form.purchase_affectation_igv_type_id = (this.affectation_igv_types.length > 0)?this.affectation_igv_types[0].id:null
@@ -575,6 +592,24 @@
             },
              clickRemoveAttribute(index) {
                 this.form.attributes.splice(index, 1)
+            },
+            saveCategory()
+            {
+                this.form_category.add = false
+
+                this.$http.post(`/categories`,  this.form_category)
+                .then(response => {
+                    if (response.data.success) {
+                        this.$message.success(response.data.message)
+                        this.categories.push(response.data.data)
+                        this.form_category.name = null
+                    } else {
+                        this.$message.error('No se guardaron los cambios')
+                    }
+                })
+                .catch(error => {
+
+                })
             },
         }
     }
