@@ -950,6 +950,8 @@ class DocumentController extends Controller
             else
                 $ch = curl_init("{$base_url}ubl2.1/invoice");
 
+            //\Log::info('service invoice:_'.json_encode($service_invoice));
+
             $data_document = json_encode($service_invoice);
             //\Log::info('Datos de service invoice', [$service_invoice]);
             // dd($data_document);
@@ -1153,6 +1155,7 @@ class DocumentController extends Controller
             //     'number' => $nextConsecutive->number,
             //     'type_document_id' => $nextConsecutive->id
             // ]);
+            //\Log::info('Datos de requesta para crear documento:', $request->all());
             $this->document = DocumentHelper::createDocument($request, $nextConsecutive, $correlative_api, $this->company, $response, $response_status, $company->type_environment_id);
             (new DocumentHelper())->savePayments($this->document, $request->payments,$request);
 
@@ -1634,6 +1637,7 @@ class DocumentController extends Controller
                 $ch = curl_init("{$base_url}ubl2.1/{$url_name_note}/{$id_test}");
             else
                 $ch = curl_init("{$base_url}ubl2.1/{$url_name_note}");
+            //\Log::info("noteservice: ".json_encode($note_service));
             $data_document = json_encode($note_service);
 
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -1779,7 +1783,7 @@ class DocumentController extends Controller
             if ($request->has('seller_id')) {
                 $request->merge(['seller_id' => $request->seller_id]);
             }
-            
+            //\Log::info('datos: ' . json_encode($request->all()));
             $this->document = DocumentHelper::createDocument($request, $nextConsecutive, $correlative_api, $this->company, $response, $response_status, $company->type_environment_id);
             $this->document->update([
                 'xml' => $this->getFileName(),

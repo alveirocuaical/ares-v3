@@ -7,6 +7,9 @@ use App\Models\Tenant\Item;
 use Illuminate\Http\Request;
 use Modules\Item\Models\Category;
 use App\Http\Resources\Tenant\ItemCollection;
+use Modules\Factcolombia1\Http\Controllers\Tenant\DocumentController;
+use Modules\Factcolombia1\Models\TenantService\AdvancedConfiguration;
+use Modules\Inventory\Models\Warehouse as ModuleWarehouse;
 use Exception;
 
 
@@ -186,21 +189,167 @@ class RestaurantController extends Controller
 
     public function items(Request $request){
 
-        $warehouse_id = auth()->user()->establishment->id;
+        $establishment_id = auth()->user()->establishment_id;
+        $warehouse = ModuleWarehouse::where('establishment_id', $establishment_id)->first();
 
-        $items = Item::where('apply_restaurant', 1)
-            ->whereNotNull('internal_id')
-            ->whereHas('warehouses', function ($query) use ($warehouse_id) {
-                $query->where('warehouse_id', $warehouse_id);
-            })
+        // Ítems tipo producto (no AIU, no set, activos, sin series, con warehouse)
+        $items_u = Item::whereNotItemsAiu()
+            ->whereWarehouse()
+            ->whereIsActive()
+            ->whereNotIsSet()
+            ->where('apply_restaurant', 1)
+            ->where('series_enabled', false)
+            ->orderBy('internal_id')
             ->get();
+
+        // Ítems tipo servicio (unit_type_id ZZ, no AIU, activos, sin series)
+        $items_s = Item::whereNotItemsAiu()
+            ->where('unit_type_id', 'ZZ')
+            ->whereIsActive()
+            ->where('apply_restaurant', 1)
+            ->where('series_enabled', false)
+            ->orderBy('internal_id')
+            ->get();
+
+        $items = $items_u->merge($items_s);
+
+        $documentController = app(\Modules\Factcolombia1\Http\Controllers\Tenant\DocumentController::class);
+        $document_items = $this->getItemsTableData();
 
         $records = new ItemCollection($items);
 
         return [
             'success' => true,
-            'data' => $records
+            'data' => $records,
+            'realProducts' => $document_items,
         ];
+    }
+
+    protected function getItemsTableData()
+    {
+        $establishment_id = auth()->user()->establishment_id;
+        $warehouse = ModuleWarehouse::where('establishment_id', $establishment_id)->first();
+
+        $items_u = Item::whereNotItemsAiu()
+            ->whereWarehouse()
+            ->whereIsActive()
+            ->whereNotIsSet()
+            ->where('apply_restaurant', 1)
+            ->where('series_enabled', false)
+            ->orderBy('internal_id')
+            ->get();
+
+        $items_s = Item::whereNotItemsAiu()
+            ->where('unit_type_id', 'ZZ')
+            ->whereIsActive()
+            ->where('apply_restaurant', 1)
+            ->where('series_enabled', false)
+            ->orderBy('internal_id')
+            ->get();
+
+        $items = $items_u->merge($items_s);
+
+        $documentController = app(\Modules\Factcolombia1\Http\Controllers\Tenant\DocumentController::class);
+
+        return collect($items)->transform(function ($row) use ($warehouse, $documentController) {
+
+            $detail = $documentController->getFullDescription($row, $warehouse);
+            $sale_unit_price_with_tax = $this->getSaleUnitPriceWithTax($row);
+
+            return [
+                'id' => $row->id,
+                'name' => $row->name,
+                'full_description' => $detail['full_description'],
+                'brand' => $detail['brand'],
+                'category' => $detail['category'],
+                'stock' => $detail['stock'],
+                'internal_id' => $row->internal_id,
+                'description' => $row->description,
+                'price' => $row->sale_unit_price,
+                'currency_type_id' => $row->currency_type_id,
+                'currency_type_symbol' => $row->currency_type->symbol,
+                'sale_unit_price' => round($sale_unit_price_with_tax, 2),
+                'purchase_unit_price' => $row->purchase_unit_price,
+                'unit_type_id' => $row->unit_type_id,
+                'sale_affectation_igv_type_id' => $row->sale_affectation_igv_type_id,
+                'purchase_affectation_igv_type_id' => $row->purchase_affectation_igv_type_id,
+                'calculate_quantity' => (bool) $row->calculate_quantity,
+                'has_igv' => (bool) $row->has_igv,
+                'amount_plastic_bag_taxes' => $row->amount_plastic_bag_taxes,
+                'image' => $row->image != "imagen-no-disponible.jpg"
+                    ? url("/storage/uploads/items/" . $row->image)
+                    : url("/logo/" . $row->image),
+
+                'item_unit_types' => collect($row->item_unit_types)->transform(function ($row) {
+                    return [
+                        'id' => $row->id,
+                        'description' => $row->description,
+                        'item_id' => $row->item_id,
+                        'unit_type_id' => $row->unit_type_id,
+                        'unit_type' => $row->unit_type,
+                        'quantity_unit' => $row->quantity_unit,
+                        'price1' => $row->price1,
+                        'price2' => $row->price2,
+                        'price3' => $row->price3,
+                        'price_default' => $row->price_default,
+                    ];
+                }),
+
+                'warehouses' => collect($row->warehouses)->transform(function ($row) use ($warehouse) {
+                    return [
+                        'warehouse_description' => $row->warehouse->description,
+                        'stock' => $row->stock,
+                        'warehouse_id' => $row->warehouse_id,
+                        'checked' => $row->warehouse_id == $warehouse->id,
+                    ];
+                }),
+
+                'attributes' => $row->attributes ?? [],
+
+                'lots_group' => collect($row->lots_group)->transform(function ($row) {
+                    return [
+                        'id' => $row->id,
+                        'code' => $row->code,
+                        'quantity' => $row->quantity,
+                        'date_of_due' => $row->date_of_due,
+                        'checked' => false,
+                    ];
+                }),
+
+                'lots' => $row->item_lots
+                    ->where('has_sale', false)
+                    ->where('warehouse_id', $warehouse->id)
+                    ->transform(function ($row) {
+                        return [
+                            'id' => $row->id,
+                            'series' => $row->series,
+                            'date' => $row->date,
+                            'item_id' => $row->item_id,
+                            'warehouse_id' => $row->warehouse_id,
+                            'has_sale' => (bool) $row->has_sale,
+                            'lot_code' => $row->item_loteable_type && isset($row->item_loteable->lot_code)
+                                ? $row->item_loteable->lot_code
+                                : null,
+                        ];
+                    }),
+
+                'lots_enabled' => (bool) $row->lots_enabled,
+                'series_enabled' => (bool) $row->series_enabled,
+                'unit_type' => $row->unit_type,
+                'tax' => $row->tax,
+                'active' => (bool) $row->active,
+            ];
+        });
+    }
+
+    private function getSaleUnitPriceWithTax($item)
+    {
+        $advanced_config = AdvancedConfiguration::first();
+        $is_tax_included = $advanced_config->item_tax_included;
+        if($is_tax_included) {
+            return number_format($item->sale_unit_price * ( 1 + ($item->tax->rate ?? 0) / ($item->tax->conversion ?? 1)), 2, ".","");
+        }
+        return $item->sale_unit_price;
     }
 
     public function savePrice(Request $request) {

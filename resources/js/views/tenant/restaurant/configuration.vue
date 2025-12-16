@@ -495,7 +495,7 @@ export default {
         menu_list: [
           {id: 1, description: 'POS', name: 'POS'},
           {id: 2, description: 'Mesas', name: 'TABLES'},
-          {id: 3, description: 'Pedidos', name: 'ORDER'},
+          // {id: 3, description: 'Pedidos', name: 'ORDER'},
         ],
         users: {},
         roles: {},
@@ -516,7 +516,7 @@ export default {
         },
         socket: null,
         permission_adm: ['Todos los menús'],
-        permission_caja: ['POS', 'Mesas', 'Pedidos'],
+        permission_caja: ['POS', 'Mesas'],
         permission_mozo: ['Mesas'],
         permission_kitbar: ['Comandas'],
         form_delete_role: {
