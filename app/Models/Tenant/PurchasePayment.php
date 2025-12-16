@@ -2,6 +2,7 @@
 
 namespace App\Models\Tenant;
 
+use Modules\Factcolombia1\Models\Tenant\Tax as ModuleTax;
 use Modules\Factcolombia1\Models\Tenant\PaymentMethod;
 use Modules\Finance\Models\GlobalPayment;
 use Modules\Finance\Models\PaymentFile;
@@ -20,6 +21,8 @@ class PurchasePayment extends ModelTenant
         'card_brand_id',
         'reference',
         'payment',
+        'is_retention',
+        'retention_type_id',
     ];
 
     protected $casts = [
@@ -65,6 +68,11 @@ class PurchasePayment extends ModelTenant
     public function payment_file()
     {
         return $this->morphOne(PaymentFile::class, 'payment');
+    }
+    
+    public function retention_type()
+    {
+        return $this->belongsTo(ModuleTax::class, 'retention_type_id');
     }
     
     public function purchase()

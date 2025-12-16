@@ -76,6 +76,15 @@
                             </div>
                         </div>
                     </div>
+                    <div class="col-md-4" v-if="typeUser != 'integrator'">
+                        <div class="form-group" :class="{'has-danger': errors.allow_cash_reports}">
+                            <label class="control-label">Permisos de Caja</label>
+                            <div>
+                                <el-checkbox v-model="form.allow_cash_reports">Ver reportes de caja</el-checkbox>
+                            </div>
+                            <small class="form-control-feedback" v-if="errors.allow_cash_reports" v-text="errors.allow_cash_reports[0]"></small>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="form-actions text-right mt-4">
@@ -128,6 +137,7 @@
                     password_confirmation: null,
                     locked:false,
                     type:null,
+                    allow_cash_reports: false,
                     modules: [],
                     levels: [],
                 }

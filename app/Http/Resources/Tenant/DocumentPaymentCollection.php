@@ -24,6 +24,9 @@ class DocumentPaymentCollection extends ResourceCollection
                 'reference' => $row->reference,
                 'filename' => ($row->payment_file) ? $row->payment_file->filename:null,
                 'payment' => $row->payment,
+                'is_retention' => (bool) ($row->is_retention ?? false),
+                'retention_type_id' => $row->retention_type_id,
+                'retention_type_description' => $row->retention_type ? $row->retention_type->description : null,
             ];
         });
     }

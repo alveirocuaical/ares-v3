@@ -9,7 +9,7 @@
             </ol>
             <div class="right-wrapper pull-right">
                 <template  v-if="open_cash">
-                    <button type="button" class="btn btn-custom btn-sm  mt-2 mr-2" @click.prevent="clickDownloadGeneral()"><i class="fas fa-shopping-cart"></i> Reporte general (Cajas del Día)</button>
+                    <button type="button" class="btn btn-custom btn-sm  mt-2 mr-2" :disabled="!can_view_reports" @click.prevent="clickDownloadGeneral()"><i class="fas fa-shopping-cart"></i> Reporte general (Cajas del Día)</button>
 
                     <button type="button" class="btn btn-custom btn-sm  mt-2 mr-2" @click.prevent="clickCreate()"><i class="fas fa-shopping-cart"></i> Aperturar Caja</button>
                 </template>
@@ -56,15 +56,15 @@
                             
                                 <el-dropdown-menu slot="dropdown">
                                 
-                                    <el-dropdown-item @click.native="showReportModal(row.id)">
+                                    <el-dropdown-item :disabled="!can_view_reports" @click.native="showReportModal(row.id)">
                                         Reporte
                                     </el-dropdown-item>
                                 
-                                    <el-dropdown-item @click.native="clickDownload(row.id, 'resumido')">
+                                    <el-dropdown-item :disabled="!can_view_reports" @click.native="clickDownload(row.id, 'resumido')">
                                         Reporte Resumen
                                     </el-dropdown-item>
                                 
-                                    <el-dropdown-item @click.native="showArqueoModal(row.id)">
+                                    <el-dropdown-item :disabled="!can_view_reports" @click.native="showArqueoModal(row.id)">
                                         Arqueo
                                     </el-dropdown-item>
                                 
@@ -161,9 +161,18 @@
                 resource: 'cash',
                 recordId: null,
                 cash:null,
+                can_view_reports: true,
             }
         },
         async created() {
+            try {
+                await this.$http.get(`/${this.resource}/tables`).then(response => {
+                    const user = response.data.user || {};
+                    this.can_view_reports = (user.allow_cash_reports === true) || (user.type === 'admin');
+                });
+            } catch (e) {
+                console.error(e);
+            }
 
             /*await this.$http.get(`/${this.resource}/opening_cash`)
                 .then(response => {

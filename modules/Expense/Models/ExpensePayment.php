@@ -4,6 +4,7 @@ namespace Modules\Expense\Models;
 
 use App\Models\Tenant\ModelTenant;
 use App\Models\Tenant\CardBrand;
+use App\Models\Tenant\Catalogs\RetentionType;
 use Modules\Factcolombia1\Models\Tenant\PaymentMethod;
 use Modules\Finance\Models\GlobalPayment;
 use Modules\Finance\Models\PaymentFile;
@@ -22,6 +23,8 @@ class ExpensePayment extends ModelTenant
         'card_brand_id',
         'reference',
         'payment',
+        'is_retention',
+        'retention_type_id',
     ];
 
     protected $casts = [
@@ -72,6 +75,11 @@ class ExpensePayment extends ModelTenant
     public function payment_file()
     {
         return $this->morphOne(PaymentFile::class, 'payment');
+    }
+
+    public function retention_type()
+    {
+        return $this->belongsTo(RetentionType::class, 'retention_type_id');
     }
 
     /**

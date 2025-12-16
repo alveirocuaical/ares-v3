@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\DocumentPaymentRequest;
 use App\Http\Requests\Tenant\DocumentRequest;
 use App\Http\Resources\Tenant\DocumentPaymentCollection;
+use Modules\Factcolombia1\Models\Tenant\Tax as ModuleTax;
 use App\Models\Tenant\Document;
 use App\Models\Tenant\DocumentPayment;
 use App\Models\Tenant\PaymentMethodType;
@@ -31,7 +32,8 @@ class DocumentPaymentController extends Controller
         return [
             'payment_method_types' => PaymentMethodType::all(), // antiguos
             'payment_methods' => PaymentMethod::all(), // nuevos
-            'payment_destinations' => $this->getPaymentDestinations()
+            'payment_destinations' => $this->getPaymentDestinations(),
+            'retention_types' => ModuleTax::where('is_retention', true)->get(),
         ];
     }
 
@@ -39,7 +41,9 @@ class DocumentPaymentController extends Controller
     {
         $document = Document::find($document_id);
 
-        $total_paid = collect($document->payments)->sum('payment');
+        $total_paid = collect($document->payments)->filter(function($p){
+            return !((bool)($p->is_retention ?? false));
+        })->sum('payment');
         $total = $document->total;
         $total_notas_credito = $document->creditNotes()->sum('total');
         $total_difference = round($total - $total_notas_credito - $total_paid, 2);
@@ -49,7 +53,9 @@ class DocumentPaymentController extends Controller
             'total_paid' => $total_paid,
             'total' => $total,
             'total_notas_credito' => $total_notas_credito,
-            'total_difference' => $total_difference
+            'subtotal' => $document->sale,
+            'total_difference' => $total_difference,
+            'taxes' => $document->taxes,
         ];
     }
 

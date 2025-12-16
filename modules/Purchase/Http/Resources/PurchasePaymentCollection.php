@@ -22,6 +22,8 @@ class PurchasePaymentCollection extends ResourceCollection
                 'payment_method_name' => $row->payment_method_name,
                 'destination_description' => ($row->global_payment) ? $row->global_payment->destination_description:null,
                 'reference' => $row->reference,
+                'is_retention' => (bool)($row->is_retention ?? false),
+                'retention_type_description' => ($row->retention_type) ? ($row->retention_type->name ?? $row->retention_type->description ?? null) : null,
                 'filename' => ($row->payment_file) ? $row->payment_file->filename:null,
                 'payment' => $row->payment,
             ];
