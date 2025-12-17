@@ -224,11 +224,20 @@ export const operations_api = {
                 return x.is_retention && x.apply;
             });
             return list.map(x => {
+                let taxable = null;
+                if (x.base_type === 'custom' && x.base_amount != null) {
+                    taxable = Number(x.base_amount || 0);
+                } else {
+                    taxable = x.in_base ? Number(total) : Number(total_iva);
+                }
+
                 return {
                     tax_id: x.type_tax_id,
                     tax_amount: this.cadenaDecimales(x.retention),
                     percent: this.cadenaDecimales(this.roundNumber(x.rate / (x.conversion / 100), 6)),
-                    taxable_amount: x.in_base ? this.cadenaDecimales(total) : this.cadenaDecimales(total_iva),
+                    taxable_amount: this.cadenaDecimales(taxable),
+                    base_type: x.base_type || null,
+                    base_amount: x.base_amount != null ? this.cadenaDecimales(Number(x.base_amount)) : null
                 };
             });
         },

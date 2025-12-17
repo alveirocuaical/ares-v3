@@ -72,6 +72,8 @@ class DocumentController extends Controller
             }
 
             $data_document = json_encode($service_invoice);
+            // DEBUG: mostrar el payload que se enviará al servicio externo
+            dd($data_document);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
             curl_setopt($ch, CURLOPT_POSTFIELDS,($data_document));

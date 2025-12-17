@@ -383,21 +383,22 @@
                                         </td>
                                     </tr>
                                     <template v-for="(tax, index) in form.taxes">
-                                        <tr v-if="((tax.is_retention) && (tax.apply))" :key="index">
-                                            <td>{{ tax.name }}(-)</td>
-                                            <td>:</td>
-                                            <!-- <td class="text-right">
-                                                {{ratePrefix()}} {{Number(tax.retention).toFixed(2)}}
-                                            </td> -->
-                                            <td class="text-right" width=35%>
-                                                <el-input v-model="tax.retention" readonly>
-                                                    <span slot="prefix" class="c-m-top">{{ ratePrefix() }}</span>
-                                                    <i slot="suffix" class="el-input__icon el-icon-delete pointer"
-                                                        @click="clickRemoveRetention(index)"></i>
-                                                    <!-- <el-button slot="suffix" icon="el-icon-delete" @click="clickRemoveRetention(index)"></el-button> -->
-                                                </el-input>
-                                            </td>
-                                        </tr>
+                                            <tr v-if="((tax.is_retention) && (tax.apply))" :key="index">
+                                                <td>
+                                                    <div>{{ tax.name }}(-)</div>
+                                                    <div v-if="tax.baseAiu !== undefined">
+                                                        <small class="text-muted">Base retención: {{ ratePrefix() }} {{ getFormatDecimal(Number(tax.baseAiu).toFixed(2)) }}</small>
+                                                    </div>
+                                                </td>
+                                                <td>:</td>
+                                                <td class="text-right" width=35%>
+                                                    <el-input v-model="tax.retention" readonly>
+                                                        <span slot="prefix" class="c-m-top">{{ ratePrefix() }}</span>
+                                                        <i slot="suffix" class="el-input__icon el-icon-delete pointer"
+                                                            @click="clickRemoveRetention(index)"></i>
+                                                    </el-input>
+                                                </td>
+                                            </tr>
                                     </template>
                                 </table>
                                 <template>
@@ -426,6 +427,7 @@
             <document-options :showDialog.sync="showDialogOptions" :recordId="documentNewId" :showDownload="true"
                 :showClose="false"></document-options>
             <document-form-retention :showDialog.sync="showDialogAddRetention"
+                :totalAiu="Number(form.sale)" :detailAiu="aiuDetail"
                 @add="addRowRetention"></document-form-retention>
             <document-order-reference :showDialog.sync="showDialogOrderReference"
                 :order_reference="form.order_reference"
@@ -637,6 +639,15 @@ export default {
             } else {
                 return { dateEnd: '', generatedCount: 0, remainingInvoices: 0 };
             }
+        }
+        ,
+        aiuDetail() {
+            const d = (this.form && this.form.aiu) ? this.form.aiu : {};
+            return {
+                value_administartion: d.value_administartion || 0,
+                value_sudden: d.value_sudden || 0,
+                value_utility: d.value_utility || 0
+            };
         }
     },
     methods:
@@ -1118,12 +1129,16 @@ export default {
             this.recordItemHealthUser = null
         },
         async addRowRetention(row) {
-            await this.taxes.forEach(tax => {
+            this.taxes.forEach(tax => {
                 if (tax.id == row.tax_id) {
-                    tax.apply = true
+                    tax.apply = true;
+                    tax.is_custom_base = (row.base_type === 'custom');
+                    tax.retention = Number(row.calculatedRetention).toFixed(2);
+                    tax.baseAiu = Number(row.baseAiu).toFixed(2);
+                    tax.base_type = row.base_type;
                 }
             });
-            await this.calculateTotal()
+            await this.calculateTotal();
         },
         cleanTaxesRetention(tax_id) {
             this.taxes.forEach(tax => {
@@ -1211,28 +1226,27 @@ export default {
             // this.taxes.forEach(tax => {
             val.taxes.forEach(tax => {
                 if (tax.is_retention && tax.in_base && tax.apply) {
-                    tax.retention = (
-                        Number(val.sale) *
-                        (tax.rate / tax.conversion)
-                    ).toFixed(2);
+                    if (!tax.is_custom_base) {
+                        tax.retention = (
+                            Number(val.sale) *
+                            (tax.rate / tax.conversion)
+                        ).toFixed(2);
+                    }
                     totalRetentionBase =
                         Number(totalRetentionBase) + Number(tax.retention);
                     if (Number(totalRetentionBase) >= Number(val.sale))
                         this.$set(tax, "retention", Number(0).toFixed(2));
                     total -= Number(tax.retention).toFixed(2);
                 }
-                if (
-                    tax.is_retention &&
-                    !tax.in_base &&
-                    tax.in_tax != null &&
-                    tax.apply
-                ) {
-                    let row = val.taxes.find(row => row.id == tax.in_tax);
-                    tax.retention = Number(
-                        Number(row.total) * (tax.rate / tax.conversion)
-                    ).toFixed(2);
-                    if (Number(tax.retention) > Number(row.total))
-                        this.$set(tax, "retention", Number(0).toFixed(2));
+                if (tax.is_retention && !tax.in_base && tax.in_tax != null && tax.apply) {
+                    let row = val.taxes.find(row => row.id == tax.in_tax) || { total: 0 };
+                    const baseForInTax = (tax.baseAiu !== undefined && tax.baseAiu !== null && tax.baseAiu !== '') ? Number(tax.baseAiu) : Number(row.total || 0);
+                    const convInTax = tax.conversion ? Number(tax.conversion) : 100;
+                    const computed = Number(baseForInTax) * (Number(tax.rate) / convInTax);
+                    tax.retention = computed ? computed.toFixed(2) : Number(0).toFixed(2);
+                    if (Number(tax.retention) > Number(baseForInTax)) {
+                        this.$set(tax, 'retention', Number(0).toFixed(2));
+                    }
                     row.retention = Number(tax.retention).toFixed(2);
                     total -= Number(tax.retention).toFixed(2);
                 }
@@ -1635,11 +1649,13 @@ export default {
                 return x.is_retention && x.apply;
             });
             return list.map(x => {
+                const baseAiuValue = (x.baseAiu !== undefined && x.baseAiu !== null && x.baseAiu !== '') ? Number(x.baseAiu) : null;
+                const taxable = baseAiuValue !== null ? baseAiuValue : (x.in_base ? Number(total) : Number(total_iva));
                 return {
                     tax_id: x.type_tax_id,
                     tax_amount: this.cadenaDecimales(x.retention),
                     percent: this.cadenaDecimales(this.roundNumber(x.rate / (x.conversion / 100), 6)),
-                    taxable_amount: x.in_base ? this.cadenaDecimales(total) : this.cadenaDecimales(total_iva),
+                    taxable_amount: this.cadenaDecimales(taxable),
                 };
             });
         },

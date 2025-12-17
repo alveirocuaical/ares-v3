@@ -6,12 +6,34 @@
                     <div class="col-md-12">
                         <div class="form-group" :class="{'has-danger': errors.tax_id}">
                             <label class="control-label">Retención</label>
-                            <el-select v-model="form.tax_id"  filterable>
+                            <el-select v-model="form.tax_id"  filterable @change="calculatePreview">
                                 <el-option v-for="option in retentiontaxes" :key="option.id" :value="option.id" :label="`${option.name} - ${option.rate}%`"></el-option>
                             </el-select>
                             <small class="form-control-feedback" v-if="errors.tax_id" v-text="errors.tax_id[0]"></small>
                         </div>
                     </div> 
+                    <div class="col-md-12 mt-2">
+                        <div class="form-group">
+                            <label class="control-label">Base</label>
+                            <el-select v-model="base_type" @change="calculatePreview">
+                                <el-option label="Subtotal" value="subtotal"></el-option>
+                                <el-option label="Base personalizada" value="custom"></el-option>
+                            </el-select>
+                        </div>
+                    </div>
+                    <div class="col-md-12" v-if="base_type === 'custom'">
+                        <div class="form-group">
+                            <label class="control-label">Base personalizada</label>
+                            <el-input v-model="custom_base" @input="calculatePreview"></el-input>
+                        </div>
+                    </div>
+                    <div class="col-md-12 mt-2" v-if="form.tax_id">
+                        <div class="alert alert-info">
+                            <div>Base seleccionada: {{ preview_base_amount || 0 }}</div>
+                            <div>Porcentaje: {{ preview_rate || 0 }}%</div>
+                            <div>Valor Retención: {{ preview_retention }}</div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="form-actions text-right pt-2 mt-3">
@@ -42,7 +64,9 @@
                 errors: {},
                 form: {},
                 taxes:[],
-
+                // base selection for retention
+                base_type: 'subtotal',
+                custom_base: 0,
             }
         },
         computed: { 
@@ -68,8 +92,13 @@
                 this.errors = {};
 
                 this.form = {
-                    tax_id: null, 
+                    tax_id: null,
+                    base_type: 'subtotal',
+                    base_amount: null,
                 };
+                this.preview_rate = 0;
+                this.preview_base_amount = 0;
+                this.preview_retention = 0;
  
             },
             async create() {
@@ -88,13 +117,37 @@
             }, 
             async clickAddItem() {
 
-                // this.form = await _.find(this.taxes, {'id': this.form.tax_id})
-                // this.form.apply = true
-                // console.log(this.form)
-                this.$emit('add', this.form);
+                let baseAmount = null;
+                if (this.base_type === 'custom') {
+                    baseAmount = Number(this.custom_base || 0);
+                }
+                const payload = Object.assign({}, this.form, { base_type: this.base_type, base_amount: baseAmount });
+                this.$emit('add', payload);
                 this.initForm();
                 
             },
+            calculatePreview() {
+                const tax = this.taxes.find(t => t.id === this.form.tax_id);
+                if (!tax) {
+                    this.preview_rate = 0;
+                    this.preview_base_amount = 0;
+                    this.preview_retention = 0;
+                    return;
+                }
+
+                this.preview_rate = Number(tax.rate || 0);
+                let base = 0;
+                if (this.base_type === 'custom') {
+                    base = Number(this.custom_base || 0);
+                } else {
+                    const parentSubtotal = (this.$parent && this.$parent.support_document && this.$parent.support_document.subtotal) ? Number(this.$parent.support_document.subtotal) : 0;
+                    base = parentSubtotal;
+                }
+
+                this.preview_base_amount = Number(base || 0);
+                const calc = Number(base || 0) * (Number(tax.rate || 0) / Number(tax.conversion || 100));
+                this.preview_retention = Number(calc.toFixed(2));
+            }
         }
     }
 

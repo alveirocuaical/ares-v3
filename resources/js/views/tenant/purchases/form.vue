@@ -332,17 +332,49 @@
             title="Retención"
             :visible.sync="dialogRetention"
             width="600px">
-            <el-select v-model="retention_selected" placeholder="Select">
-                <el-option
-                    v-for="(item, index) in retention_taxes"
-                    :key="index"
-                    :label="item.name+' '+item.rate+'%'"
-                    :value="item.id">
-                </el-option>
-            </el-select>
+            <div class="form-body">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label class="control-label">Retención</label>
+                        <el-select v-model="retention_selected" filterable @change="calculateRetention">
+                            <el-option
+                                v-for="(item, index) in retention_taxes"
+                                :key="index"
+                                :label="item.name+' '+item.rate+'%'"
+                                :value="item.id">
+                            </el-option>
+                        </el-select>
+                    </div>
+                </div>
+
+                <div class="col-md-12 mt-2">
+                    <div class="form-group">
+                        <label class="control-label">Base para la retención</label>
+                        <el-select v-model="retention_base_type" @change="calculateRetention">
+                            <el-option label="Total" value="total"></el-option>
+                            <el-option label="Personalizada" value="custom"></el-option>
+                        </el-select>
+                    </div>
+                </div>
+
+                <div class="col-md-12 mt-2" v-if="retention_base_type === 'custom'">
+                    <div class="form-group">
+                        <label class="control-label">Base personalizada</label>
+                        <el-input v-model="retention_custom_base" :step="0.01" @input="calculateRetention"></el-input>
+                    </div>
+                </div>
+
+                <div class="col-md-12 mt-2" v-if="retention_selected">
+                    <div class="alert alert-info">
+                        <div>Base seleccionada: {{ retention_base_amount || 0 }}</div>
+                        <div>Porcentaje: {{ retention_selected_rate }}%</div>
+                        <div>Valor Retención: {{ retention_calculated }}</div>
+                    </div>
+                </div>
+            </div>
             <span slot="footer" class="dialog-footer">
-                <el-button @click="dialogRetention = false">Cancel</el-button>
-                <el-button type="primary" @click="validateRetention">Confirm</el-button>
+                <el-button @click="dialogRetention = false">Cerrar</el-button>
+                <el-button type="primary" @click="validateRetention" :disabled="!retention_selected">Agregar</el-button>
             </span>
         </el-dialog>
 
@@ -418,6 +450,11 @@
                 retention_selected: null,
                 dialogRetention: false,
                 retention_taxes: [],
+                retention_base_type: 'total',
+                retention_custom_base: 0,
+                retention_calculated: 0,
+                retention_selected_rate: 0,
+                retention_base_amount: 0,
                 recordItem: null,
                 payment_methods: [],
             }
@@ -593,6 +630,27 @@
 
                 val.total = Number(total).toFixed(2)
 
+            },
+            calculateRetention() {
+                const tax = this.form.taxes.find(t => t.id === this.retention_selected);
+                if (!tax) {
+                    this.retention_calculated = 0;
+                    this.retention_selected_rate = 0;
+                    this.retention_base_amount = 0;
+                    return;
+                }
+
+                this.retention_selected_rate = Number(tax.rate || 0);
+
+                let base = 0;
+                if (this.retention_base_type === 'custom') {
+                    base = Number(this.retention_custom_base || 0);
+                } else {
+                    base = tax.in_tax ? Number(this.form.total) : Number(this.form.sale);
+                }
+
+                this.retention_base_amount = Number(base || 0);
+                this.retention_calculated = Number(base || 0) * (Number(tax.rate || 0) / Number(tax.conversion || 100));
             },
             ratePrefix(tax = null) {
                 if ((tax != null) && (!tax.is_fixed_value)) return null;
@@ -1040,22 +1098,41 @@
             },
             validateRetention() {
                 var current_tax = this.form.taxes.find(tax => tax.id === this.retention_selected);
-                current_tax.retention = (Number(current_tax.in_tax ? this.form.total : this.form.sale) * (current_tax.rate / current_tax.conversion)).toFixed(2);
+                if (!current_tax) return;
+
+                let baseValue = 0;
+                if (this.retention_base_type === 'custom') {
+                    baseValue = Number(this.retention_custom_base || 0);
+                } else {
+                    baseValue = current_tax.in_tax ? Number(this.form.total) : Number(this.form.sale);
+                }
+
+                current_tax.retention = Number(baseValue * (current_tax.rate / current_tax.conversion));
 
                 var totalRetentionBase = 0;
                 totalRetentionBase += Number(current_tax.retention);
 
                 if (Number(totalRetentionBase) >= Number(this.form.total)) {
-                    current_tax.retention = Number(0).toFixed(2);
+                    current_tax.retention = 0;
                 }
+                current_tax.retention = Number(current_tax.retention).toFixed(2);
+                current_tax.apply = true;
+                current_tax.base_amount = Number(baseValue || 0).toFixed(2);
 
-                this.form.total -= Number(current_tax.retention).toFixed(2);
+                this.form.total = (Number(this.form.total) - Number(current_tax.retention)).toFixed(2);
                 this.dialogRetention = false;
-                this.retention_selected = null; // se puede añadir otro ¿?
+                this.retention_selected = null;
+                this.retention_base_type = 'total';
+                this.retention_custom_base = 0;
+                this.retention_calculated = 0;
+                this.retention_selected_rate = 0;
+                this.retention_base_amount = 0;
             },
             deleteRetention(id) {
                 var current_tax = this.form.taxes.find(tax => tax.id === id);
                 current_tax.retention = 0;
+                current_tax.apply = false;
+                current_tax.base_amount = 0;
                 this.calculateTotal()
             },
             ediItem(row, index)

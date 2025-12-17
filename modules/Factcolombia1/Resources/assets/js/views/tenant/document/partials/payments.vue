@@ -78,10 +78,18 @@
                                     <td>
                                         <div class="form-group mb-0" :class="{'has-danger': row.errors.reference}">
                                             <template v-if="row.is_retention">
-                                                <el-select v-model="row.retention_type_id" placeholder="Tipo retención" @change="onRetentionTypeChange(index)">
-                                                    <el-option v-for="option in retention_types" :key="option.id" :value="option.id" :label="(option.name || option.description) + ' - ' + ( ((Number(option.rate || 0) / (Number(option.conversion || 100))) * 100).toFixed(2) + '%' )"></el-option>
-                                                </el-select>
-                                                <small class="form-text text-muted">Referencia: {{ document.subtotal | numberFormat }}</small>
+                                                <div class="row">
+                                                    <div class="col-12 col-sm-6 mb-2">
+                                                        <small class="form-text text-muted">Base:</small>
+                                                        <el-input v-model="row.base_amount" @input="onRetentionTypeChange(index)" @blur="onRetentionTypeChange(index)"></el-input>
+                                                    </div>
+                                                    <div class="col-12 col-sm-6 mb-2">
+                                                        <small class="form-text text-muted">Tipo retención</small>
+                                                        <el-select v-model="row.retention_type_id" placeholder="Tipo retención" @change="onRetentionTypeChange(index)">
+                                                            <el-option v-for="option in retention_types" :key="option.id" :value="option.id" :label="(option.name || option.description) + ' - ' + ( ((Number(option.rate || 0) / (Number(option.conversion || 100))) * 100).toFixed(2) + '%' )"></el-option>
+                                                        </el-select>
+                                                    </div>
+                                                </div>
                                             </template>
                                             <template v-else>
                                                 <el-input v-model="row.reference"></el-input>
@@ -125,43 +133,48 @@
                             </tr>
                             </tbody>
                             <tfoot>
-                            <!-- Mostrar retenciones aplicadas -->
-                                <tr v-for="(ret, i) in applied_retention_types" :key="'ret-'+i">
-                                    <td colspan="6" class="text-right">{{ ret.name || ret.description }}</td>
-                                    <td class="text-right">{{ (parseFloat(ret.amount) || 0) | numberFormat }}</td>
-                                    <td></td>
-                                </tr>
-                            <tr v-if="total_retention > 0">
-                                <td colspan="6" class="text-right">TOTAL RETENCIONES</td>
-                                <td class="text-right">{{ total_retention | numberFormat }}</td>
-                                <td></td>
-                            </tr>
                             <tr>
-                                <td colspan="6" class="text-right">TOTAL PAGADO</td>
-                                <td class="text-right">{{ document.total_paid | numberFormat }}</td>
-                                <td></td>
-                            </tr>
-                            <tr>
-                                <td colspan="6" class="text-right">TOTAL A PAGAR</td>
-                                <td class="text-right">{{ document.total | numberFormat }}</td>
-                                <td></td>
-                            </tr>
-                            <tr v-if="document.total_notas_credito && document.total_notas_credito > 0">
-                                <td colspan="6" class="text-right">NOTAS DE CRÉDITO</td>
-                                <td class="text-right">{{ document.total_notas_credito }}</td>
-                                <td></td>
-                            </tr>
-                            <tr v-if="document.total_notas_credito && document.total_notas_credito > 0">
-                                <td colspan="6" class="text-right">NOTAS DE CRÉDITO</td>
-                                <td class="text-right">{{ document.total_notas_credito }}</td>
-                                <td></td>
-                            </tr>
-                            <tr>
-                                <td colspan="6" class="text-right">PENDIENTE DE PAGO</td>
-                                <td class="text-right">
-                                    {{ (parseFloat(document.total) - (parseFloat(document.total_notas_credito) || 0) - parseFloat(document.total_paid)).toFixed(2) }}
+                                <td colspan="2" class="text-left footer-col">
+                                    <div class="mb-1"><strong>Retenciones pagadas</strong></div>
+                                    <div v-if="retentionPaymentsRecords.length > 0">
+                                        <div v-for="(r, i) in retentionPaymentsRecords" :key="'rpaid-'+i" class="d-flex justify-content-between mb-1">
+                                            <div><strong>{{ formatRetentionLabel(r) }}</strong></div>
+                                            <div><strong>{{ (Number(r.payment) || 0) | numberFormat }}</strong></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between"><div><strong>Total</strong></div><div><strong>{{ retentionPaid | numberFormat }}</strong></div></div>
+                                    </div>
+                                    <div v-else>-</div>
                                 </td>
-                                <td></td>
+
+                                <td colspan="2" class="text-left footer-col">
+                                    <div class="mb-1"><strong>Retenciones por pagar</strong></div>
+                                    <div v-if="applied_retention_types && applied_retention_types.length > 0">
+                                        <div v-for="(ret, i) in applied_retention_types" :key="'rapplied-'+i" class="d-flex justify-content-between mb-1">
+                                            <div><strong>{{ formatAppliedRetentionLabel(ret) }}</strong></div>
+                                            <div><strong>{{ (parseFloat(ret.amount) || 0) | numberFormat }}</strong></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between"><div><strong>Total aplicado</strong></div><div><strong>{{ total_retention | numberFormat }}</strong></div></div>
+                                        <div class="d-flex justify-content-between"><div><strong>Por pagar</strong></div><div><strong>{{ retentionPending | numberFormat }}</strong></div></div>
+                                    </div>
+                                    <div v-else>-</div>
+                                </td>
+
+                                <td colspan="2" class="text-right footer-col">
+                                    <div class="mb-1"><strong>Pagos realizados</strong></div>
+                                    <div v-if="paymentsRecords.length > 0">
+                                        <div v-for="(p, i) in paymentsRecords" :key="'ppaid-'+i" class="d-flex justify-content-between mb-1">
+                                            <div><strong>{{ p.payment_method_name || p.payment_method_type_description || 'Pago' }}</strong></div>
+                                            <div><strong>{{ (Number(p.payment) || 0) | numberFormat }}</strong></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between"><div><strong>Total</strong></div><div><strong>{{ paymentsPaid | numberFormat }}</strong></div></div>
+                                    </div>
+                                    <div v-else>-</div>
+                                </td>
+
+                                <td colspan="2" class="text-right">
+                                    <div><strong>Pagos por pagar</strong></div>
+                                    <div><strong>Total pendiente:</strong> {{ totalPending | numberFormat }}</div>
+                                </td>
                             </tr>
                             </tfoot>
                         </table>
@@ -222,10 +235,18 @@
                                 <div class="form-group mb-1" :class="{'has-danger': row.errors.reference}">
                                     <label>Referencia</label>
                                     <template v-if="row.is_retention">
-                                        <el-select v-model="row.retention_type_id" placeholder="Tipo retención" @change="onRetentionTypeChange(index)">
-                                            <el-option v-for="option in retention_types" :key="option.id" :value="option.id" :label="(option.name || option.description) + ' - ' + ( ((Number(option.rate || 0) / (Number(option.conversion || 100))) * 100).toFixed(2) + '%' )"></el-option>
-                                        </el-select>
-                                        <small class="form-text text-muted">Referencia: {{ document.subtotal | numberFormat }}</small>
+                                        <div class="row">
+                                            <div class="col-12 col-sm-6 mb-2">
+                                                <small class="form-text text-muted">Base:</small>
+                                                <el-input v-model="row.base_amount" @input="onRetentionTypeChange(index)" @blur="onRetentionTypeChange(index)"></el-input>
+                                            </div>
+                                            <div class="col-12 col-sm-6 mb-2">
+                                                <small class="form-text text-muted">Tipo retención</small>
+                                                <el-select v-model="row.retention_type_id" placeholder="Tipo retención" @change="onRetentionTypeChange(index)">
+                                                    <el-option v-for="option in retention_types" :key="option.id" :value="option.id" :label="(option.name || option.description) + ' - ' + ( ((Number(option.rate || 0) / (Number(option.conversion || 100))) * 100).toFixed(2) + '%' )"></el-option>
+                                                </el-select>
+                                            </div>
+                                        </div>
                                     </template>
                                     <template v-else>
                                         <el-input v-model="row.reference"></el-input>
@@ -319,6 +340,19 @@
 .card-body {
     padding: 1rem;
 }
+
+/* Divider for footer columns */
+.footer-col {
+    border-right: 1px solid #e9ecef;
+    padding-right: 12px;
+}
+
+@media (max-width: 999px) {
+    .footer-col {
+        border-right: none;
+        padding-right: 0;
+    }
+}
 </style>
 
 <script>
@@ -356,6 +390,32 @@
                     this.retention_types = response.data.retention_types || [];
                     //this.initDocumentTypes()
                 })
+        },
+        computed: {
+            retentionPaymentsRecords() {
+                return (this.records || []).filter(r => r.is_retention);
+            },
+            retentionPaid() {
+                return this.retentionPaymentsRecords.reduce((sum, r) => sum + (Number(r.payment) || 0), 0);
+            },
+            paymentsRecords() {
+                return (this.records || []).filter(r => !r.is_retention);
+            },
+            paymentsPaid() {
+                return this.paymentsRecords.reduce((sum, r) => sum + (Number(r.payment) || 0), 0);
+            },
+            retentionPending() {
+                return Math.max((Number(this.total_retention) || 0) - (Number(this.retentionPaid) || 0), 0);
+            },
+            totalPending() {
+                const total = Number(this.document.total || 0);
+                const notas = Number(this.document.total_notas_credito || 0);
+                const paid = Number(this.document.total_paid || 0);
+                return Number((total - notas - paid) || 0);
+            },
+            paymentsPending() {
+                return Math.max(this.totalPending - this.retentionPending, 0);
+            }
         },
         methods: {
             clickDownloadFile(filename) {
@@ -436,6 +496,7 @@
                     filename: null,
                     temp_path: null,
                     payment: 0,
+                    base_amount: 0,
                     is_retention: false,
                     retention_type_id: null,
                     payment_destination_disabled: false,
@@ -471,6 +532,7 @@
                     reference: this.records[index].reference,
                     is_retention: this.records[index].is_retention || false,
                     retention_type_id: this.records[index].retention_type_id || null,
+                    base_amount: this.records[index].base_amount || null,
                     filename: this.records[index].filename,
                     temp_path: this.records[index].temp_path,
                     payment: this.records[index].payment,
@@ -536,7 +598,9 @@
                 if (row.is_retention) {
                     row.payment_destination_disabled = true;
                     row.payment_destination_id = this.getCashDestinationId();
-                    row.reference = this.document.subtotal || null;
+                    row.base_amount = Number(this.document.subtotal || 0);
+                    row.reference = Number(row.base_amount || 0).toFixed(2);
+                    if (row.retention_type_id) this.onRetentionTypeChange(index);
                 } else {
                     row.payment_destination_disabled = false;
                     row.retention_type_id = null;
@@ -549,20 +613,29 @@
                 if (!row.retention_type_id) return;
                 const rt = this.retention_types.find(r => r.id == row.retention_type_id);
                 if (!rt) return;
-                const subtotal = Number(this.document.subtotal || 0);
+                const base = Number(row.base_amount || this.document.subtotal || 0);
                 const rate = Number(rt.rate || 0);
                 const conversion = Number(rt.conversion || 100);
-                // calcular monto de la retención: si es valor fijo, usar rate; si no, usar rate/conversion * subtotal
+                // calcular monto de la retención: si es valor fijo, usar rate; si no, usar rate/conversion * base
                 if (rt.is_fixed_value) {
                     row.payment = Number(rate.toFixed(2));
                 } else {
-                    const calc = subtotal * (rate / conversion);
+                    const calc = base * (rate / conversion);
                     row.payment = Number(calc.toFixed(2));
                 }
-                // referencia por defecto ya está el subtotal
-                row.reference = this.document.subtotal || row.reference;
+                // la referencia se toma del campo base (se guarda así)
+                row.reference = Number(base || 0).toFixed(2);
             }
             ,
+            formatAppliedRetentionLabel(ret) {
+                if (!ret) return '-';
+                const name = ret.name || ret.description || ret.id || '-';
+                if (ret.is_fixed_value) return name;
+                const rate = Number(ret.rate || 0);
+                const conversion = Number(ret.conversion || 100);
+                const percent = ((rate / conversion) * 100).toFixed(2) + '%';
+                return name + ' - ' + percent;
+            },
             formatRetentionLabel(row) {
                 if (!row) return '-';
                 // prefer associated retention type from local table (fetched in created)

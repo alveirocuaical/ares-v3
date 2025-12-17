@@ -416,9 +416,12 @@
             },
             async addRowRetention(row){
 
-                await this.taxes.forEach(tax => {
+                this.taxes.forEach(tax => {
                     if(tax.id == row.tax_id){
-                        tax.apply = true
+                        this.$set(tax, 'apply', true);
+                        // guardar información de base personalizada si viene
+                        this.$set(tax, 'base_type', row.base_type);
+                        this.$set(tax, 'base_amount', row.base_amount);
                     }
                 });
 
@@ -545,16 +548,21 @@
                 // this.taxes.forEach(tax => {
                 val.taxes.forEach(tax => {
                     if (tax.is_retention && tax.in_base && tax.apply) {
+                        // Permitir base personalizada si fue seteada al aplicar la retención
+                        let baseForRetention = Number(val.sale);
+                        if (tax.base_type === 'custom' && tax.base_amount != null) {
+                            baseForRetention = Number(tax.base_amount || 0);
+                        }
+
                         tax.retention = (
-                        Number(val.sale) *
+                        Number(baseForRetention) *
                         (tax.rate / tax.conversion)
                         ).toFixed(2);
 
-                        totalRetentionBase =
-                        Number(totalRetentionBase) + Number(tax.retention);
+                        totalRetentionBase = Number(totalRetentionBase) + Number(tax.retention);
 
                         if (Number(totalRetentionBase) >= Number(val.sale))
-                        this.$set(tax, "retention", Number(0).toFixed(2));
+                            this.$set(tax, "retention", Number(0).toFixed(2));
 
                         total -= Number(tax.retention).toFixed(2);
                     }
@@ -567,14 +575,25 @@
                     ) {
                         let row = val.taxes.find(row => row.id == tax.in_tax);
 
+                        // Si se pasó una base personalizada para esta retención, usarla
+                        let baseForRetentionInTax = null;
+                        if (tax.base_type === 'custom' && tax.base_amount != null) {
+                            baseForRetentionInTax = Number(tax.base_amount || 0);
+                        }
+
+                        const sourceValue = (baseForRetentionInTax !== null) ? baseForRetentionInTax : Number(row.total);
+
                         tax.retention = Number(
-                        Number(row.total) * (tax.rate / tax.conversion)
+                        Number(sourceValue) * (tax.rate / tax.conversion)
                         ).toFixed(2);
 
-                        if (Number(tax.retention) > Number(row.total))
-                        this.$set(tax, "retention", Number(0).toFixed(2));
+                        // Si no se usó base personalizada, mantener la validación que evita retenciones mayores al total de la fila
+                        if (baseForRetentionInTax === null) {
+                            if (row && Number(tax.retention) > Number(row.total))
+                                this.$set(tax, "retention", Number(0).toFixed(2));
+                        }
 
-                        row.retention = Number(tax.retention).toFixed(2);
+                        if (row) row.retention = Number(tax.retention).toFixed(2);
                         total -= Number(tax.retention).toFixed(2);
                     }
                 });

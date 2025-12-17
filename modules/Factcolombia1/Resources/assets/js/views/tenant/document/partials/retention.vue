@@ -19,7 +19,15 @@
                             <el-option label="Administración" value="administration"></el-option>
                             <el-option label="Imprevisto" value="sudden"></el-option>
                             <el-option label="Utilidad" value="utility"></el-option>
+                            <el-option label="Personalizada" value="custom"></el-option>
                         </el-select>
+                    </div>
+                </div>
+                <div class="col-md-12 mt-2" v-if="form.base_type === 'custom'">
+                    <div class="form-group" :class="{'has-danger': errors.custom_base}">
+                        <label class="control-label">Base personalizada</label>
+                        <el-input-number v-model="form.custom_base" :min="0" :step="0.01" @change="calculateRetention" :precision="2"></el-input-number>
+                        <small class="form-control-feedback" v-if="errors.custom_base" v-text="errors.custom_base[0]"></small>
                     </div>
                 </div>
                 <div class="col-md-12" v-if="form.tax_id">
@@ -67,6 +75,8 @@
                 form: {
                     tax_id: null,
                     base_type: 'total'
+                ,
+                    custom_base: 0
                 },
                 taxes:[],
                 selectedTaxRate: 0,
@@ -79,6 +89,9 @@
                 return this.taxes.filter(tax => tax.is_retention);
             },
             getSelectedBaseAmount() {
+                if (this.form.base_type === 'custom') {
+                    return Number(this.form.custom_base || 0).toFixed(2);
+                }
                 const valor = this.form.base_type === 'administration' ? this.detailAiu.value_administartion :
                              this.form.base_type === 'sudden' ? this.detailAiu.value_sudden :
                              this.form.base_type === 'utility' ? this.detailAiu.value_utility :
