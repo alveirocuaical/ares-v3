@@ -39,6 +39,14 @@ class CompanyController extends Controller
         $resolutions_invoice = TypeDocument::where('code', TypeDocument::INVOICE_CODE)
             ->whereNotNull('resolution_number')
             ->whereNotNull('prefix')
+            ->where('show_in_establishments', '!=', 'none')
+            ->where(function ($query) use ($establishment_id) {
+                $query->where('show_in_establishments', 'all')
+                    ->orWhere(function ($q) use ($establishment_id) {
+                        $q->where('show_in_establishments', 'custom')
+                            ->whereJsonContains('establishment_ids', $establishment_id);
+                    });
+            })
             ->get([
                 'id',                   // ID de la resolución
                 'name',                 // Nombre del tipo de documento
@@ -53,9 +61,16 @@ class CompanyController extends Controller
                 'generated'             // Cantidad generada
             ]);
         // Resoluciones de POS
-        $resolutions_pos = ConfigurationPos::where('electronic', false)
-            ->whereNotNull('resolution_number')
+        $resolutions_pos = ConfigurationPos::whereNotNull('resolution_number')
             ->whereNotNull('prefix')
+            ->where('show_in_establishments', '!=', 'none')
+            ->where(function ($query) use ($establishment_id) {
+                $query->where('show_in_establishments', 'all')
+                    ->orWhere(function ($q) use ($establishment_id) {
+                        $q->where('show_in_establishments', 'custom')
+                            ->whereJsonContains('establishment_ids', $establishment_id);
+                    });
+            })
             ->get([
                 'id',                   // ID de la resolución POS
                 'prefix',               // Prefijo de la resolución
@@ -75,11 +90,15 @@ class CompanyController extends Controller
                                ->whereType('customers')
                                ->whereIsEnabled()
                                ->orderBy('name')
-                               ->take(2000)
                                ->get()->transform(function ($row) {
                                     return [
                                         'id'                                     => $row->id,
                                         'dv'                                     => $row->dv,
+                                        'registro_mercantil'                     => "000000",
+                                        'tipo_organizacion'                      => $row->type_person_id,
+                                        'municipality_id_fact'                   => $row->city_id,
+                                        'type_regime_id'                         => $row->type_regime_id,
+                                        'type_liability_id'                      => $row->type_obligation_id,
                                         'codigo_tipo_documento_identidad'        => $row->identity_document_type_id,
                                         'numero_documento'                       => $row->number,
                                         'apellidos_y_nombres_o_razon_social'     => $row->name,
