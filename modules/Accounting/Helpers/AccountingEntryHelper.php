@@ -24,7 +24,7 @@ class AccountingEntryHelper
             'document_payroll_id' => $document['document_payroll_id'] ?? null,
             'support_document_id' => $document['support_document_id'] ?? null,
             'expense_id' => $document['expense_id'] ?? null,
-            'status' => isset($document['document_payroll_id']) && $document['document_payroll_id'] ? 'draft' : 'posted',
+            'status' => 'draft',
         ]);
 
         foreach ($document['movements'] as $movement) {
