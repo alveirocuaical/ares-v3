@@ -1,6 +1,6 @@
 <template>
     <div>
-    <el-dialog :title="titleDialog" :visible="showDialog" @close="close" @open="create" width="65%" :close-on-click-modal="false">
+    <el-dialog :title="titleDialog" :visible="showDialog" @close="close" @open="create" width="75%" :close-on-click-modal="false">
         <form autocomplete="off" @submit.prevent="submit">
             <div class="form-body">
                 <div class="row">
@@ -407,6 +407,13 @@ export default {
                             id: row.third_party_id,
                             name: row.third_party_label,
                         });
+                    }
+
+                    if (
+                        row.chart_of_account_label &&
+                        row.chart_of_account_label.split(' - ')[0] === '110505'
+                    ) {
+                        row.bank_account_id = 'cash';
                     }
 
                     // NUEVO: carga la lista completa del tipo existente

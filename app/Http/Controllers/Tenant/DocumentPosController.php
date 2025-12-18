@@ -212,10 +212,12 @@ class DocumentPosController extends Controller
 
     public function store(Request $request)
     {
+        // \Log::info('Datos del request POS: ', $request->all());
         DB::connection('tenant')->beginTransaction();
         try{
 //        DB::connection('tenant')->transaction(function () use ($request) {
             $data = $this->mergeData($request);
+            //\Log::info('Datos procesados POS: ', $data);
             if ($request->has('enter_amount')) {
                 $data['enter_amount'] = $request->input('enter_amount');
             }
@@ -392,6 +394,7 @@ class DocumentPosController extends Controller
 //                ]
 //            ];
             // gestion DIAN
+            //\Log::info('Datos enviados api POS: ', $data_invoice_pos);
             if ($data['electronic'] === true && (!isset($data['sincronize']) || $data['sincronize'] !== true)) {
                 $company = ServiceTenantCompany::firstOrFail();
                 $id_test = $company->test_set_id_eqdocs;
@@ -586,10 +589,10 @@ class DocumentPosController extends Controller
                 }
             }
 
+            //\Log::info('Datos para generar Documento POS: ', $data);
             // fin gestion DIAN
             $this->sale_note =  DocumentPos::create($data);
             // asientos contables
-            $this->registerAccountingPosEntries($this->sale_note);
             // $this->sale_note->payments()->delete();
             $this->deleteAllPayments($this->sale_note->payments);
             foreach($data['items'] as $row) {
@@ -624,6 +627,7 @@ class DocumentPosController extends Controller
             $this->setFilename();
             $this->createPdf($this->sale_note,"ticket", $this->sale_note->filename);
             $this->registerCustomerCoupon($this->sale_note);
+            $this->registerAccountingPosEntries($this->sale_note);
 
 //        });
         }catch(\Exception $e){
@@ -667,7 +671,7 @@ class DocumentPosController extends Controller
         }
 
         $accountIdCash = ChartOfAccount::where('code','110505')->first();
-        $accountIdIncome = ChartOfAccount::where('code','413595')->first();
+        $accountIdDefaultIncome = ChartOfAccount::where('code','413595')->first();
         $accountIdDiscount = $discount_account_code
         ? ChartOfAccount::where('code', $discount_account_code)->first()
         : null;
@@ -729,16 +733,37 @@ class DocumentPosController extends Controller
                 //'payment_method_name' => $payment_method_name,
             ];
         }
+        // HABER: Ventas por cada producto (agrupado por cuenta contable)
+        $ventasPorCuenta = [];
+        foreach ($document->items as $item) {
+            // Obtener la cuenta contable de ventas asociada al producto
+            $product = $item->relation_item;
+            $account_id = null;
+            if ($product && $product->chart_account_sale_configuration && $product->chart_account_sale_configuration->income_account) {
+                $account = ChartOfAccount::where('code', $product->chart_account_sale_configuration->income_account)->first();
+                if ($account) {
+                    $account_id = $account->id;
+                }
+            }
+            // Si no tiene cuenta asociada, usar la cuenta por defecto
+            if (!$account_id && $accountIdDefaultIncome) {
+                $account_id = $accountIdDefaultIncome->id;
+            }
+            // Agrupar por cuenta
+            if (!isset($ventasPorCuenta[$account_id])) {
+                $ventasPorCuenta[$account_id] = 0;
+            }
+            $ventasPorCuenta[$account_id] += ($item->subtotal - $item->total_tax); // O el campo que corresponda al neto de la venta
+        }
 
-        // Haber: Ventas
-        if ($accountIdIncome) {
+        foreach ($ventasPorCuenta as $account_id => $monto) {
             $movements[] = [
-                'account_id' => $accountIdIncome->id,
+                'account_id' => $account_id,
                 'debit' => 0,
-                'credit' => $venta,
-                'affects_balance' => true,
+                'credit' => $monto,
                 'third_party_id' => $thirdPartyId,
                 //'payment_method_name' => $payment_method_name,
+                'affects_balance' => true,
             ];
         }
 
@@ -775,7 +800,7 @@ class DocumentPosController extends Controller
             }
 
             $accountIdCash = ChartOfAccount::where('code','110505')->first();
-            $accountDefaultIncome = ChartOfAccount::where('code','417505')->first();
+            $accountIdDefaultReturn = ChartOfAccount::where('code','417505')->first();
             $accountIdDiscount = $discount_account_code
                 ? ChartOfAccount::where('code', $discount_account_code)->first()
                 : null;
@@ -786,9 +811,20 @@ class DocumentPosController extends Controller
             $person = Person::find($document->customer_id);
             $thirdPartyId = null;
             if ($person) {
+                if ($person->identity_document_type_id) {
+                    $typeDoc = TypeIdentityDocument::find($person->identity_document_type_id);
+                    $documentType = $typeDoc ? $typeDoc->code : null;
+                }
                 $thirdParty = ThirdParty::updateOrCreate(
                     ['document' => $person->number, 'type' => $person->type],
-                    []
+                    [
+                        'name' => $person->name,
+                        'email' => $person->email,
+                        'address' => $person->address,
+                        'phone' => $person->telephone,
+                        'document_type' => $documentType,
+                        'origin_id' => $person->id
+                    ]
                 );
                 $thirdPartyId = $thirdParty->id;
             }
@@ -826,14 +862,38 @@ class DocumentPosController extends Controller
                 ];
             }
 
-            // Debe: Ventas (reversar ingreso)
-            if ($accountDefaultIncome) {
+
+            $devolucionesPorCuenta = [];
+            foreach ($document->items as $item) {
+                $product = $item->relation_item;
+                $account_id = null;
+                // Buscar cuenta de devolución de ventas asociada al producto
+                if ($product && $product->chart_account_sale_configuration && $product->chart_account_sale_configuration->return_income_account) {
+                    $account = ChartOfAccount::where('code', $product->chart_account_sale_configuration->return_income_account)->first();
+                    if ($account) {
+                        $account_id = $account->id;
+                    }
+                }
+                // Si no tiene cuenta asociada, usar la cuenta por defecto
+                if (!$account_id && $accountIdDefaultReturn) {
+                    $account_id = $accountIdDefaultReturn->id;
+                }
+                // Agrupar por cuenta
+                if (!isset($devolucionesPorCuenta[$account_id])) {
+                    $devolucionesPorCuenta[$account_id] = 0;
+                }
+                // Valor neto sin impuesto
+                $devolucionesPorCuenta[$account_id] += ($item->unit_price * $item->quantity);
+            }
+
+            foreach ($devolucionesPorCuenta as $account_id => $monto) {
                 $movements[] = [
-                    'account_id' => $accountDefaultIncome->id,
-                    'debit' => $venta,
+                    'account_id' => $account_id,
+                    'debit' => $monto,
                     'credit' => 0,
                     'affects_balance' => true,
                     'third_party_id' => $thirdPartyId,
+                    //'payment_method_name' => $payment_method_name,
                 ];
             }
 

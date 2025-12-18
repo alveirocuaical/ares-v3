@@ -738,6 +738,9 @@ class DocumentController extends Controller
         // ini_set('memory_limit', '-1');
         //\Log::info('Service invoice:', $request->service_invoice);
         //\Log::info('Datos de service invoice', [$request->service_invoice]);
+        // \Log::info('Store Document Request:', [
+        //     'request' => $request->all(),
+        // ]);
         DB::connection('tenant')->beginTransaction();
         try {
             if($invoice_json !== NULL)

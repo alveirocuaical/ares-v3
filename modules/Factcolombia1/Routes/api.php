@@ -31,6 +31,9 @@ if ($currentHostname) {
                 Route::get('customer-search', 'Api\Tenant\DocumentController@searchCustomers');
             });
             Route::prefix('co-documents-pos')->group(function() {
+                Route::post('res', 'Api\Tenant\DocumentPosController@storeApi');
+                Route::get('print-ticket/{id}', 'Api\Tenant\DocumentPosController@printTicket');
+                //Route::get('downloadFile/{filename}', 'Api\Tenant\DocumentPosController@downloadFile');
                 Route::get('voided/{id}', 'Api\Tenant\DocumentPosController@voided');
             });
         });
