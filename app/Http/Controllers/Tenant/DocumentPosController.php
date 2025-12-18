@@ -212,10 +212,12 @@ class DocumentPosController extends Controller
 
     public function store(Request $request)
     {
+        // \Log::info('Datos del request POS: ', $request->all());
         DB::connection('tenant')->beginTransaction();
         try{
 //        DB::connection('tenant')->transaction(function () use ($request) {
             $data = $this->mergeData($request);
+            //\Log::info('Datos procesados POS: ', $data);
             if ($request->has('enter_amount')) {
                 $data['enter_amount'] = $request->input('enter_amount');
             }
@@ -392,6 +394,7 @@ class DocumentPosController extends Controller
 //                ]
 //            ];
             // gestion DIAN
+            //\Log::info('Datos enviados api POS: ', $data_invoice_pos);
             if ($data['electronic'] === true && (!isset($data['sincronize']) || $data['sincronize'] !== true)) {
                 $company = ServiceTenantCompany::firstOrFail();
                 $id_test = $company->test_set_id_eqdocs;
@@ -586,6 +589,7 @@ class DocumentPosController extends Controller
                 }
             }
 
+            //\Log::info('Datos para generar Documento POS: ', $data);
             // fin gestion DIAN
             $this->sale_note =  DocumentPos::create($data);
             // asientos contables

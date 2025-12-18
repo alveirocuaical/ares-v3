@@ -31,6 +31,7 @@ class ItemCollection extends ResourceCollection
 
             return [
                 'id' => $row->id,
+                'item_id' => $row->id,
                 'unit_type_id' => $row->unit_type->name,
                 'description' => $row->description,
                 'name' => $row->name,

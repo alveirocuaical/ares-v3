@@ -258,6 +258,7 @@ class RestaurantController extends Controller
 
             return [
                 'id' => $row->id,
+                "item_id" => $row->id,
                 'name' => $row->name,
                 'full_description' => $detail['full_description'],
                 'brand' => $detail['brand'],
@@ -268,6 +269,21 @@ class RestaurantController extends Controller
                 'price' => $row->sale_unit_price,
                 'currency_type_id' => $row->currency_type_id,
                 'currency_type_symbol' => $row->currency_type->symbol,
+                'tax_id' => $row->tax_id,
+                'is_set' => (bool) $row->is_set,
+                'edit_unit_price' => false,
+                'aux_quantity' => 1,
+                'edit_sale_unit_price' => strval(round($sale_unit_price_with_tax, 2)),
+                'aux_sale_unit_price' => number_format($row->sale_unit_price, 2, ".",""),
+                'category_id' => $row->category_id,
+                'sets' => collect($row->sets)->transform(function($r){
+                    return [
+                        $r->individual_item->name
+                    ];
+                }),
+                'is_favorite' => (bool) $row->is_favorite,
+                'sale_unit_price_with_tax' => $sale_unit_price_with_tax,
+                'unit_price' => $row->sale_unit_price,
                 'sale_unit_price' => round($sale_unit_price_with_tax, 2),
                 'purchase_unit_price' => $row->purchase_unit_price,
                 'unit_type_id' => $row->unit_type_id,
@@ -279,6 +295,9 @@ class RestaurantController extends Controller
                 'image' => $row->image != "imagen-no-disponible.jpg"
                     ? url("/storage/uploads/items/" . $row->image)
                     : url("/logo/" . $row->image),
+                'image_url' => ($row->image !== 'imagen-no-disponible.jpg') 
+                            ? asset('storage'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'items'.DIRECTORY_SEPARATOR.$row->image) 
+                            : asset("/logo/{$row->image}"),
 
                 'item_unit_types' => collect($row->item_unit_types)->transform(function ($row) {
                     return [

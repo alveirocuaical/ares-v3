@@ -83,7 +83,8 @@ class CompanyController extends Controller
                 'generated',            // Cantidad generada
                 'cash_type',            // Tipo de caja
                 'show_in_establishments', // Mostrar en establecimientos
-                'establishment_ids'     // IDs de establecimientos asociados
+                'establishment_ids',     // IDs de establecimientos asociados
+                'electronic'             // Indicador de resolución electrónica
             ]);
             
         $customers = Person::without(['country', 'department', 'city'])
@@ -178,6 +179,9 @@ class CompanyController extends Controller
                 'id' => $unit->id,
                 'name' => $unit->name,
                 'code' => $unit->code,
+                'deleted_at' => $unit->deleted_at,
+                'created_at' => $unit->created_at,
+                'updated_at' => $unit->updated_at,
             ];
         });
 
