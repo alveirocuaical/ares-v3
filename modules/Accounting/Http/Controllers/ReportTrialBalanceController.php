@@ -110,7 +110,7 @@ class ReportTrialBalanceController extends Controller
 
     public function export(Request $request)
     {
-        $format = $request->get('format');
+        $format = $request->get('formats');
         $result = $this->records($request);
         $data = $result['data'];
         $totals = $result['totals'];

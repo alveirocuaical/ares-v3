@@ -411,10 +411,15 @@ class ChartOfAccountController extends Controller
         $query = ChartOfAccount::with('parent');
 
         if (!empty($value)) {
-            $query->where(function($q) use ($value) {
-                $q->where('code', 'like', "%$value%")
-                ->orWhere('name', 'like', "%$value%");
-            });
+            // Si el valor es numérico, buscar por "empieza con"
+            if (is_numeric($value)) {
+                $query->where('code', 'like', "{$value}%");
+            } else {
+                $query->where(function($q) use ($value) {
+                    $q->where('code', 'like', "%$value%")
+                    ->orWhere('name', 'like', "%$value%");
+                });
+            }
         }
 
         $query->orderBy('code', 'asc');
