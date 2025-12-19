@@ -31,6 +31,7 @@ use Modules\Accounting\Models\ChartOfAccount;
 use Modules\Accounting\Models\JournalPrefix;
 use Modules\Accounting\Models\ThirdParty;
 use Modules\Factcolombia1\Models\Tenant\TypeIdentityDocument;
+use Modules\Factcolombia1\Models\Tenant\Tax;
 
 
 class ExpenseController extends Controller
@@ -74,7 +75,7 @@ class ExpenseController extends Controller
         $expense_types = ExpenseType::get();
         $expense_method_types = ExpenseMethodType::all();
         $expense_reasons = ExpenseReason::all();
-        $payment_destinations = $this->getBankAccounts();
+        $payment_destinations = $this->getPaymentDestinations();
         $currencies = Currency::all();
 
         return compact('suppliers', 'establishment','currencies', 'expense_types', 'expense_method_types', 'expense_reasons', 'payment_destinations');
@@ -92,6 +93,18 @@ class ExpenseController extends Controller
     public function store(ExpenseRequest $request)
     {
         $data = self::merge_inputs($request);
+
+        $total_tax = 0;
+        foreach ($data['items'] as $row) {
+            if (!empty($row['tax_id'])) {
+                $tax = Tax::find($row['tax_id']);
+                if ($tax && $tax->rate > 0) {
+                    $tax_amount = round($row['total'] * ($tax->rate / (100 + $tax->rate)), 2);
+                    $total_tax += $tax_amount;
+                }
+            }
+        }
+        $data['total_tax'] = $total_tax;
 
         $expense = DB::connection('tenant')->transaction(function () use ($data) {
 
@@ -153,15 +166,37 @@ class ExpenseController extends Controller
             $thirdPartyId = $thirdParty->id;
         }
 
-        // Agrupar ítems por cuenta contable y totalizar
+        // Agrupar ítems por cuenta contable y totalizar (solo base sin impuesto)
         $grouped = [];
+        $tax_movements = [];
         foreach ($expense->items as $item) {
-            // Si no tiene cuenta contable, usa la predeterminada 5195 (gastos varios)
             $account_id = $item->chart_of_account_id ?: ChartOfAccount::where('code', '5195')->value('id');
+            $tax_amount = 0;
+            if ($item->tax_id) {
+                $tax = Tax::find($item->tax_id);
+                if ($tax && $tax->chart_account_purchase) {
+                    $tax_amount = round($item->total * ($tax->rate / (100 + $tax->rate)), 2); // Calcula el impuesto incluido
+                    // Solo crear movimiento si el impuesto es mayor a 0
+                    if ($tax_amount > 0) {
+                        $tax_account = ChartOfAccount::where('code', $tax->chart_account_purchase)->first();
+                        if ($tax_account) {
+                            $tax_movements[] = [
+                                'account_id' => $tax_account->id,
+                                'debit' => $tax_amount,
+                                'credit' => 0,
+                                'affects_balance' => true,
+                                'third_party_id' => $thirdPartyId,
+                            ];
+                        }
+                    }
+                }
+            }
+            // El gasto es el total menos el impuesto
+            $base_amount = $item->total - $tax_amount;
             if (!isset($grouped[$account_id])) {
                 $grouped[$account_id] = 0;
             }
-            $grouped[$account_id] += $item->total;
+            $grouped[$account_id] += $base_amount;
         }
 
         // Construir los movimientos (débito por cada cuenta, crédito único)
@@ -176,6 +211,10 @@ class ExpenseController extends Controller
                 'affects_balance' => true,
                 'third_party_id' => $thirdPartyId,
             ];
+        }
+
+        foreach ($tax_movements as $tax_movement) {
+            $movements[] = $tax_movement;
         }
 
         // Crédito total (Cuentas por pagar)
@@ -198,6 +237,20 @@ class ExpenseController extends Controller
             'taxes' => [],
             'tax_config' => [],
         ]);
+    }
+
+    public function tableTaxes()
+    {
+        $taxes = Tax::where('is_retention', false)
+            ->get()
+            ->map(function($tax) {
+            return [
+                'id' => $tax->id,
+                'name' => $tax->name . ' (' . $tax->rate . '%)',
+                'rate' => $tax->rate,
+            ];
+        });
+        return response()->json($taxes);
     }
 
     public static function merge_inputs($inputs)
@@ -257,7 +310,7 @@ class ExpenseController extends Controller
                 ],
                 'message' => 'Gasto anulado exitosamente',
             ];
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return [
                 'success' => false,
                 'data' => [

@@ -26,7 +26,7 @@
                 </div>
                 <div class="row">
                     <div class="col-md-4">
-                        <div class="form-group col-12">
+                        <div class="form-group">
                             <label>Cuenta contable</label>
                             <el-select
                                 v-model="form.chart_of_account_id"
@@ -44,6 +44,15 @@
                                     :value="option.id"
                                     :label="option.code + ' - ' + option.name"
                                 ></el-option>
+                            </el-select>
+                        </div>
+                    </div>
+                    <div class="col-md-2"></div>
+                    <div class="col-md-6">
+                      <div class="form-group">
+                            <label>Impuesto</label>
+                            <el-select v-model="form.tax_id" filterable placeholder="Seleccionar impuesto" clearable style="width: 100%">
+                                <el-option v-for="option in taxes" :key="option.id" :value="option.id" :label="option.name"></el-option>
                             </el-select>
                         </div>
                     </div>
@@ -69,6 +78,7 @@ export default {
       searchTimeout: null,
       form: {},
       defaultAccount: null, // cuenta 5195 completa (id, code, name)
+      taxes: [],
     };
   },
   watch: {
@@ -78,6 +88,10 @@ export default {
         this.ensureDefaultAccount();
       }
     },
+  },
+  async created() {
+    const res = await this.$http.get('/expenses/table/taxes');
+    this.taxes = res.data;
   },
   methods: {
     // Busca la cuenta 5195 directamente y guarda su info
@@ -164,6 +178,7 @@ export default {
     clickAddItem() {
       this.form.currency_id = this.currencyType.id;
       this.form.total_original = parseFloat(this.form.total);
+      this.form.tax_id = this.form.tax_id || null;
       this.$emit('add', this.form);
       this.initForm();
     },

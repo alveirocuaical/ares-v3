@@ -16,6 +16,7 @@ class ExpenseItem extends ModelTenant
         'description',
         'total', 
         'chart_of_account_id',
+        'tax_id',
     ];
 
     public function expense()

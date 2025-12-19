@@ -33,6 +33,7 @@ class Expense extends ModelTenant
         'time_of_issue',
         'supplier',
         'total',
+        'total_tax'
     ];
 
     protected $casts = [
