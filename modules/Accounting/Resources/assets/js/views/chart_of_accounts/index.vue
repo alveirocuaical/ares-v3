@@ -64,7 +64,7 @@
                     >
                     <span slot-scope="{ node, data }" class="tree-node-label d-flex justify-content-between align-items-center w-100">
                         <span>{{ data.code }} - {{ data.label }}</span>
-                        <span v-if="data.level >= 4" class="ml-auto d-flex">
+                        <span v-if="data.level >= 3" class="ml-auto d-flex">
                             <el-button size="mini" type="primary" icon="el-icon-edit" @click="openForm(data.id)">Editar</el-button>
                             <el-button size="mini" type="danger" icon="el-icon-delete" @click="deleteRecord(data.id)">Eliminar</el-button>
                         </span>
@@ -201,16 +201,22 @@ export default {
                 this.loading = false;
                 return;
             }
-            // Filtra el árbol recursivamente por código o nombre
+            const isNumeric = /^\d+$/.test(this.searchCode);
+
             const filterRecursive = (nodes) => {
                 return nodes
                     .map(node => {
+                        // Primero filtra los hijos recursivamente
                         let children = node.children ? filterRecursive(node.children) : [];
-                        if (
-                            node.code.includes(this.searchCode) ||
-                            (node.label && node.label.toLowerCase().includes(this.searchCode.toLowerCase())) ||
-                            children.length > 0
-                        ) {
+                        let codeMatch = false;
+                        if (isNumeric) {
+                            codeMatch = node.code.startsWith(this.searchCode);
+                        } else {
+                            codeMatch = node.code.includes(this.searchCode) ||
+                                (node.label && node.label.toLowerCase().includes(this.searchCode.toLowerCase()));
+                        }
+                        // Mostrar el nodo solo si él mismo coincide o tiene hijos que coinciden
+                        if (codeMatch || children.length > 0) {
                             return {
                                 ...node,
                                 children
@@ -220,6 +226,7 @@ export default {
                     })
                     .filter(node => node !== null);
             };
+
             this.filteredTreeData = filterRecursive(this.treeData);
             this.loading = false;
         }
