@@ -408,11 +408,7 @@ class ChartOfAccountController extends Controller
         $page = $request->input('page', 1);
         $value = $request->input('value', '');
 
-        $query = ChartOfAccount::with('parent')
-            ->where(function($q) {
-                $q->where('code', 'like', '14%')
-                ->orWhere('code', 'like', '51%');
-            });
+        $query = ChartOfAccount::with('parent');
 
         if (!empty($value)) {
             $query->where(function($q) use ($value) {

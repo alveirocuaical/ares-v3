@@ -299,6 +299,7 @@ class SupportDocumentController extends Controller
         if ($document->payment_form_id == 1) {
             // Contado: usar caja general (110505) o bancos (111005) según el medio de pago
             // Puedes mejorar esto para usar bancos si corresponde
+            $payment_method = PaymentMethod::find($document->payment_method_id);
             $accountCash = ChartOfAccount::where('code', '110505')->first();
             $movements[] = [
                 'account_id' => $accountCash->id,
@@ -307,6 +308,7 @@ class SupportDocumentController extends Controller
                 'affects_balance' => true,
                 'third_party_id' => $thirdPartyId,
                 'description' => $accountCash->code . ' - ' . $accountCash->name,
+                'payment_method_name' => $payment_method ? $payment_method->name : null,
             ];
         } else {
             // Crédito: proveedores

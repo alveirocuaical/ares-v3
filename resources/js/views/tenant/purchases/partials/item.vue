@@ -421,9 +421,17 @@
                 this.form.sale_unit_price = this.form.item.sale_unit_price
                 
                 // Cargar cuenta contable de inventario si existe
-                // 🔹 SOLO PONER LA CUENTA CONTABLE SI AÚN NO HAY UNA SELECCIONADA
-                if (!this.form.chart_of_account_code || this.form.chart_of_account_code === null) {
-                    this.form.chart_of_account_code = this.form.item.chart_of_account_code || null;
+                const code = this.form.item.chart_of_account_code || null;
+                this.form.chart_of_account_code = code;
+                if (code && !this.chartOfAccounts.find(acc => acc.code === code)) {
+                    // Buscar el nombre de la cuenta desde el backend si no está en el array
+                    this.$http.get('/accounting/charts/records', { params: { column: 'code', value: code, per_page: 1 } })
+                        .then(response => {
+                            const account = response.data.data[0];
+                            if (account) {
+                                this.chartOfAccounts.push(account);
+                            }
+                        });
                 }
                 // Si applyWeightedPrice está activo, calcular el precio ponderado
                 // después de establecer los valores iniciales
