@@ -471,7 +471,7 @@
                     @if(in_array('restaurant', $vc_modules))
                     <li class="nav-parent {{ in_array($path[0], ['restaurant'])?'nav-active nav-expanded':'' }}">
                         <a class="nav-link" href="#">
-                            <span class="float-right badge badge-red badge-danger mr-3">Nuevo</span>
+                            <span class="float-right badge badge-red badge-danger mr-3">Beta</span>
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                     stroke-linejoin="round"
