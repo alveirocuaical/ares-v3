@@ -33,6 +33,7 @@ use App\Http\Controllers\Tenant\{
     PersonController,
     ItemController,
 };
+use App\Http\Controllers\Tenant\src\services\RemissionPaymentService;
 use Modules\Factcolombia1\Helpers\DocumentHelper;
 use App\Models\Tenant\ItemWarehouse;
 use App\Models\Tenant\InventoryKardex;
@@ -45,7 +46,16 @@ class RemissionController extends Controller
 
     use StorageDocument, FinanceTrait;
 
+    protected $remissionPaymentService;
+
     protected $remission;
+
+    public function __construct(RemissionPaymentService $remissionPaymentService)
+    {
+        $this->remissionPaymentService = $remissionPaymentService;
+    }
+
+
 
     public function index()
     {
@@ -153,6 +163,8 @@ class RemissionController extends Controller
 
         });
 
+        $this->remissionPaymentService->store($request->payments, $this->remission->id);
+
         return [
             'success' => true,
             'data' => [
@@ -226,7 +238,7 @@ class RemissionController extends Controller
     {
         ini_set("pcre.backtrack_limit", "5000000");
         $template = new Template();
-        
+
         $document = ($remission != null) ? $remission : $this->remission;
         $company = Company::first();
         $filename = ($filename != null) ? $filename : $this->remission->filename;

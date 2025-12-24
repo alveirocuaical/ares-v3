@@ -13,8 +13,11 @@ class AppServiceProvider extends ServiceProvider
         if (config('tenant.force_https')) URL::forceScheme('https');
         Document::observe(DocumentObserver::class);
     }
-    
+
     public function register() {
-        
+        $bindings = config('repositories');
+        foreach ($bindings as $interface => $implementation) {
+            $this->app->bind($interface, $implementation);
+        }
     }
 }
