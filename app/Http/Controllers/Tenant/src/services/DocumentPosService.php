@@ -23,6 +23,7 @@ class DocumentPosService
         TaxesService $taxesService,
         SendInternalService $sendInternalService,
         RemissionPaymentInterface $remissionPayment
+
     ) {
         $this->documentPosRepository = $documentPosRepository;
         $this->itemService = $itemService;
@@ -136,6 +137,8 @@ class DocumentPosService
         $token = $request->header('Authorization');
 
 
+
+
         try {
             $sendInternal = $this->sendInternalService->sendInternal($url, $data, $token);
 
@@ -185,5 +188,10 @@ class DocumentPosService
         return [
             'number' => $remission->number_full,
         ];
+    }
+
+    public function getResolutionType()
+    {
+
     }
 }

@@ -49,7 +49,7 @@ class DocumentPosRequest extends FormRequest
             'taxes.*.total'       => 'nullable|numeric|min:0',
 
             'payments'            => 'required|array|min:1',
-            'payments.*.payment_method_type_id' => 'required|string',
+            'payments.*.payment_method_id' => 'required',
             'payments.*.payment'  => ['required', 'numeric', 'min:0.01'],
         ];
     }

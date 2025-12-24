@@ -56,7 +56,8 @@ class DocumentPosResource extends JsonResource
             'payment_method_id' => 1,
             'payments' => collect($this->payments)->map(function($payment) {
                 return [
-                    'payment_method_type_id' => $payment['payment_method_type_id'],
+                    'payment_method_id' => $payment['payment_method_id'],
+                    'payment_method_type_id' => null, //$payment['payment_method_type_id'],
                     'payment' => $payment['payment'],
                     'date_of_payment' => now('America/Bogota')->toDateString(),
                     'payment_destination_id' => 'cash',
