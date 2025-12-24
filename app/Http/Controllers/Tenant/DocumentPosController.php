@@ -1902,6 +1902,11 @@ class DocumentPosController extends Controller
                 $this->apply_change = true;
             }
 
+            $credit_types = [13];
+            if(in_array($row['payment_method_id'], $credit_types)){
+                continue;
+            }
+
             $record_payment = $sale_note->payments()->create($row);
 
             if(isset($row['payment_destination_id'])){

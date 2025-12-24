@@ -153,9 +153,13 @@ class RemissionController extends Controller
             }
             if(isset($data['payments']) && is_array($data['payments'])) {
                 foreach ($data['payments'] as $payment) {
-                    $payment['remission_id'] = $this->remission->id;
-                    $remission_payment = RemissionPayment::create($payment);
-                    $this->createGlobalPayment($remission_payment, $payment);
+                    if($payment['payment_method_id'] != 13) { //* Excluir tipo de pago crédito
+                        $payment['remission_id'] = $this->remission->id;
+                        $remission_payment = RemissionPayment::create($payment);
+                        $this->createGlobalPayment($remission_payment, $payment);
+                    }
+
+
                 }
             }
             $this->setFilename();
@@ -163,7 +167,7 @@ class RemissionController extends Controller
 
         });
 
-        $this->remissionPaymentService->store($request->payments, $this->remission->id);
+
 
         return [
             'success' => true,

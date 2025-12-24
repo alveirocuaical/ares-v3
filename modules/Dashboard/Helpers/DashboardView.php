@@ -188,7 +188,10 @@ class DashboardView
 
         $remissions  = self::getRecordsRemissions($customer_id, $establishment_id, $d_start, $d_end);
 
-        $records = ($documents->union($sale_notes))->union($remissions)->get();
+        $pos         = self::getRecordsPos($customer_id, $establishment_id, $d_start, $d_end);
+
+        //? changes to return $pos records
+        $records = ($documents->union($sale_notes))->union($remissions)->union($pos)->get();
 
         return collect($records)->transform(function($row) {
                 $total_to_pay = (float)$row->total - (float)$row->total_payment;
@@ -302,5 +305,47 @@ class DashboardView
                     ->when($customer_id !== null, function ($query) use ($customer_id){
                         return $query->where('co_remissions.customer_id', $customer_id);
                     });
+        }
+
+    private static function getRecordsPos($customer_id, $establishment_id, $d_start, $d_end)
+    {
+
+        $pos_payments = DB::table('documents_pos_payments')
+            ->select('document_pos_id', DB::raw('SUM(payment) as total_payment'))
+            ->groupBy('document_pos_id');
+
+                    // Consulta principal
+        $results = DB::connection('tenant')
+                        ->table('documents_pos')
+                        ->join('persons', 'persons.id', '=', 'documents_pos.customer_id')
+                        ->leftJoinSub($pos_payments, 'payments', function ($join) {
+                            $join->on('documents_pos.id', '=', 'payments.document_pos_id');
+                        })
+                        ->select(
+                            'documents_pos.id',
+                            DB::raw("DATE_FORMAT(documents_pos.date_of_issue, '%Y-%m-%d') as date_of_issue"),
+                            'persons.name as customer_name',
+                            'persons.id as customer_id',
+                            DB::raw("NULL as type_document_id"),
+                            DB::raw("CONCAT(documents_pos.prefix, '-', documents_pos.number) AS number_full"),
+                            'documents_pos.total',
+                            DB::raw("IFNULL(payments.total_payment, 0) as total_payment"),
+                            DB::raw("'document' as type"),
+                            'documents_pos.currency_id',
+                            'documents_pos.automatic_date_of_issue as date_expiration'
+                        )
+
+                        ->whereRaw('documents_pos.total > IFNULL(payments.total_payment, 0)')
+                        ->whereBetween('documents_pos.date_of_issue', [$d_start, $d_end])
+                        ->when($establishment_id !== null, function ($q) use ($establishment_id) {
+                            return $q->where('documents_pos.establishment_id', $establishment_id);
+                        })
+                        ->when($customer_id !== null, function ($q) use ($customer_id) {
+                            return $q->where('documents_pos.customer_id', $customer_id);
+                        });
+
+
+
+            return $results ;
         }
 }
