@@ -19,5 +19,10 @@ class AppServiceProvider extends ServiceProvider
         foreach ($bindings as $interface => $implementation) {
             $this->app->bind($interface, $implementation);
         }
+
+        if ($this->app->environment('local', 'testing')) {
+            $this->app->register(\Laravel\Dusk\DuskServiceProvider::class);
+        }
+
     }
 }
