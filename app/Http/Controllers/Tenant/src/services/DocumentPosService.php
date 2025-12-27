@@ -131,7 +131,10 @@ class DocumentPosService
 
         $apiResource = $request->document_type_id === 'RM' ? 'co-remissions' : 'document-pos';
 
-        $scheme = 'https'; //! changue this in local dev
+        $scheme = 'https'; //! By default use https
+        if (app()->environment('local')) {
+            $scheme = 'http';
+        }
         $host = $request->attributes->get('tenant_fqdn', $request->getHost());
         $url = $scheme . '://' . $host . "/api/{$apiResource}";
         $token = $request->header('Authorization');
