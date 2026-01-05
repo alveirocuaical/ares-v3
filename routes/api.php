@@ -3,11 +3,14 @@
 
 
 use Illuminate\Support\Facades\Route;
+
 use Modules\Finance\Http\Controllers\IncomeController;
 use Modules\Finance\Http\Controllers\UnpaidController;
 use Modules\Sale\Http\Controllers\RemissionController;
 use Modules\Expense\Http\Controllers\ExpenseController;
+use Modules\Inventory\Http\Controllers\MovesController;
 use App\Http\Controllers\Tenant\src\Http\ItemsController;
+use Modules\Inventory\Http\Controllers\InventoryController;
 use Modules\Sale\Http\Controllers\RemissionPaymentController;
 use App\Http\Controllers\Tenant\src\Http\Controllers\TaxController;
 use App\Http\Controllers\Tenant\src\Http\Controllers\CustomerController;
@@ -183,6 +186,27 @@ if ($hostname) {
 
             //* Payment Methods
             Route::get('payment-methods/csv', [PaymentMethodController::class, 'getAllPaymentMethods']);
+
+            //* Inventory
+            Route::prefix('inventory')->group(function () {
+                Route::get('/', [InventoryController::class, 'index'])->name('inventory.index');
+                Route::get('records', [InventoryController::class, 'records']);
+                Route::get('columns', [InventoryController::class, 'columns']);
+                Route::get('tables', [InventoryController::class, 'tables']);
+                Route::get('tables/transaction/{type}', [InventoryController::class, 'tables_transaction']);
+                Route::get('record/{inventory}', [InventoryController::class, 'record']);
+                Route::post('/', [InventoryController::class, 'store']);
+                Route::post('/transaction', [InventoryController::class, 'store_transaction']);
+                Route::post('/transaction/import/input', [InventoryController::class, 'transactionImport']);
+                Route::post('move', [InventoryController::class, 'move']);
+                Route::get('moves', [MovesController::class, 'index'])->name('inventory.moves.index');
+                Route::post('remove', [InventoryController::class, 'remove']);
+                Route::get('initialize', [InventoryController::class, 'initialize']);
+                Route::get('download', [InventoryController::class, 'download']);
+                Route::get('search-items', [InventoryController::class, 'searchItems']);
+                Route::post('/transaction/import/massive', [InventoryController::class, 'transactionImportMassive']);
+                Route::get('/formats/Format_massive.xlsx', [InventoryController::class, 'downloadFormatMassive']);
+            });
 
         });
 
